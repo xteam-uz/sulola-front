@@ -1,9 +1,9 @@
-import WebApp from '@twa-dev/sdk';
+import WebApp from "@twa-dev/sdk";
 
 export const initTelegramApp = () => {
     WebApp.enableClosingConfirmation();
-    WebApp.setHeaderColor('#2481cc');
-    WebApp.setBackgroundColor('#ffffff');
+    WebApp.setHeaderColor("#2481cc");
+    WebApp.setBackgroundColor("#ffffff");
 
     // Ready event
     WebApp.ready();
@@ -19,4 +19,8 @@ export const sendDataToBot = (data) => {
 
 export const closeApp = () => {
     WebApp.close();
+};
+
+export const hello = () => {
+    WebApp.showAlert("Hey there!");
 };
