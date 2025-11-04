@@ -12,7 +12,6 @@ export const DefaultLayout = () => {
     const onLogout = (e) => {
         e.preventDefault();
         localStorage.removeItem("ACCESS_TOKEN");
-        window.location.href = "/login";
     };
 
     return (
