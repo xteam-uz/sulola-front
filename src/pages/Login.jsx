@@ -20,16 +20,16 @@ export const Login = () => {
     const onSubmit = (e) => {
         e.preventDefault();
 
-        // if (!telegramUser?.id) {
-        //     setErrors({
-        //         telegram_id: ["Telegram foydalanuvchi ma'lumoti topilmadi"],
-        //     });
-        //     return;
-        // }
+        if (!telegramUser?.id) {
+            setErrors({
+                telegram_id: ["Telegram foydalanuvchi ma'lumoti topilmadi"],
+            });
+            return;
+        }
 
         const payload = {
-            telegram_id: 1367538109, // telegramUser?.id,
-            username: "mirrrjr", // telegramUser?.username,
+            telegram_id: telegramUser?.id,
+            username: telegramUser?.username,
             first_name: firstNameRef.current.value,
             last_name: lastNameRef.current.value,
             role: role,
