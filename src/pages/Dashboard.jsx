@@ -1,10 +1,9 @@
-import Test from "../components/test";
+import Card from "../components/ui/card";
 
 export const Dashboard = () => {
     return (
         <div>
-            <h1>Dashboard</h1>
-            <Test />
+            <Card />
         </div>
     );
 };

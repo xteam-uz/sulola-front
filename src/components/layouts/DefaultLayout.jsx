@@ -23,25 +23,8 @@ export const DefaultLayout = () => {
     };
 
     return (
-        <div id="defaultLayout">
-            <aside>
-                <Link to="/dashboard">Dashboard</Link>
-                <Link to="/users">Users</Link>
-            </aside>
-            <div className="content">
-                <header>
-                    <div>Header</div>
-                    <div>
-                        {user.name}
-                        <a href="#" onClick={onLogout} className="btn-logout">
-                            Logout
-                        </a>
-                    </div>
-                </header>
-                <main>
-                    <Outlet />
-                </main>
-            </div>
-        </div>
+        <main>
+            <Outlet />
+        </main>
     );
 };
