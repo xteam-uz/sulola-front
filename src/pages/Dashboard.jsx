@@ -7,17 +7,49 @@ import {
     Plus,
     FileText,
     Clock,
+    Menu,
 } from "lucide-react";
+import { useStateContext } from "../contexts/ContextProvider";
+import axiosClient from "../axios-client";
+import { Navigate } from "react-router-dom";
 
 export const Dashboard = () => {
-    const [user, setUser] = useState(null);
     const [tests, setTests] = useState([]);
     const [activeTab, setActiveTab] = useState("created");
     const [loading, setLoading] = useState(true);
+    const [isOpen, setIsOpen] = useState(false);
 
-    // Mock data - bu yerda real API dan ma'lumot keladi
+    const toggleDropdown = () => setIsOpen(!isOpen);
+    const { token, user, setUser, setToken } = useStateContext();
+
+    if (!token) {
+        return <Navigate to="/login" />;
+    }
+
+    const onLogout = (e) => {
+        e.preventDefault();
+        localStorage.removeItem("ACCESS_TOKEN");
+
+        axiosClient
+            .post("/logout")
+            .then(() => {
+                setUser({});
+                setToken(null);
+            })
+            .catch((error) => {
+                console.error(error);
+            });
+    };
+
     useEffect(() => {
-        // Simulate API call
+        axiosClient
+            .get("/user")
+            .then(({ data }) => {
+                setUser(data);
+            })
+            .catch((error) => {
+                console.error(error);
+            });
         setTimeout(() => {
             setUser({
                 id: 1,
@@ -68,25 +100,60 @@ export const Dashboard = () => {
     return (
         <div className="min-h-screen bg-gray-50 pb-20">
             {/* Header */}
-            <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-4 rounded-b-3xl shadow-lg">
+            <div className="relative bg-gradient-to-r from-blue-600 to-blue-700 text-white p-4 rounded-b-3xl shadow-lg">
                 <div className="flex items-center justify-between mb-4">
                     <h1 className="text-xl font-bold">Rash yordamchi</h1>
-                    <button className="p-2">
-                        <div className="w-6 h-1 bg-white rounded mb-1"></div>
-                        <div className="w-6 h-1 bg-white rounded mb-1"></div>
-                        <div className="w-6 h-1 bg-white rounded"></div>
+                    <button
+                        id="dropdownDividerButton"
+                        onClick={toggleDropdown}
+                        className="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
+                        type="button"
+                    >
+                        <Menu size={20} />
+                        <svg
+                            className="w-2.5 h-2.5 ms-3"
+                            aria-hidden="true"
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 10 6"
+                        >
+                            <path
+                                stroke="currentColor"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth="2"
+                                d="m1 1 4 4 4-4"
+                            />
+                        </svg>
                     </button>
                 </div>
+                {isOpen && (
+                    <div
+                        id="dropdownDivider"
+                        className="z-10 absolute right-0 mt-2 bg-white divide-y divide-gray-100 rounded-lg shadow-sm w-44 dark:bg-gray-700 dark:divide-gray-600"
+                    >
+                        <ul className="py-2 text-sm text-gray-700 dark:text-gray-200">
+                            <li>
+                                <button
+                                    onClick={onLogout}
+                                    className="w-full text-left block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white cursor-pointer"
+                                >
+                                    Logout
+                                </button>
+                            </li>
+                        </ul>
+                    </div>
+                )}
 
                 {/* User Info Card */}
                 <div className="bg-white text-gray-800 rounded-2xl p-4 shadow-md">
                     <div className="flex items-center justify-between mb-3">
                         <div>
                             <h2 className="text-lg font-semibold">
-                                {user.first_name} {user.last_name}
+                                {user?.first_name} {user?.last_name}
                             </h2>
                             <p className="text-blue-600 text-sm">
-                                {user.username}
+                                {user?.username}
                             </p>
                         </div>
                         <button className="text-blue-600">
@@ -96,7 +163,7 @@ export const Dashboard = () => {
                     <div className="text-sm text-gray-600">
                         <span>Telegram ID: </span>
                         <span className="font-semibold text-gray-800">
-                            {user.telegram_id}
+                            {user?.telegram_id}
                         </span>
                     </div>
                 </div>
@@ -116,7 +183,7 @@ export const Dashboard = () => {
                             </div>
                             <div>
                                 <p className="text-gray-600 text-sm">
-                                    Balansingiz: {user.balance} so'm
+                                    Balansingiz: {user?.balance} so'm
                                 </p>
                                 <p className="text-xs text-gray-400 mt-1">
                                     Pullik testlardan tushgan daromad
@@ -138,7 +205,7 @@ export const Dashboard = () => {
                             </div>
                             <div>
                                 <p className="text-gray-600 text-sm">
-                                    Kredit balansi: {user.credits} ta
+                                    Kredit balansi: {user?.credits} ta
                                 </p>
                                 <p className="text-xs text-gray-400 mt-1">
                                     Har bir o'quvchi natijasi uchun 1 kredit
@@ -154,7 +221,7 @@ export const Dashboard = () => {
             </div>
 
             {/* Tests Section */}
-            <div className="px-4 mt-6">
+            <div className="px-4 my-6">
                 <div className="flex items-center justify-between mb-4">
                     <h3 className="text-lg font-bold text-gray-800">Testlar</h3>
                     <button className="bg-blue-600 text-white px-4 py-2 rounded-xl flex items-center space-x-2 shadow-md hover:bg-blue-700 transition-colors">
@@ -169,21 +236,19 @@ export const Dashboard = () => {
                 <div className="flex space-x-1 bg-gray-100 rounded-xl p-1 mb-4">
                     <button
                         onClick={() => setActiveTab("created")}
-                        className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-all ${
-                            activeTab === "created"
+                        className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-all ${activeTab === "created"
                                 ? "bg-white text-blue-600 shadow-sm"
                                 : "text-gray-600 hover:text-gray-800"
-                        }`}
+                            }`}
                     >
                         Jarayondagi testlar
                     </button>
                     <button
                         onClick={() => setActiveTab("taken")}
-                        className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-all ${
-                            activeTab === "taken"
+                        className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-all ${activeTab === "taken"
                                 ? "bg-white text-blue-600 shadow-sm"
                                 : "text-gray-600 hover:text-gray-800"
-                        }`}
+                            }`}
                     >
                         Yopilgan testlar
                     </button>

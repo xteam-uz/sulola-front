@@ -1,6 +1,6 @@
 import { createBrowserRouter, Navigate } from "react-router-dom";
 import { DefaultLayout, GuestLayout } from "./components/layouts";
-import { Login, Signup, Dashboard, Users, NotFound } from "./pages";
+import { Login, Dashboard, Users, NotFound, Signup } from "./pages";
 
 const router = createBrowserRouter([
     {
@@ -25,6 +25,10 @@ const router = createBrowserRouter([
         path: "/",
         element: <GuestLayout />,
         children: [
+            {
+                path: "/register",
+                element: <Signup />,
+            },
             {
                 path: "/login",
                 element: <Login />,
