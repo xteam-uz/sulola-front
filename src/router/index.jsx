@@ -1,6 +1,6 @@
 import { createBrowserRouter, Navigate } from "react-router-dom";
-import { DefaultLayout, GuestLayout } from "./components/layouts";
-import { Login, Dashboard, Users, NotFound, Signup } from "./pages";
+import { DefaultLayout, GuestLayout } from "../components/layouts";
+import { Dashboard, NotFound, Signup, Students } from "../pages";
 
 const router = createBrowserRouter([
     {
@@ -16,8 +16,8 @@ const router = createBrowserRouter([
                 element: <Dashboard />,
             },
             {
-                path: "/users",
-                element: <Users />,
+                path: "/students",
+                element: <Students />,
             },
         ],
     },
@@ -28,10 +28,6 @@ const router = createBrowserRouter([
             {
                 path: "/register",
                 element: <Signup />,
-            },
-            {
-                path: "/login",
-                element: <Login />,
             },
         ],
     },

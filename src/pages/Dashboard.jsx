@@ -1,45 +1,45 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import {
-    User,
     CreditCard,
     Award,
     ChevronRight,
     Plus,
     FileText,
     Clock,
-    Menu,
+    X,
 } from "lucide-react";
 import { useStateContext } from "../contexts/ContextProvider";
-import axiosClient from "../axios-client";
-import { Navigate } from "react-router-dom";
+import axiosClient from "../api/axios-client";
+import { FooterNavbar } from "../components/FooterNavbar";
+import { TopHeader } from "../components/ui/TopHeader";
+import { FadeContent } from "../components/ui/FadeContent";
 
 export const Dashboard = () => {
     const [tests, setTests] = useState([]);
     const [activeTab, setActiveTab] = useState("created");
     const [loading, setLoading] = useState(true);
-    const [isOpen, setIsOpen] = useState(false);
+    const [showModal, setShowModal] = useState(false);
 
-    const toggleDropdown = () => setIsOpen(!isOpen);
     const { token, user, setUser, setToken } = useStateContext();
 
-    if (!token) {
-        return <Navigate to="/login" />;
-    }
+    // if (!token) {
+    //     return <Navigate to="/register" />;
+    // }
 
-    const onLogout = (e) => {
-        e.preventDefault();
-        localStorage.removeItem("ACCESS_TOKEN");
+    // const onLogout = (e) => {
+    //     e.preventDefault();
+    //     localStorage.removeItem("ACCESS_TOKEN");
 
-        axiosClient
-            .post("/logout")
-            .then(() => {
-                setUser({});
-                setToken(null);
-            })
-            .catch((error) => {
-                console.error(error);
-            });
-    };
+    //     axiosClient
+    //         .post("/logout")
+    //         .then(() => {
+    //             setUser({});
+    //             setToken(null);
+    //         })
+    //         .catch((error) => {
+    //             console.error(error);
+    //         });
+    // };
 
     useEffect(() => {
         axiosClient
@@ -100,65 +100,19 @@ export const Dashboard = () => {
     return (
         <div className="min-h-screen bg-gray-50 pb-20">
             {/* Header */}
-            <div className="relative bg-gradient-to-r from-blue-600 to-blue-700 text-white p-4 rounded-b-3xl shadow-lg">
-                <div className="flex items-center justify-between mb-4">
-                    <h1 className="text-xl font-bold">Rash yordamchi</h1>
-                    <button
-                        id="dropdownDividerButton"
-                        onClick={toggleDropdown}
-                        className="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
-                        type="button"
-                    >
-                        <Menu size={20} />
-                        <svg
-                            className="w-2.5 h-2.5 ms-3"
-                            aria-hidden="true"
-                            xmlns="http://www.w3.org/2000/svg"
-                            fill="none"
-                            viewBox="0 0 10 6"
-                        >
-                            <path
-                                stroke="currentColor"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth="2"
-                                d="m1 1 4 4 4-4"
-                            />
-                        </svg>
-                    </button>
-                </div>
-                {isOpen && (
-                    <div
-                        id="dropdownDivider"
-                        className="z-10 absolute right-0 mt-2 bg-white divide-y divide-gray-100 rounded-lg shadow-sm w-44 dark:bg-gray-700 dark:divide-gray-600"
-                    >
-                        <ul className="py-2 text-sm text-gray-700 dark:text-gray-200">
-                            <li>
-                                <button
-                                    onClick={onLogout}
-                                    className="w-full text-left block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white cursor-pointer"
-                                >
-                                    Logout
-                                </button>
-                            </li>
-                        </ul>
-                    </div>
-                )}
-
+            <div className=" bg-gradient-to-r from-blue-600 to-blue-700 text-white p-4 rounded-b-3xl shadow-lg">
+                <TopHeader />
                 {/* User Info Card */}
                 <div className="bg-white text-gray-800 rounded-2xl p-4 shadow-md">
                     <div className="flex items-center justify-between mb-3">
                         <div>
-                            <h2 className="text-lg font-semibold">
+                            <span className="text-lg font-semibold">
                                 {user?.first_name} {user?.last_name}
-                            </h2>
-                            <p className="text-blue-600 text-sm">
-                                {user?.username}
-                            </p>
+                            </span>
+                            <span className="text-blue-600 text-sm ml-3">
+                                {user?.role}
+                            </span>
                         </div>
-                        <button className="text-blue-600">
-                            <ChevronRight size={20} />
-                        </button>
                     </div>
                     <div className="text-sm text-gray-600">
                         <span>Telegram ID: </span>
@@ -224,7 +178,9 @@ export const Dashboard = () => {
             <div className="px-4 my-6">
                 <div className="flex items-center justify-between mb-4">
                     <h3 className="text-lg font-bold text-gray-800">Testlar</h3>
-                    <button className="bg-blue-600 text-white px-4 py-2 rounded-xl flex items-center space-x-2 shadow-md hover:bg-blue-700 transition-colors">
+                    <button
+                        onClick={() => setShowModal(true)}
+                        className="bg-blue-600 text-white px-4 py-2 rounded-xl flex items-center space-x-2 shadow-md hover:bg-blue-700 transition-colors">
                         <Plus size={18} />
                         <span className="text-sm font-medium">
                             Test qo'shish
@@ -237,8 +193,8 @@ export const Dashboard = () => {
                     <button
                         onClick={() => setActiveTab("created")}
                         className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-all ${activeTab === "created"
-                                ? "bg-white text-blue-600 shadow-sm"
-                                : "text-gray-600 hover:text-gray-800"
+                            ? "bg-white text-blue-600 shadow-sm"
+                            : "text-gray-600 hover:text-gray-800"
                             }`}
                     >
                         Jarayondagi testlar
@@ -246,8 +202,8 @@ export const Dashboard = () => {
                     <button
                         onClick={() => setActiveTab("taken")}
                         className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-all ${activeTab === "taken"
-                                ? "bg-white text-blue-600 shadow-sm"
-                                : "text-gray-600 hover:text-gray-800"
+                            ? "bg-white text-blue-600 shadow-sm"
+                            : "text-gray-600 hover:text-gray-800"
                             }`}
                     >
                         Yopilgan testlar
@@ -302,21 +258,70 @@ export const Dashboard = () => {
                 </div>
             </div>
 
-            {/* Bottom Navigation */}
-            <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-6 py-3 shadow-lg">
-                <div className="flex items-center justify-around max-w-md mx-auto">
-                    <button className="flex flex-col items-center space-y-1 text-blue-600">
-                        <div className="bg-blue-100 p-2 rounded-xl">
-                            <FileText size={20} />
+            {/* Modal */}
+            {showModal && (
+
+                <div
+                    className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 animate-fadeIn"
+                    onClick={() => setShowModal(false)}
+                >
+                    <FadeContent blur={true} duration={300} easing="ease-out" initialOpacity={0}>
+                        <div
+                            onClick={(e) => e.stopPropagation()}
+                            className="bg-white w-80 rounded-2xl shadow-lg p-6 relative animate-fadeInUp"
+                        >
+                            <div className="flex items-center justify-between mb-4">
+                                <h2 className="text-sm text-center text-gray-800">
+                                    Test turini tanlang
+                                </h2>
+                                <button
+                                    onClick={() => setShowModal(false)}
+                                    className="px-4 py-2 text-gray-500 rounded-lg hover:bg-gray-100 text-sm"
+                                >
+                                    <X size={16} />
+                                </button>
+                            </div>
+
+                            <div className="space-y-3">
+                                <label className="flex items-center space-x-3 border rounded-xl p-3 cursor-pointer hover:bg-gray-50">
+                                    <input type="radio" name="testType" defaultChecked />
+                                    <div>
+                                        <p className="font-medium">💰 Pullik test</p>
+                                        <p className="text-xs text-gray-500">
+                                            O‘quvchilar Click yoki Payme orqali to‘laydi.
+                                        </p>
+                                    </div>
+                                </label>
+
+                                <label className="flex items-center space-x-3 border rounded-xl p-3 cursor-pointer hover:bg-gray-50">
+                                    <input type="radio" name="testType" />
+                                    <div>
+                                        <p className="font-medium">🎓 Tekin test</p>
+                                        <p className="text-xs text-gray-500">
+                                            O‘quvchilar uchun bepul test.
+                                        </p>
+                                    </div>
+                                </label>
+                            </div>
+
+                            <div className="flex justify-end mt-5 space-x-2">
+                                <button
+                                    onClick={() => setShowModal(false)}
+                                    className="px-4 py-2 text-gray-500 rounded-lg hover:bg-gray-100 text-sm"
+                                >
+                                    Bekor qilish
+                                </button>
+                                <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm">
+                                    Boshlash
+                                </button>
+                            </div>
                         </div>
-                        <span className="text-xs font-medium">Bosh sahifa</span>
-                    </button>
-                    <button className="flex flex-col items-center space-y-1 text-gray-400 hover:text-gray-600">
-                        <User size={24} />
-                        <span className="text-xs">O'quvchilar</span>
-                    </button>
+                    </FadeContent>
                 </div>
-            </div>
+            )}
+
+            {/* Bottom Navigation */}
+            <FooterNavbar />
         </div>
     );
 };

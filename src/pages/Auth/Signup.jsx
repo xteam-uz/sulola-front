@@ -1,8 +1,7 @@
 import { useRef, useState, useEffect } from "react";
-import axiosClient from "../axios-client";
-import { useStateContext } from "../contexts/ContextProvider";
-import { getUserData, initTelegramApp } from "../telegram";
-
+import axiosClient from "../../api/axios-client";
+import { useStateContext } from "../../contexts/ContextProvider";
+import { getUserData, initTelegramApp } from "../../telegram/init";
 export const Signup = () => {
     const { setUser, setToken } = useStateContext();
     const firstNameRef = useRef();
@@ -125,11 +124,10 @@ export const Signup = () => {
                     <button
                         type="button"
                         onClick={() => setRole("tester")}
-                        className={`flex-1 py-2 rounded border text-xs transition-all ${
-                            role === "tester"
-                                ? "bg-blue-600 text-white border-blue-600"
-                                : "bg-white text-gray-700 border-gray-300"
-                        }`}
+                        className={`flex-1 py-2 rounded border text-xs transition-all ${role === "tester"
+                            ? "bg-blue-600 text-white border-blue-600"
+                            : "bg-white text-gray-700 border-gray-300"
+                            }`}
                     >
                         Test oluvchi
                     </button>
@@ -137,11 +135,10 @@ export const Signup = () => {
                     <button
                         type="button"
                         onClick={() => setRole("test_taker")}
-                        className={`flex-1 py-2 rounded border text-xs transition-all ${
-                            role === "test_taker"
-                                ? "bg-blue-600 text-white border-blue-600"
-                                : "bg-white text-gray-700 border-gray-300"
-                        }`}
+                        className={`flex-1 py-2 rounded border text-xs transition-all ${role === "test_taker"
+                            ? "bg-blue-600 text-white border-blue-600"
+                            : "bg-white text-gray-700 border-gray-300"
+                            }`}
                     >
                         Test topshiruvchi
                     </button>
