@@ -11,45 +11,29 @@ import {
 import { useStateContext } from "../contexts/ContextProvider";
 import axiosClient from "../api/axios-client";
 import { FooterNavbar } from "../components/FooterNavbar";
-import { TopHeader } from "../components/ui/TopHeader";
-import { FadeContent } from "../components/ui/FadeContent";
+import { TopHeader, FadeContent, AnimatedContent } from "../components/ui";
 
 export const Dashboard = () => {
     const [tests, setTests] = useState([]);
-    const [activeTab, setActiveTab] = useState("created");
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
+    const [activeTab, setActiveTab] = useState("created");
 
     const { token, user, setUser, setToken } = useStateContext();
 
-    // if (!token) {
-    //     return <Navigate to="/register" />;
-    // }
+    const toggleTestsTab = () => {
+        setActiveTab(activeTab === "created" ? "taken" : "created");
+    }
 
-    // const onLogout = (e) => {
-    //     e.preventDefault();
-    //     localStorage.removeItem("ACCESS_TOKEN");
-
-    //     axiosClient
-    //         .post("/logout")
-    //         .then(() => {
-    //             setUser({});
-    //             setToken(null);
-    //         })
-    //         .catch((error) => {
-    //             console.error(error);
-    //         });
-    // };
+    const filteredTests = tests.filter(test => {
+        if (activeTab === "created") {
+            return test.status === "Ochiq";
+        } else {
+            return test.status === "Yopiq";
+        }
+    });
 
     useEffect(() => {
-        axiosClient
-            .get("/user")
-            .then(({ data }) => {
-                setUser(data);
-            })
-            .catch((error) => {
-                console.error(error);
-            });
         setTimeout(() => {
             setUser({
                 id: 1,
@@ -79,30 +63,41 @@ export const Dashboard = () => {
                     name: "Test",
                     code: "4E5F54",
                     subject: "Ona tili va adabiyot",
+                    status: "Yopiq",
+                    statusColor: "red",
+                    created_at: "04.11.2025 - 18:12",
+                },
+                {
+                    id: 3,
+                    name: "Matematika testi",
+                    code: "A1B2C3",
+                    subject: "Matematika",
                     status: "Ochiq",
                     statusColor: "green",
-                    created_at: "04.11.2025 - 18:12",
+                    created_at: "05.11.2025 - 10:30",
+                },
+                {
+                    id: 4,
+                    name: "Fizika testi",
+                    code: "X9Y8Z7",
+                    subject: "Fizika",
+                    status: "Yopiq",
+                    statusColor: "red",
+                    created_at: "03.11.2025 - 14:45",
                 },
             ]);
 
             setLoading(false);
-        }, 500);
+        }, 1500); // 1.5 soniya loading ko'rinishi uchun
     }, []);
-
-    if (loading) {
-        return (
-            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-            </div>
-        );
-    }
 
     return (
         <div className="min-h-screen bg-gray-50 pb-20">
             {/* Header */}
-            <div className=" bg-gradient-to-r from-blue-600 to-blue-700 text-white p-4 rounded-b-3xl shadow-lg">
-                <TopHeader />
-                {/* User Info Card */}
+            <TopHeader />
+
+            {/* User Info Card */}
+            <div className="px-4 mt-4 space-y-3">
                 <div className="bg-white text-gray-800 rounded-2xl p-4 shadow-md">
                     <div className="flex items-center justify-between mb-3">
                         <div>
@@ -191,7 +186,7 @@ export const Dashboard = () => {
                 {/* Tabs */}
                 <div className="flex space-x-1 bg-gray-100 rounded-xl p-1 mb-4">
                     <button
-                        onClick={() => setActiveTab("created")}
+                        onClick={toggleTestsTab}
                         className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-all ${activeTab === "created"
                             ? "bg-white text-blue-600 shadow-sm"
                             : "text-gray-600 hover:text-gray-800"
@@ -200,7 +195,7 @@ export const Dashboard = () => {
                         Jarayondagi testlar
                     </button>
                     <button
-                        onClick={() => setActiveTab("taken")}
+                        onClick={toggleTestsTab}
                         className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-all ${activeTab === "taken"
                             ? "bg-white text-blue-600 shadow-sm"
                             : "text-gray-600 hover:text-gray-800"
@@ -212,60 +207,96 @@ export const Dashboard = () => {
 
                 {/* Test List */}
                 <div className="space-y-3">
-                    {tests.map((test) => (
-                        <div
-                            key={test.id}
-                            className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 hover:shadow-md transition-shadow cursor-pointer"
-                        >
-                            <div className="flex items-start justify-between">
-                                <div className="flex-1">
-                                    <div className="flex items-center space-x-2 mb-2">
-                                        <h4 className="font-semibold text-gray-800">
-                                            {test.name}
-                                        </h4>
-                                        <span className="px-2 py-0.5 bg-blue-100 text-blue-600 text-xs rounded-full font-medium">
-                                            {test.status === "Ochiq"
-                                                ? "Ochiq test"
-                                                : test.status}
-                                        </span>
-                                        <span className="px-2 py-0.5 bg-green-100 text-green-600 text-xs rounded-full font-medium">
-                                            {test.statusColor === "green"
-                                                ? "Ochiq"
-                                                : test.statusColor}
-                                        </span>
-                                    </div>
-                                    <p className="text-gray-700 text-sm mb-2">
-                                        {test.subject}
-                                    </p>
-                                    <div className="flex items-center space-x-4 text-xs text-gray-500">
-                                        <div className="flex items-center space-x-1">
-                                            <FileText size={14} />
-                                            <span>Test kodi: {test.code}</span>
+                    <AnimatedContent
+                        key={activeTab}  // Bu eng muhim qism!
+                        distance={450}
+                        direction="horizontal"
+                        reverse={true}  // Yopilgan testlar uchun teskari yo'nalish
+                        duration={0.5}
+                        ease="power3.out"
+                        initialOpacity={0.2}
+                        animateOpacity
+                        scale={1.1}
+                        threshold={0.2}
+                        delay={0.3}
+                    >
+                        {loading ? (
+                            // Loading spinner - faqat test list uchun
+                            <div className="bg-white rounded-2xl p-12 text-center">
+                                <div className="flex justify-center">
+                                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+                                </div>
+                                <p className="text-gray-500 mt-4">Yuklanmoqda...</p>
+                            </div>
+                        ) : filteredTests.length > 0 ? (
+                            // Test list
+                            filteredTests.map((test) => (
+                                <div
+                                    key={test.id}
+                                    className="bg-white rounded-2xl p-4 mb-2 shadow-sm border border-gray-100 hover:shadow-md transition-shadow cursor-pointer"
+                                >
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex-1">
+                                            <div className="flex items-center space-x-2 mb-2">
+                                                <h4 className="font-semibold text-gray-800">
+                                                    {test.name}
+                                                </h4>
+                                                <span className="px-2 py-0.5 bg-blue-100 text-blue-600 text-xs rounded-full font-medium">
+                                                    {test.status === "Ochiq"
+                                                        ? "Ochiq test"
+                                                        : "Yopiq test"}
+                                                </span>
+                                                <span className={`px-2 py-0.5 ${test.statusColor === "green"
+                                                    ? "bg-green-100 text-green-600"
+                                                    : "bg-red-100 text-red-600"
+                                                    } text-xs rounded-full font-medium`}>
+                                                    {test.statusColor === "green"
+                                                        ? "Ochiq"
+                                                        : "Yopiq"}
+                                                </span>
+                                            </div>
+                                            <p className="text-gray-700 text-sm mb-2">
+                                                {test.subject}
+                                            </p>
+                                            <div className="flex flex-col items-start gap-1 text-xs text-gray-500">
+                                                <div className="flex items-center space-x-1">
+                                                    <FileText size={14} />
+                                                    <span>Test kodi: {test.code}</span>
+                                                </div>
+                                                <div className="flex items-center space-x-1">
+                                                    <Clock size={14} />
+                                                    <span>Yaratilgan vaqti: {test.created_at}</span>
+                                                </div>
+                                            </div>
                                         </div>
-                                        <div className="flex items-center space-x-1">
-                                            <Clock size={14} />
-                                            <span>{test.created_at}</span>
-                                        </div>
+                                        <ChevronRight
+                                            className="text-gray-400 ml-2 flex-shrink-0"
+                                            size={20}
+                                        />
                                     </div>
                                 </div>
-                                <ChevronRight
-                                    className="text-gray-400 ml-2 flex-shrink-0"
-                                    size={20}
-                                />
+                            ))
+                        ) : (
+                            // Empty state
+                            <div className="bg-white rounded-2xl p-8 text-center">
+                                <p className="text-gray-500">
+                                    {activeTab === "created"
+                                        ? "Hozircha jarayondagi testlar yo'q"
+                                        : "Hozircha yopilgan testlar yo'q"}
+                                </p>
                             </div>
-                        </div>
-                    ))}
+                        )}
+                    </AnimatedContent>
                 </div>
             </div>
 
             {/* Modal */}
             {showModal && (
-
                 <div
                     className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 animate-fadeIn"
                     onClick={() => setShowModal(false)}
                 >
-                    <FadeContent blur={true} duration={300} easing="ease-out" initialOpacity={0}>
+                    <FadeContent blur={true} duration={300} easing="ease-in" initialOpacity={0}>
                         <div
                             onClick={(e) => e.stopPropagation()}
                             className="bg-white w-80 rounded-2xl shadow-lg p-6 relative animate-fadeInUp"
@@ -288,7 +319,7 @@ export const Dashboard = () => {
                                     <div>
                                         <p className="font-medium">💰 Pullik test</p>
                                         <p className="text-xs text-gray-500">
-                                            O‘quvchilar Click yoki Payme orqali to‘laydi.
+                                            O'quvchilar Click yoki Payme orqali to'laydi.
                                         </p>
                                     </div>
                                 </label>
@@ -298,7 +329,7 @@ export const Dashboard = () => {
                                     <div>
                                         <p className="font-medium">🎓 Tekin test</p>
                                         <p className="text-xs text-gray-500">
-                                            O‘quvchilar uchun bepul test.
+                                            O'quvchilar uchun bepul test.
                                         </p>
                                     </div>
                                 </label>

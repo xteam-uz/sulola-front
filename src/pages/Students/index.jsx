@@ -12,15 +12,7 @@ export const Students = () => {
     return (
         <div className="min-h-screen bg-gray-50 flex flex-col">
             {/* Header */}
-            <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-4 rounded-b-3xl shadow-lg">
-                <TopHeader />
-                <div>
-                    <h2 className="text-lg font-semibold">O‘quvchilarim</h2>
-                    <p className="text-blue-100 text-sm">
-                        {students.length} ta o‘quvchi
-                    </p>
-                </div>
-            </div>
+            <TopHeader />
 
             {/* Students List */}
             <div className="flex-1 px-4 py-5 space-y-3">
