@@ -30,7 +30,6 @@ export const TopHeader = () => {
                 buttonBgColor="#111"
                 buttonTextColor="#fff"
                 ease="power3.out"
-
             />
         </>
     )

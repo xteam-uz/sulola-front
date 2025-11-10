@@ -1,15 +1,16 @@
 import { useState, useEffect, useRef } from "react";
 import { ChevronLeft, Camera, X } from "lucide-react";
 import { CountdownTimer } from "../../components";
+import { Link } from "react-router-dom";
 
 
 const TopHeader = ({ testName, onBack }) => (
     <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-4 py-4 shadow-md">
         <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
-                <button onClick={onBack} className="text-white">
+                <Link to="/" className="text-white">
                     <ChevronLeft size={24} />
-                </button>
+                </Link>
                 <h1 className="text-white text-xl font-semibold">{testName}</h1>
             </div>
         </div>
@@ -222,13 +223,13 @@ export const TestTakingPage = () => {
                 {showCamera && <CameraModal />}
 
                 <div className="px-4 py-4">
-                    <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 mb-4">
-                        <div className="flex justify-between items-center mb-2">
+                    <div className="flex justify-between items-center bg-white rounded-2xl p-4 shadow-sm border border-gray-100 mb-4">
+                        <div className="flex items-center">
                             <span className="text-gray-600 text-sm">Test kodi:</span>
-                            <span className="text-orange-500 font-bold text-lg">{testCode}</span>
+                            <span className="text-orange-500 text-lg ml-2">{testCode}</span>
                         </div>
                         <div className="flex justify-between items-center">
-                            <span className="text-blue-600 font-bold text-lg">
+                            <span className="text-blue-600 text-lg">
                                 0 / {totalQuestions}
                             </span>
                         </div>
