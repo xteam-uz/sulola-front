@@ -135,7 +135,7 @@ export const CardNav = ({
 
     return (
         <div
-            className={`w-full text-white bg-white p-4 rounded-b-3xl shadow-lg w-[90%] max-w-[800px] z-[99] ${className}`}
+            className={`w-full text-white bg-white p-4 rounded-b-3xl shadow-lg w-[90%] max-w-[800px] z-[98] ${className}`}
         >
             <nav
                 ref={navRef}
