@@ -1,65 +1,88 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { TopHeader } from "../components/ui";
-
+import { useStateContext } from "../contexts/ContextProvider";
 
 export const Profile = () => {
-    const [firstName, setFirstName] = useState("Mirsoli");
-    const [lastName, setLastName] = useState("Mirsultonov");
-    const [selectedRole, setSelectedRole] = useState("tester");
-    const [telegramId] = useState("1367538109");
+    const { user, setUser } = useStateContext();
+
+    const [selectedRole, setSelectedRole] = useState(user?.role || "tester");
+    const [originalRole, setOriginalRole] = useState(user?.role || "tester");
     const [showChanges, setShowChanges] = useState(false);
-    const [originalRole, setOriginalRole] = useState("tester");
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        // Faqat test uchun user ma’lumotlarini o‘rnatish (backenddan kelganda olib tashlanadi)
+        if (!user) {
+            setTimeout(() => {
+
+                setUser({
+                    id: 1,
+                    telegram_id: 1367538109,
+                    username: "oqituvchi",
+                    first_name: "Mirsoli",
+                    last_name: "Mirsultonov",
+                    role: "tester",
+                    phone_number: null,
+                    balance: 0,
+                    status: 1,
+                    credits: 50,
+                });
+                setLoading(false);
+            }, 1500);
+        }
+    }, []);
 
     const handleRoleChange = (role) => {
         setSelectedRole(role);
-        // setShowChanges(true);
+        setShowChanges(true);
     };
 
     const handleSave = () => {
-        // Save logic here
-        console.log("Saving:", { firstName, lastName, selectedRole });
+        console.log("Saving:", { firstName: user?.first_name, lastName: user?.last_name, selectedRole });
+
+        setUser({
+            ...user,
+            role: selectedRole,
+        });
+
+        setOriginalRole(selectedRole);
         setShowChanges(false);
     };
 
     const handleCancel = () => {
+        setSelectedRole(originalRole);
         setShowChanges(false);
-        // Reset to original values if needed
     };
 
-    // O'zgarish bor yoki yo'qligini tekshirish
     const hasRoleChanged = selectedRole !== originalRole;
 
-    // O'zgarish matnini olish
     const getRoleChangeText = () => {
         const roleNames = {
-            "tester": "Test topshiruvchi",
-            "test_taker": "Test oluvchi"
+            tester: "Test oluvchi",
+            test_taker: "Test topshiruvchi",
         };
         return {
             from: roleNames[originalRole],
-            to: roleNames[selectedRole]
+            to: roleNames[selectedRole],
         };
     };
 
     return (
         <div className="min-h-screen bg-gray-50 pb-20">
-            {/* Header */}
             <TopHeader />
 
-            {/* Content */}
             <div className="px-4 mt-6">
-                {/* Current Info Card */}
+                {/* Current Info */}
                 <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 mb-6">
                     <h3 className="text-sm font-semibold text-gray-700 mb-3">Joriy ma'lumotlar</h3>
-
                     <div className="space-y-2 text-sm">
                         <div className="flex justify-between">
                             <span className="text-gray-600">Ism:</span>
-                            <span className="font-medium text-gray-800">{firstName}</span>
+                            <span className="font-medium text-gray-800">{user?.first_name}</span>
                         </div>
                         <div className="flex justify-between">
                             <span className="text-gray-600">Familiya:</span>
-                            <span className="font-medium text-gray-800">{lastName}</span>
+                            <span className="font-medium text-gray-800">{user?.last_name}</span>
                         </div>
                         <div className="flex justify-between">
                             <span className="text-gray-600">Rol:</span>
@@ -69,7 +92,7 @@ export const Profile = () => {
                         </div>
                         <div className="flex justify-between">
                             <span className="text-gray-600">Telegram ID:</span>
-                            <span className="font-medium text-gray-800">{telegramId}</span>
+                            <span className="font-medium text-gray-800">{user?.telegram_id}</span>
                         </div>
                     </div>
                 </div>
@@ -78,25 +101,35 @@ export const Profile = () => {
                 <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 mb-6">
                     <h3 className="text-sm font-semibold text-gray-700 mb-4">Tahrirlash</h3>
 
-                    {/* First Name Input */}
+                    {/* First Name */}
                     <div className="mb-4">
                         <label className="block text-xs text-gray-600 mb-2">Ism</label>
                         <input
                             type="text"
-                            value={firstName}
-                            onChange={(e) => setFirstName(e.target.value)}
+                            value={user?.first_name || ""}
+                            onChange={(e) =>
+                                setUser({
+                                    ...user,
+                                    first_name: e.target.value,
+                                })
+                            }
                             className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                             placeholder="Ism"
                         />
                     </div>
 
-                    {/* Last Name Input */}
+                    {/* Last Name */}
                     <div className="mb-4">
                         <label className="block text-xs text-gray-600 mb-2">Familiya</label>
                         <input
                             type="text"
-                            value={lastName}
-                            onChange={(e) => setLastName(e.target.value)}
+                            value={user?.last_name || ""}
+                            onChange={(e) =>
+                                setUser({
+                                    ...user,
+                                    last_name: e.target.value,
+                                })
+                            }
                             className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                             placeholder="Familiya"
                         />
@@ -124,15 +157,14 @@ export const Profile = () => {
                             >
                                 Test topshiruvchi
                             </button>
-
                         </div>
                     </div>
 
-                    {/* Telegram ID (Read-only) */}
+                    {/* Telegram ID */}
                     <div className="mb-4">
                         <label className="block text-xs text-gray-600 mb-2">Telegram ID</label>
                         <div className="px-4 py-3 border border-dashed border-gray-300 rounded-xl bg-gray-50">
-                            <p className="text-sm text-gray-700">{telegramId}</p>
+                            <p className="text-sm text-gray-700">{user?.telegram_id}</p>
                             <p className="text-xs text-gray-500 mt-1">Telegram ID o'zgartirib bo'lmaydi</p>
                         </div>
                     </div>
@@ -150,6 +182,7 @@ export const Profile = () => {
                         </div>
                     </div>
                 )}
+
                 {/* Action Buttons */}
                 <div className="flex flex-col gap-3">
                     <button
@@ -164,9 +197,8 @@ export const Profile = () => {
                     >
                         Bekor qilish
                     </button>
-
                 </div>
             </div>
         </div>
     );
-}
+};
