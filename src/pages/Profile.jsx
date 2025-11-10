@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
-import { TopHeader } from "../components/ui";
+import { TopHeader, SuccessNotify } from "../components/ui";
 import { useStateContext } from "../contexts/ContextProvider";
+import { toast, ToastContainer } from "react-toastify";
 
 export const Profile = () => {
     const { user, setUser } = useStateContext();
@@ -47,6 +48,20 @@ export const Profile = () => {
 
         setOriginalRole(selectedRole);
         setShowChanges(false);
+        // toast(<SuccessNotify />, {
+        //     position: "bottom-center",
+        //     className: "bg-blue-600",
+        // })
+        toast.success('Malumotlar saqlandi', {
+            position: "bottom-center",
+            autoClose: 5000,
+            hideProgressBar: false,
+            closeOnClick: false,
+            pauseOnHover: true,
+            draggable: true,
+            progress: undefined,
+            theme: "colored",
+        });
     };
 
     const handleCancel = () => {
@@ -191,6 +206,18 @@ export const Profile = () => {
                     >
                         O'zgarishlarni saqlash
                     </button>
+                    <ToastContainer
+                        position="bottom-center"
+                        autoClose={5000}
+                        hideProgressBar={false}
+                        newestOnTop={false}
+                        closeOnClick={false}
+                        rtl={false}
+                        pauseOnFocusLoss
+                        draggable
+                        pauseOnHover
+                        theme="colored"
+                    />
                     <button
                         onClick={handleCancel}
                         className="flex-1 py-3 px-4 bg-white text-gray-700 border border-gray-200 rounded-xl font-medium text-sm hover:bg-gray-50 transition-colors"
