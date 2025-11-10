@@ -205,11 +205,11 @@ export const TesterDashboard = () => {
 
                 {/* Test List */}
                 <div className="space-y-3">
-                    <AnimatedContent
+                    {/* <AnimatedContent
                         key={activeTab}  // Bu eng muhim qism!
                         distance={450}
-                        direction="horizontal"
-                        reverse={activeTab === "taken"}  // Yopilgan testlar uchun teskari yo'nalish
+                        direction="vertical"
+                        reverse={false}  // Yopilgan testlar uchun teskari yo'nalish
                         duration={0.5}
                         ease="power3.out"
                         initialOpacity={0.2}
@@ -217,74 +217,74 @@ export const TesterDashboard = () => {
                         scale={1.1}
                         threshold={0.2}
                         delay={0.3}
-                    >
-                        {loading ? (
-                            // Loading spinner - faqat test list uchun
-                            <div className="bg-white rounded-2xl p-12 text-center">
-                                <div className="flex justify-center">
-                                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-                                </div>
-                                <p className="text-gray-500 mt-4">Yuklanmoqda...</p>
+                    > */}
+                    {loading ? (
+                        // Loading spinner - faqat test list uchun
+                        <div className="bg-white rounded-2xl p-12 text-center">
+                            <div className="flex justify-center">
+                                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
                             </div>
-                        ) : filteredTests.length > 0 ? (
-                            // Test list
-                            filteredTests.map((test) => (
-                                <div
-                                    key={test.id}
-                                    className="bg-white rounded-2xl p-4 mb-2 shadow-sm border border-gray-100 hover:shadow-md transition-shadow cursor-pointer"
-                                >
-                                    <div className="flex items-center justify-between">
-                                        <div className="flex-1">
-                                            <div className="flex items-center space-x-2 mb-2">
-                                                <h4 className="font-semibold text-gray-800">
-                                                    {test.name}
-                                                </h4>
-                                                <span className="px-2 py-0.5 bg-blue-100 text-blue-600 text-xs rounded-full font-medium">
-                                                    {test.status === "Ochiq"
-                                                        ? "Ochiq test"
-                                                        : "Yopiq test"}
-                                                </span>
-                                                <span className={`px-2 py-0.5 ${test.statusColor === "green"
-                                                    ? "bg-green-100 text-green-600"
-                                                    : "bg-red-100 text-red-600"
-                                                    } text-xs rounded-full font-medium`}>
-                                                    {test.statusColor === "green"
-                                                        ? "Ochiq"
-                                                        : "Yopiq"}
-                                                </span>
+                            <p className="text-gray-500 mt-4">Yuklanmoqda...</p>
+                        </div>
+                    ) : filteredTests.length > 0 ? (
+                        // Test list
+                        filteredTests.map((test) => (
+                            <div
+                                key={test.id}
+                                className="bg-white rounded-2xl p-4 mb-2 shadow-sm border border-gray-100 hover:shadow-md transition-shadow cursor-pointer"
+                            >
+                                <div className="flex items-center justify-between">
+                                    <div className="flex-1">
+                                        <div className="flex items-center space-x-2 mb-2">
+                                            <h4 className="font-semibold text-gray-800">
+                                                {test.name}
+                                            </h4>
+                                            <span className="px-2 py-0.5 bg-blue-100 text-blue-600 text-xs rounded-full font-medium">
+                                                {test.status === "Ochiq"
+                                                    ? "Ochiq test"
+                                                    : "Yopiq test"}
+                                            </span>
+                                            <span className={`px-2 py-0.5 ${test.statusColor === "green"
+                                                ? "bg-green-100 text-green-600"
+                                                : "bg-red-100 text-red-600"
+                                                } text-xs rounded-full font-medium`}>
+                                                {test.statusColor === "green"
+                                                    ? "Ochiq"
+                                                    : "Yopiq"}
+                                            </span>
+                                        </div>
+                                        <p className="text-gray-700 text-sm mb-2">
+                                            {test.subject}
+                                        </p>
+                                        <div className="flex flex-col items-start gap-1 text-xs text-gray-500">
+                                            <div className="flex items-center space-x-1">
+                                                <FileText size={14} />
+                                                <span>Test kodi: {test.code}</span>
                                             </div>
-                                            <p className="text-gray-700 text-sm mb-2">
-                                                {test.subject}
-                                            </p>
-                                            <div className="flex flex-col items-start gap-1 text-xs text-gray-500">
-                                                <div className="flex items-center space-x-1">
-                                                    <FileText size={14} />
-                                                    <span>Test kodi: {test.code}</span>
-                                                </div>
-                                                <div className="flex items-center space-x-1">
-                                                    <Clock size={14} />
-                                                    <span>Yaratilgan vaqti: {test.created_at}</span>
-                                                </div>
+                                            <div className="flex items-center space-x-1">
+                                                <Clock size={14} />
+                                                <span>Yaratilgan vaqti: {test.created_at}</span>
                                             </div>
                                         </div>
-                                        <ChevronRight
-                                            className="text-gray-400 ml-2 flex-shrink-0"
-                                            size={20}
-                                        />
                                     </div>
+                                    <ChevronRight
+                                        className="text-gray-400 ml-2 flex-shrink-0"
+                                        size={20}
+                                    />
                                 </div>
-                            ))
-                        ) : (
-                            // Empty state
-                            <div className="bg-white rounded-2xl p-8 text-center">
-                                <p className="text-gray-500">
-                                    {activeTab === "created"
-                                        ? "Hozircha jarayondagi testlar yo'q"
-                                        : "Hozircha yopilgan testlar yo'q"}
-                                </p>
                             </div>
-                        )}
-                    </AnimatedContent>
+                        ))
+                    ) : (
+                        // Empty state
+                        <div className="bg-white rounded-2xl p-8 text-center">
+                            <p className="text-gray-500">
+                                {activeTab === "created"
+                                    ? "Hozircha jarayondagi testlar yo'q"
+                                    : "Hozircha yopilgan testlar yo'q"}
+                            </p>
+                        </div>
+                    )}
+                    {/* </AnimatedContent> */}
                 </div>
             </div>
 
