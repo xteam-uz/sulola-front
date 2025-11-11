@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { ChevronRight, Clock, FileText } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useStateContext } from "../contexts/ContextProvider";
+import { MainButton } from "@twa-dev/sdk/react";
 
 export const TestTakerDashboard = () => {
     const [activeTests, setActiveTests] = useState([]);
@@ -32,6 +33,8 @@ export const TestTakerDashboard = () => {
 
     return (
         <>
+            <MainButton text="Testlarni ko'rish" onClick={() => console.log('Main button clicked')} />
+
             {/* User Info Card */}
             <div className="px-4 mt-4 space-y-3">
                 <div className="bg-white text-gray-800 rounded-2xl p-4 shadow-md">
