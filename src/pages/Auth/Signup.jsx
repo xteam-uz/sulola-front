@@ -46,7 +46,7 @@ export const Signup = () => {
             last_name: lastNameRef.current.value,
             // username: telegramUser?.username,
             telegram_user_id: telegramUser?.id,
-            role,
+            user_type: role,
         };
 
         setErrors(null);
@@ -81,32 +81,29 @@ export const Signup = () => {
 
             <div className="grid md:grid-cols-2 md:gap-6">
                 {/* Ism */}
-                <div className="relative z-0 w-full mb-2 group">
+                <div className="relative z-0 w-full mb-5 group">
                     <input
                         ref={firstNameRef}
                         type="text"
                         id="floating_first_name"
-                        className={`block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2
-                        ${error ? "border-red-500 focus:border-red-600" : "border-gray-300 focus:border-blue-600"}
-                        appearance-none focus:outline-none focus:ring-0 peer animate-duration-300`}
+                        className="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2
+                               border-gray-300 appearance-none  dark:border-gray-600 dark:focus:border-blue-500
+                               focus:outline-none focus:ring-0 focus:border-blue-600 peer"
                         placeholder=" "
-                        defaultValue={telegramUser?.last_name || ""}
+                        defaultValue={telegramUser?.first_name || ""}
                         required
                     />
                     <label
                         htmlFor="floating_first_name"
                         className="peer-focus:font-medium absolute text-sm text-gray-500 dark:text-gray-400 duration-300
-                        transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0
-                        peer-focus:text-blue-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0
-                        peer-focus:scale-75 peer-focus:-translate-y-6"
+                               transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0
+                               peer-focus:text-blue-600 peer-focus:dark:text-blue-500
+                               peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0
+                               peer-focus:scale-75 peer-focus:-translate-y-6"
                     >
                         Ism
                     </label>
                 </div>
-
-                {error && (
-                    <p className="text-sm text-red-600 mt-1">Ism kiritish majburiy</p>
-                )}
 
                 {/* Familiya */}
                 <div className="relative z-0 w-full mb-5 group">
