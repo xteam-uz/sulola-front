@@ -2,12 +2,14 @@ import { useRef, useState, useEffect } from "react";
 import axiosClient from "../../api/axios-client";
 import { useStateContext } from "../../contexts/ContextProvider";
 import { getUserData, initTelegramApp } from "../../telegram/init";
+
 export const Signup = () => {
     const { setUser, setToken } = useStateContext();
     const firstNameRef = useRef();
     const lastNameRef = useRef();
     const [role, setRole] = useState("test_taker");
     const [errors, setErrors] = useState(null);
+    const [error, setError] = useState(false);
     const [telegramUser, setTelegramUser] = useState(null);
 
     useEffect(() => {
@@ -25,6 +27,19 @@ export const Signup = () => {
             });
             return;
         }
+
+        if (!firstNameRef.current.value.trim()) {
+            setError(true);
+
+            // animatsiyani qayta ishga tushirish uchun classni olib, qayta qo‘shamiz
+            firstNameRef.current.classList.remove("animate-shake");
+            void firstNameRef.current.offsetWidth; // reflow trigger
+            firstNameRef.current.classList.add("animate-shake");
+
+            return;
+        }
+
+        setError(false);
 
         const payload = {
             first_name: firstNameRef.current.value,
@@ -66,29 +81,31 @@ export const Signup = () => {
 
             <div className="grid md:grid-cols-2 md:gap-6">
                 {/* Ism */}
-                <div className="relative z-0 w-full mb-5 group">
+                <div className="relative z-0 w-full mb-2 group">
                     <input
                         ref={firstNameRef}
                         type="text"
                         id="floating_first_name"
-                        className="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2
-                               border-gray-300 appearance-none  dark:border-gray-600 dark:focus:border-blue-500
-                               focus:outline-none focus:ring-0 focus:border-blue-600 peer"
+                        className={`block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2
+                        ${error ? "border-red-500 focus:border-red-600" : "border-gray-300 focus:border-blue-600"}
+                        appearance-none focus:outline-none focus:ring-0 peer animate-duration-300`}
                         placeholder=" "
-                        defaultValue={telegramUser?.first_name || ""}
                         required
                     />
                     <label
                         htmlFor="floating_first_name"
                         className="peer-focus:font-medium absolute text-sm text-gray-500 dark:text-gray-400 duration-300
-                               transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0
-                               peer-focus:text-blue-600 peer-focus:dark:text-blue-500
-                               peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0
-                               peer-focus:scale-75 peer-focus:-translate-y-6"
+                        transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0
+                        peer-focus:text-blue-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0
+                        peer-focus:scale-75 peer-focus:-translate-y-6"
                     >
                         Ism
                     </label>
                 </div>
+
+                {error && (
+                    <p className="text-sm text-red-600 mt-1">Ism kiritish majburiy</p>
+                )}
 
                 {/* Familiya */}
                 <div className="relative z-0 w-full mb-5 group">
@@ -101,7 +118,7 @@ export const Signup = () => {
                                focus:outline-none focus:ring-0 focus:border-blue-600 peer"
                         placeholder=" "
                         defaultValue={telegramUser?.last_name || ""}
-                        required
+                    // required
                     />
                     <label
                         htmlFor="floating_last_name"
