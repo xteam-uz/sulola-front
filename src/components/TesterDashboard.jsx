@@ -20,7 +20,7 @@ export const TesterDashboard = () => {
     const [showModal, setShowModal] = useState(false);
     const [activeTab, setActiveTab] = useState("created");
 
-    const { token, user, setUser, setToken } = useStateContext();
+    const { user } = useStateContext();
 
     const toggleTestsTab = () => {
         setActiveTab(activeTab === "created" ? "taken" : "created");

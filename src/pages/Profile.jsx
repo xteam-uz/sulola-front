@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { TopHeader, SuccessNotify } from "../components/ui";
+import { useState } from "react";
+import { TopHeader } from "../components/ui";
 import { useStateContext } from "../contexts/ContextProvider";
 import { toast, ToastContainer, Zoom } from "react-toastify";
 
@@ -9,29 +9,6 @@ export const Profile = () => {
     const [selectedRole, setSelectedRole] = useState(user?.role || "tester");
     const [originalRole, setOriginalRole] = useState(user?.role || "tester");
     const [showChanges, setShowChanges] = useState(false);
-    const [loading, setLoading] = useState(true);
-
-    useEffect(() => {
-        // Faqat test uchun user ma’lumotlarini o‘rnatish (backenddan kelganda olib tashlanadi)
-        if (!user) {
-            setTimeout(() => {
-
-                setUser({
-                    id: 1,
-                    telegram_id: 1367538109,
-                    username: "oqituvchi",
-                    first_name: "Mirsoli",
-                    last_name: "Mirsultonov",
-                    role: "tester",
-                    phone_number: null,
-                    balance: 0,
-                    status: 1,
-                    credits: 50,
-                });
-                setLoading(false);
-            }, 1500);
-        }
-    }, []);
 
     const handleRoleChange = (role) => {
         setSelectedRole(role);
@@ -48,10 +25,7 @@ export const Profile = () => {
 
         setOriginalRole(selectedRole);
         setShowChanges(false);
-        // toast(<SuccessNotify />, {
-        //     position: "bottom-center",
-        //     className: "bg-blue-600",
-        // })
+
         toast.success('Malumotlar saqlandi', {
             position: "bottom-center",
             autoClose: 5000,

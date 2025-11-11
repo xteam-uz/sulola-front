@@ -9,7 +9,6 @@ export const Signup = () => {
     const lastNameRef = useRef();
     const [role, setRole] = useState("test_taker");
     const [errors, setErrors] = useState(null);
-    const [error, setError] = useState(false);
     const [telegramUser, setTelegramUser] = useState(null);
 
     useEffect(() => {
@@ -28,23 +27,9 @@ export const Signup = () => {
             return;
         }
 
-        if (!firstNameRef.current.value.trim()) {
-            setError(true);
-
-            // animatsiyani qayta ishga tushirish uchun classni olib, qayta qo‘shamiz
-            firstNameRef.current.classList.remove("animate-shake");
-            void firstNameRef.current.offsetWidth; // reflow trigger
-            firstNameRef.current.classList.add("animate-shake");
-
-            return;
-        }
-
-        setError(false);
-
         const payload = {
             first_name: firstNameRef.current.value,
             last_name: lastNameRef.current.value,
-            // username: telegramUser?.username,
             telegram_user_id: telegramUser?.id,
             user_type: role,
         };

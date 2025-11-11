@@ -6,7 +6,7 @@ export const TestTakerDashboard = () => {
     const [activeTests, setActiveTests] = useState([]);
     const [completedTests, setCompletedTests] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [user, setUser] = useState(null);
+    const [user] = useState(null);
     const [showModal, setShowModal] = useState(false);
     const [testCode, setTestCode] = useState("");
 
@@ -14,12 +14,12 @@ export const TestTakerDashboard = () => {
 
     useEffect(() => {
         setTimeout(() => {
-            setUser({
-                first_name: "Mirsoli",
-                last_name: "Mirsultonov",
-                telegram_id: 1367538109,
-                role: "o'quvchi"
-            });
+            // setUser({
+            //     first_name: "Mirsoli",
+            //     last_name: "Mirsultonov",
+            //     telegram_id: 1367538109,
+            //     role: "o'quvchi"
+            // });
 
             setActiveTests([]);
             setCompletedTests([]);
