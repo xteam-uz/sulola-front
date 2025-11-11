@@ -6,16 +6,6 @@ import { TestTakingPage } from "../pages/Tests/TestTakingPage";
 const router = createBrowserRouter([
     {
         path: "/",
-        element: <GuestLayout />,
-        children: [
-            {
-                path: "/register",
-                element: <Signup />,
-            },
-        ],
-    },
-    {
-        path: "/",
         element: <DefaultLayout />,
         children: [
             {
@@ -40,7 +30,16 @@ const router = createBrowserRouter([
             }
         ],
     },
-
+    {
+        path: "/",
+        element: <GuestLayout />,
+        children: [
+            {
+                path: "/register",
+                element: <Signup />,
+            },
+        ],
+    },
     {
         path: "*",
         element: <NotFound />,
