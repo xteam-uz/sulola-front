@@ -27,11 +27,11 @@ export const Signup = () => {
         }
 
         const payload = {
-            telegram_id: telegramUser?.id, //1367538109, // ,
-            username: telegramUser?.username, //"mirrrjr", //,
             first_name: firstNameRef.current.value,
             last_name: lastNameRef.current.value,
-            role: role,
+            // username: telegramUser?.username,
+            telegram_user_id: telegramUser?.id,
+            role,
         };
 
         setErrors(null);
