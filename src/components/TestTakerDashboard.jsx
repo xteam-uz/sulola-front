@@ -33,7 +33,7 @@ export const TestTakerDashboard = () => {
 
     return (
         <>
-            <MainButton text="Testlarni ko'rish" onClick={() => console.log('Main button clicked')} />
+            {/* <MainButton text="Testlarni ko'rish" onClick={() => console.log('Main button clicked')} /> */}
 
             {/* User Info Card */}
             <div className="px-4 mt-4 space-y-3">
