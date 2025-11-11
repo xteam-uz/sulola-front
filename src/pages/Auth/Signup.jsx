@@ -21,12 +21,12 @@ export const Signup = () => {
     const onSubmit = (e) => {
         e.preventDefault();
 
-        if (!telegramUser?.id) {
-            setErrors({
-                telegram_id: ["Telegram foydalanuvchi ma'lumoti topilmadi"],
-            });
-            return;
-        }
+        // if (!telegramUser?.id) {
+        //     setErrors({
+        //         telegram_id: ["Telegram foydalanuvchi ma'lumoti topilmadi"],
+        //     });
+        //     return;
+        // }
 
         if (!firstNameRef.current.value.trim()) {
             setError(true);
@@ -45,7 +45,7 @@ export const Signup = () => {
             first_name: firstNameRef.current.value,
             last_name: lastNameRef.current.value,
             // username: telegramUser?.username,
-            telegram_user_id: telegramUser?.id,
+            telegram_user_id: 1, //telegramUser?.id,
             user_type: role,
         };
 
