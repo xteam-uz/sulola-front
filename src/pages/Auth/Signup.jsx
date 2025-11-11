@@ -45,7 +45,7 @@ export const Signup = () => {
             first_name: firstNameRef.current.value,
             last_name: lastNameRef.current.value,
             // username: telegramUser?.username,
-            telegram_user_id: 1, //telegramUser?.id,
+            telegram_user_id: telegramUser?.id,
             user_type: role,
         };
 
