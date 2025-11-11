@@ -1,12 +1,13 @@
 import { useState, useEffect } from "react";
 import { ChevronRight, Clock, FileText } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useStateContext } from "../contexts/ContextProvider";
 
 export const TestTakerDashboard = () => {
     const [activeTests, setActiveTests] = useState([]);
     const [completedTests, setCompletedTests] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [user] = useState(null);
+    const { user } = useStateContext();
     const [showModal, setShowModal] = useState(false);
     const [testCode, setTestCode] = useState("");
 
