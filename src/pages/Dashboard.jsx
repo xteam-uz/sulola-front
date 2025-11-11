@@ -8,24 +8,23 @@ export const Dashboard = () => {
     const { user, setUser } = useStateContext();
 
 
-    useEffect(() => {
-        setUser({
-            id: 1,
-            telegram_id: 1367538109,
-            username: "o'qituvchi",
-            first_name: "Mirsoli",
-            last_name: "Mirsultonov",
-            role: "test_taker",
-            phone_number: null,
-            balance: 0,
-            status: 1,
-            credits: 50,
-        });
-    }, []);
+    // useEffect(() => {
+    //     setUser({
+    //         id: 1,
+    //         telegram_id: 1367538109,
+    //         username: "o'qituvchi",
+    //         first_name: "Mirsoli",
+    //         last_name: "Mirsultonov",
+    //         role: "test_taker",
+    //         phone_number: null,
+    //         balance: 0,
+    //         status: 1,
+    //         credits: 50,
+    //     });
+    // }, []);
 
     return (
         <div className="min-h-screen bg-gray-50 pb-20">
-            {/* Header */}
             <TopHeader />
 
             {user?.role === 'tester' ? <TesterDashboard /> : <TestTakerDashboard />}

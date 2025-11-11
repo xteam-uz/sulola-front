@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { TopHeader, SuccessNotify } from "../components/ui";
 import { useStateContext } from "../contexts/ContextProvider";
-import { toast, ToastContainer } from "react-toastify";
+import { toast, ToastContainer, Zoom } from "react-toastify";
 
 export const Profile = () => {
     const { user, setUser } = useStateContext();
@@ -60,7 +60,8 @@ export const Profile = () => {
             pauseOnHover: true,
             draggable: true,
             progress: undefined,
-            theme: "colored",
+            theme: "light",
+            transition: Zoom,
         });
     };
 
@@ -216,7 +217,8 @@ export const Profile = () => {
                         pauseOnFocusLoss
                         draggable
                         pauseOnHover
-                        theme="colored"
+                        theme="light"
+                        transition={Zoom}
                     />
                     <button
                         onClick={handleCancel}

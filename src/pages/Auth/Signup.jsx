@@ -28,9 +28,7 @@ export const Signup = () => {
 
         const payload = {
             telegram_id: telegramUser?.id, //1367538109, // ,
-            // telegram_id: 1367538109,
             username: telegramUser?.username, //"mirrrjr", //,
-            // username: "mirrrjr",
             first_name: firstNameRef.current.value,
             last_name: lastNameRef.current.value,
             role: role,
@@ -41,7 +39,6 @@ export const Signup = () => {
         axiosClient
             .post("/register", payload)
             .then(({ data }) => {
-                console.log(data);
                 setUser(data.user);
                 setToken(data.token);
             })

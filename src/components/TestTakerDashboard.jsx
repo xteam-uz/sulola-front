@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
-import { ChevronRight, Clock, FileText, Edit } from "lucide-react";
-import { FadeContent } from "./ui";
-import { Link, Navigate, useNavigate } from "react-router-dom";
+import { ChevronRight, Clock, FileText } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 export const TestTakerDashboard = () => {
     const [activeTests, setActiveTests] = useState([]);

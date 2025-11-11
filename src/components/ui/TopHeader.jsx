@@ -15,7 +15,7 @@ export const TopHeader = () => {
                     href: "/profile"
                 },
             ]
-        },
+        }
 
     ];
 

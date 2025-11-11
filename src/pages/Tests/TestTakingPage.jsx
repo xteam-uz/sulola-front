@@ -1,25 +1,13 @@
 import { useState, useEffect, useRef } from "react";
-import { ChevronLeft, Camera, X } from "lucide-react";
-import { CountdownTimer } from "../../components";
-import { Link } from "react-router-dom";
+import { Camera, } from "lucide-react";
+import { CountdownTimer, TestHeader, TestCameraModal } from "../../components";
+import axiosClient from "../../api/axios-client";
+import { toast, ToastContainer, Zoom } from "react-toastify";
 
-
-const TopHeader = ({ testName, onBack }) => (
-    <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-4 py-4 shadow-md">
-        <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-                <Link to="/" className="text-white">
-                    <ChevronLeft size={24} />
-                </Link>
-                <h1 className="text-white text-xl font-semibold">{testName}</h1>
-            </div>
-        </div>
-    </div>
-);
 
 export const TestTakingPage = () => {
     const [testCode] = useState("37687C");
-    const [testName] = useState("anpanman");
+    const [testName] = useState("Yangi");
     const [totalQuestions] = useState(35);
     const [timeRemaining, setTimeRemaining] = useState(85541);
     const [answers, setAnswers] = useState({});
@@ -93,14 +81,43 @@ export const TestTakingPage = () => {
         setTestStatus("active");
     };
 
-    const handleSubmit = () => {
+    const handleSubmit = async () => {
         if (answeredCount === 0) {
             alert("Test boshlanmagan, javob jo'natish mumkin emas");
             return;
         }
-        console.log("Submitting answers:", answers);
-        alert(`${answeredCount} ta javob yuborildi!`);
+
+        try {
+            // Javoblar va rasm fayllarini birlashtirish
+            const submissionData = {
+                answers,
+                images: uploadedImages
+            };
+
+            console.log("Submitting data:", submissionData);
+
+            const response = await axiosClient.post('/tests/submit', submissionData);
+
+            toast.success("Javoblar yuborildi!", {
+                position: "bottom-center",
+                autoClose: 5000,
+                hideProgressBar: false,
+                closeOnClick: false,
+                pauseOnHover: true,
+                draggable: true,
+                progress: undefined,
+                theme: "light",
+                transition: Zoom,
+            });
+
+            console.log("Server response:", response.data);
+            // alert(`${answeredCount} ta javob va ${Object.keys(uploadedImages).length} ta rasm yuborildi!`);
+        } catch (error) {
+            console.error("Submission error:", error);
+        }
     };
+
+
 
     // Kamera funksiyalari
     const handleOpenCamera = async (questionItem) => {
@@ -158,69 +175,14 @@ export const TestTakingPage = () => {
         setCurrentImageQuestion(null);
     };
 
-    // Kamera Modal Component
-    const CameraModal = () => (
-        <div className="fixed inset-0 bg-black z-50 flex flex-col">
-            <div className="bg-gray-900 px-4 py-4 flex items-center justify-between">
-                <h2 className="text-white text-lg font-semibold">Rasmga olish</h2>
-                <button onClick={handleCloseCamera} className="text-white">
-                    <X size={24} />
-                </button>
-            </div>
 
-            <div className="flex-1 relative bg-black">
-                {!capturedImage ? (
-                    <>
-                        <video
-                            ref={videoRef}
-                            autoPlay
-                            playsInline
-                            className="w-full h-full object-cover"
-                        />
-                        <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2">
-                            <button
-                                onClick={handleCapture}
-                                className="w-16 h-16 rounded-full bg-blue-600 border-4 border-white shadow-lg hover:bg-blue-700 transition-colors flex items-center justify-center"
-                            >
-                                <Camera size={28} className="text-white" />
-                            </button>
-                        </div>
-                    </>
-                ) : (
-                    <>
-                        <img
-                            src={capturedImage}
-                            alt="Captured"
-                            className="w-full h-full object-contain"
-                        />
-                        <div className="absolute bottom-8 left-0 right-0 flex justify-center gap-4 px-4">
-                            <button
-                                onClick={() => setCapturedImage(null)}
-                                className="flex-1 max-w-xs py-3 bg-gray-600 text-white rounded-xl font-medium hover:bg-gray-700 transition-colors"
-                            >
-                                Qayta olish
-                            </button>
-                            <button
-                                onClick={handleSaveImage}
-                                className="flex-1 max-w-xs py-3 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition-colors"
-                            >
-                                Saqlash
-                            </button>
-                        </div>
-                    </>
-                )}
-            </div>
-
-            <canvas ref={canvasRef} style={{ display: 'none' }} />
-        </div>
-    );
 
     if (!testStarted) {
         return (
             <div className="min-h-screen bg-gray-50 pb-20">
-                <TopHeader testName={testName} onBack={() => console.log("Go back")} />
+                <TestHeader testName={testName} />
 
-                {showCamera && <CameraModal />}
+                {showCamera && <TestCameraModal />}
 
                 <div className="px-4 py-4">
                     <div className="flex justify-between items-center bg-white rounded-2xl p-4 shadow-sm border border-gray-100 mb-4">
@@ -327,6 +289,19 @@ export const TestTakingPage = () => {
                         <p className="text-center text-red-500 text-sm mt-2">
                             Test boshlanmagan, javob jo'natish mumkin emas
                         </p>
+                        {/* <ToastContainer
+                            position="bottom-center"
+                            autoClose={5000}
+                            hideProgressBar={false}
+                            newestOnTop={false}
+                            closeOnClick={false}
+                            rtl={false}
+                            pauseOnFocusLoss
+                            draggable
+                            pauseOnHover
+                            theme="light"
+                            transition={Zoom}
+                        /> */}
                     </div>
                 </div>
             </div>
@@ -335,9 +310,9 @@ export const TestTakingPage = () => {
 
     return (
         <div className="min-h-screen bg-gray-50 pb-32">
-            <TopHeader testName={testName} onBack={() => console.log("Go back")} />
+            <TopHeader testName={testName} />
 
-            {showCamera && <CameraModal />}
+            {showCamera && <TestCameraModal />}
 
             <div className="px-4 py-4">
                 <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 mb-4">
@@ -444,6 +419,19 @@ export const TestTakingPage = () => {
                 >
                     Javoblarni jo'natish
                 </button>
+                <ToastContainer
+                    position="bottom-center"
+                    autoClose={5000}
+                    hideProgressBar={false}
+                    newestOnTop={false}
+                    closeOnClick={false}
+                    rtl={false}
+                    pauseOnFocusLoss
+                    draggable
+                    pauseOnHover
+                    theme="light"
+                    transition={Zoom}
+                />
                 {answeredCount === 0 && (
                     <p className="text-center text-red-500 text-sm mt-2">
                         Test boshlanmagan, javob jo'natish mumkin emas

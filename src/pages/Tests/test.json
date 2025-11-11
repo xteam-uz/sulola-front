@@ -1,0 +1,115 @@
+{
+    "type": "rash",
+    "questions_1_32": {
+        "1": {
+            "correct_answer": "A"
+        },
+        "2": {
+            "correct_answer": "B"
+        },
+        "3": {
+            "correct_answer": "C"
+        },
+        "4": {
+            "correct_answer": "C"
+        },
+        "5": {
+            "correct_answer": "D"
+        },
+        "6": {
+            "correct_answer": "C"
+        },
+        "7": {
+            "correct_answer": "B"
+        },
+        "8": {
+            "correct_answer": "A"
+        },
+        "9": {
+            "correct_answer": "A"
+        },
+        "10": {
+            "correct_answer": "B"
+        },
+        "11": {
+            "correct_answer": "C"
+        },
+        "12": {
+            "correct_answer": "D"
+        },
+        "13": {
+            "correct_answer": "D"
+        },
+        "14": {
+            "correct_answer": "C"
+        },
+        "15": {
+            "correct_answer": "B"
+        },
+        "16": {
+            "correct_answer": "A"
+        },
+        "17": {
+            "correct_answer": "A"
+        },
+        "18": {
+            "correct_answer": "B"
+        },
+        "19": {
+            "correct_answer": "C"
+        },
+        "20": {
+            "correct_answer": "D"
+        },
+        "21": {
+            "correct_answer": "C"
+        },
+        "22": {
+            "correct_answer": "D"
+        },
+        "23": {
+            "correct_answer": "D"
+        },
+        "24": {
+            "correct_answer": "A"
+        },
+        "25": {
+            "correct_answer": "A"
+        },
+        "26": {
+            "correct_answer": "C"
+        },
+        "27": {
+            "correct_answer": "C"
+        },
+        "28": {
+            "correct_answer": "B"
+        },
+        "29": {
+            "correct_answer": "D"
+        },
+        "30": {
+            "correct_answer": "C"
+        },
+        "31": {
+            "correct_answer": "B"
+        },
+        "32": {
+            "correct_answer": "A"
+        }
+    },
+    "questions_33_35": {
+        "33": {
+            "correct_answer": "B"
+        },
+        "34": {
+            "correct_answer": "E"
+        },
+        "35": {
+            "correct_answer": "B"
+        }
+    },
+    "questions_36_45": {
+        "mode": "image"
+    }
+}

@@ -12,6 +12,7 @@ import {
 import { useStateContext } from "../contexts/ContextProvider";
 import { FadeContent, AnimatedContent } from "./ui";
 import { FooterNavbar } from "./FooterNavbar";
+import axiosClient from "../api/axios-client";
 
 export const TesterDashboard = () => {
     const [tests, setTests] = useState([]);
@@ -34,61 +35,15 @@ export const TesterDashboard = () => {
     });
 
     useEffect(() => {
-        setTimeout(() => {
-            setUser({
-                id: 1,
-                telegram_id: 1367538109,
-                username: "o'qituvchi",
-                first_name: "Mirsoli",
-                last_name: "Mirsultonov",
-                role: "tester",
-                phone_number: null,
-                balance: 0,
-                status: 1,
-                credits: 50,
+        axiosClient.get("tests/list")
+            .then(({ data }) => {
+                setTests(data.tests);
+                setLoading(false);
+            })
+            .catch((error) => {
+                console.error("Testlarni olishda xatolik:", error);
+                setLoading(false);
             });
-
-            setTests([
-                {
-                    id: 1,
-                    name: "Test 2",
-                    code: "EB9202",
-                    subject: "Biologiya",
-                    status: "Ochiq",
-                    statusColor: "green",
-                    created_at: "04.11.2025 - 18:17",
-                },
-                {
-                    id: 2,
-                    name: "Test",
-                    code: "4E5F54",
-                    subject: "Ona tili va adabiyot",
-                    status: "Yopiq",
-                    statusColor: "red",
-                    created_at: "04.11.2025 - 18:12",
-                },
-                {
-                    id: 3,
-                    name: "Matematika testi",
-                    code: "A1B2C3",
-                    subject: "Matematika",
-                    status: "Ochiq",
-                    statusColor: "green",
-                    created_at: "05.11.2025 - 10:30",
-                },
-                {
-                    id: 4,
-                    name: "Fizika testi",
-                    code: "X9Y8Z7",
-                    subject: "Fizika",
-                    status: "Yopiq",
-                    statusColor: "red",
-                    created_at: "03.11.2025 - 14:45",
-                },
-            ]);
-
-            setLoading(false);
-        }, 1500); // 1.5 soniya loading ko'rinishi uchun
     }, []);
 
     return (
