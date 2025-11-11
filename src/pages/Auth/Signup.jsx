@@ -21,12 +21,12 @@ export const Signup = () => {
     const onSubmit = (e) => {
         e.preventDefault();
 
-        // if (!telegramUser?.id) {
-        //     setErrors({
-        //         telegram_id: ["Telegram foydalanuvchi ma'lumoti topilmadi"],
-        //     });
-        //     return;
-        // }
+        if (!telegramUser?.id) {
+            setErrors({
+                telegram_id: ["Telegram foydalanuvchi ma'lumoti topilmadi"],
+            });
+            return;
+        }
 
         if (!firstNameRef.current.value.trim()) {
             setError(true);
@@ -59,8 +59,10 @@ export const Signup = () => {
             })
             .catch((error) => {
                 const response = error.response;
-                if (response && response.status === 422) {
+                if (response) {
                     setErrors(response.data.errors);
+                } else {
+                    setErrors({ general: ["Xatolik chiqdi"] });
                 }
             });
     };
