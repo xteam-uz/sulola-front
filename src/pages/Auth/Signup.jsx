@@ -7,7 +7,7 @@ export const Signup = () => {
     const { setUser, setToken } = useStateContext();
     const firstNameRef = useRef();
     const lastNameRef = useRef();
-    const [role, setRole] = useState("test_taker");
+    const [role, setRole] = useState("tester");
     const [errors, setErrors] = useState(null);
     const [telegramUser, setTelegramUser] = useState(null);
 
