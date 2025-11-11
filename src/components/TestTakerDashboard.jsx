@@ -7,7 +7,7 @@ export const TestTakerDashboard = () => {
     const [activeTests, setActiveTests] = useState([]);
     const [completedTests, setCompletedTests] = useState([]);
     const [loading, setLoading] = useState(true);
-    const { user, setUser } = useStateContext();
+    const { user } = useStateContext();
     const [showModal, setShowModal] = useState(false);
     const [testCode, setTestCode] = useState("");
 
@@ -15,10 +15,6 @@ export const TestTakerDashboard = () => {
 
     useEffect(() => {
         setTimeout(() => {
-            initTelegramApp();
-            const tg_user = getUserData();
-            if (tg_user) setUser(tg_user);
-
             setActiveTests([]);
             setCompletedTests([]);
 
@@ -45,7 +41,7 @@ export const TestTakerDashboard = () => {
                                 {user?.first_name} {user?.last_name}
                             </span>
                             <span className="text-blue-600 text-sm ml-3">
-                                {user?.role}
+                                {user?.user_type}
                             </span>
                         </div>
                     </div>

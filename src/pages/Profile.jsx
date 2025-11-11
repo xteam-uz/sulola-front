@@ -6,8 +6,8 @@ import { toast, ToastContainer, Zoom } from "react-toastify";
 export const Profile = () => {
     const { user, setUser } = useStateContext();
 
-    const [selectedRole, setSelectedRole] = useState(user?.role || "tester");
-    const [originalRole, setOriginalRole] = useState(user?.role || "tester");
+    const [selectedRole, setSelectedRole] = useState(user?.user_type || "tester");
+    const [originalRole, setOriginalRole] = useState(user?.user_type || "tester");
     const [showChanges, setShowChanges] = useState(false);
 
     const handleRoleChange = (role) => {

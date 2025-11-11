@@ -58,7 +58,7 @@ export const TesterDashboard = () => {
                                 {user?.first_name} {user?.last_name}
                             </span>
                             <span className="text-blue-600 text-sm ml-3">
-                                {user?.role}
+                                {user?.user_type}
                             </span>
                         </div>
                     </div>
