@@ -82,7 +82,7 @@ export const Profile = () => {
                         </div>
                         <div className="flex justify-between">
                             <span className="text-gray-600">Telegram ID:</span>
-                            <span className="font-medium text-gray-800">{user?.telegram_id}</span>
+                            <span className="font-medium text-gray-800">{user?.telegram_user_id}</span>
                         </div>
                     </div>
                 </div>
@@ -154,7 +154,7 @@ export const Profile = () => {
                     <div className="mb-4">
                         <label className="block text-xs text-gray-600 mb-2">Telegram ID</label>
                         <div className="px-4 py-3 border border-dashed border-gray-300 rounded-xl bg-gray-50">
-                            <p className="text-sm text-gray-700">{user?.telegram_id}</p>
+                            <p className="text-sm text-gray-700">{user?.telegram_user_id}</p>
                             <p className="text-xs text-gray-500 mt-1">Telegram ID o'zgartirib bo'lmaydi</p>
                         </div>
                     </div>

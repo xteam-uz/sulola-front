@@ -65,7 +65,7 @@ export const TesterDashboard = () => {
                     <div className="text-sm text-gray-600">
                         <span>Telegram ID: </span>
                         <span className="font-semibold text-gray-800">
-                            {user?.telegram_id}
+                            {user?.telegram_user_id}
                         </span>
                     </div>
                 </div>
