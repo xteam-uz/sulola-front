@@ -90,6 +90,7 @@ export const Signup = () => {
                         ${error ? "border-red-500 focus:border-red-600" : "border-gray-300 focus:border-blue-600"}
                         appearance-none focus:outline-none focus:ring-0 peer animate-duration-300`}
                         placeholder=" "
+                        defaultValue={telegramUser?.last_name || ""}
                         required
                     />
                     <label
