@@ -17,27 +17,32 @@ export const Profile = () => {
     };
 
     const handleSave = () => {
-        console.log("Saving:", { firstName: user?.first_name, lastName: user?.last_name, selectedRole });
+        axiosClient.put("/user", {
+            user_type: selectedRole,
+            first_name: user?.first_name,
+            last_name: user?.last_name,
+        })
+            .then(({ data }) => {
+                setUser(data);
+                setOriginalRole(selectedRole);
+                setShowChanges(false);
+                toast.success('Malumotlar saqlandi', {
+                    position: "bottom-center",
+                    autoClose: 5000,
+                    hideProgressBar: false,
+                    closeOnClick: false,
+                    pauseOnHover: true,
+                    draggable: true,
+                    progress: undefined,
+                    theme: "light",
+                    transition: Zoom,
+                });
+            })
+            .catch(() => {
+                toast.error("Xatolik yuz berdi!");
+            });
 
-        setUser({
-            ...user,
-            role: selectedRole,
-        });
 
-        setOriginalRole(selectedRole);
-        setShowChanges(false);
-
-        toast.success('Malumotlar saqlandi', {
-            position: "bottom-center",
-            autoClose: 5000,
-            hideProgressBar: false,
-            closeOnClick: false,
-            pauseOnHover: true,
-            draggable: true,
-            progress: undefined,
-            theme: "light",
-            transition: Zoom,
-        });
     };
 
     const handleCancel = () => {
