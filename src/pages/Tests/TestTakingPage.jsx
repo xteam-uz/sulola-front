@@ -1,139 +1,123 @@
 import { useState, useEffect, useRef } from "react";
-import { Camera, } from "lucide-react";
-import { CountdownTimer, TestHeader, TestCameraModal } from "../../components";
-import axiosClient from "../../api/axios-client";
 import { toast, ToastContainer, Zoom } from "react-toastify";
-
+import { Camera, X } from "lucide-react";
+import { TopHeader } from "../../components/ui";
+import axiosClient from "../../api/axios-client";
+import { useLocation, useNavigate } from "react-router-dom";
 
 export const TestTakingPage = () => {
-    const [testCode] = useState("37687C");
-    const [testName] = useState("Yangi");
-    const [totalQuestions] = useState(35);
-    const [timeRemaining, setTimeRemaining] = useState(85541);
+    const [loading, setLoading] = useState(true);
+    const [testData, setTestData] = useState(null);
     const [answers, setAnswers] = useState({});
-    const [testStarted, setTestStarted] = useState(false);
-    const [testStatus, setTestStatus] = useState("not_started");
+    const [uploadedImages, setUploadedImages] = useState({});
     const [showCamera, setShowCamera] = useState(false);
     const [cameraStream, setCameraStream] = useState(null);
     const [capturedImage, setCapturedImage] = useState(null);
     const [currentImageQuestion, setCurrentImageQuestion] = useState(null);
-    const [uploadedImages, setUploadedImages] = useState({});
     const videoRef = useRef(null);
     const canvasRef = useRef(null);
 
-    const testInfo = {
-        instructions: "Quyidagi 4 ta rasm yuklang: 36-40 savollar uchun bitta, 41-42-43 masalalar uchun har biriga bittadan savollar javoblarini yozib, rasmga olib yuklang:",
-        imageQuestions: [
-            { id: 1, label: "36-40 savollar uchun rasm" },
-            { id: 2, label: "41-masala uchun rasm" },
-            { id: 3, label: "42-masala uchun rasm" },
-            { id: 4, label: "43-masala uchun rasm" }
-        ]
-    };
+    const navigate = useNavigate();
 
-    const questions = Array.from({ length: 35 }, (_, i) => ({
-        id: i + 1,
-        number: i + 1,
-        type: "multiple_choice",
-        options: ["A", "B", "C", "D"]
-    }));
+    const { state } = useLocation();
+    const testId = state?.testId;
 
+    // Testni yuklash
     useEffect(() => {
-        if (!testStarted || testStatus !== "active") return;
+        const fetchTest = async () => {
+            try {
+                const { data } = await axiosClient.get(`/tests/${testId}`);
+                // console.log("Test ma'lumotlari:", data);
+                setTestData(data.test);
+            } catch (error) {
+                console.error("Test yuklashda xatolik:", error);
+                toast.error("Test ma'lumotlarini yuklashda xatolik!");
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchTest();
+    }, [testId]);
 
-        const timer = setInterval(() => {
-            setTimeRemaining(prev => {
-                if (prev <= 1) {
-                    setTestStatus("expired");
-                    return 0;
-                }
-                return prev - 1;
-            });
-        }, 1000);
+    // Spinner
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center min-h-screen bg-gray-50">
+                <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+            </div>
+        );
+    }
 
-        return () => clearInterval(timer);
-    }, [testStarted, testStatus]);
+    if (!testData) {
+        return (
+            <div className="flex items-center justify-center min-h-screen text-gray-700">
+                Test topilmadi.
+            </div>
+        );
+    }
 
-    const formatTime = (seconds) => {
-        const days = Math.floor(seconds / 86400);
-        const hours = Math.floor((seconds % 86400) / 3600);
-        const mins = Math.floor((seconds % 3600) / 60);
-        const secs = seconds % 60;
-
-        if (days > 0) {
-            return `${days} kun, ${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-        }
-        return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    const { name, code, details } = testData;
+    const allQuestions = {
+        ...details.questions_1_32,
+        ...details.questions_33_35,
     };
 
     const handleAnswerSelect = (questionId, answer) => {
-        setAnswers(prev => ({
+        setAnswers((prev) => ({
             ...prev,
-            [questionId]: answer
+            [questionId]: answer,
         }));
     };
 
     const answeredCount = Object.keys(answers).length;
+    const totalQuestions = Object.keys(allQuestions).length + 10; // 36–45 rasmli qism ham qo‘shiladi
     const progressPercentage = Math.round((answeredCount / totalQuestions) * 100);
 
-    const handleStartTest = () => {
-        setTestStarted(true);
-        setTestStatus("active");
-    };
-
+    // Javoblarni yuborish
     const handleSubmit = async () => {
         if (answeredCount === 0) {
-            alert("Test boshlanmagan, javob jo'natish mumkin emas");
+            toast.error("Hech qanday javob belgilanmagan!");
             return;
         }
 
+        const questions_1_32 = {};
+        const questions_33_35 = {};
+
+        Object.entries(answers).forEach(([id, answer]) => {
+            const qid = Number(id);
+            if (qid >= 1 && qid <= 32) questions_1_32[qid] = { correct_answer: answer };
+            else if (qid >= 33 && qid <= 35) questions_33_35[qid] = { correct_answer: answer };
+        });
+
+        const submissionData = {
+            type: details.type,
+            questions_1_32,
+            questions_33_35,
+            questions_36_45: {
+                mode: "image",
+                images: uploadedImages,
+            },
+        };
+
         try {
-            // Javoblar va rasm fayllarini birlashtirish
-            const submissionData = {
-                answers,
-                images: uploadedImages
-            };
-
-            console.log("Submitting data:", submissionData);
-
-            const response = await axiosClient.post('/tests/submit', submissionData);
-
-            toast.success("Javoblar yuborildi!", {
-                position: "bottom-center",
-                autoClose: 5000,
-                hideProgressBar: false,
-                closeOnClick: false,
-                pauseOnHover: true,
-                draggable: true,
-                progress: undefined,
-                theme: "light",
-                transition: Zoom,
-            });
-
-            console.log("Server response:", response.data);
-            // alert(`${answeredCount} ta javob va ${Object.keys(uploadedImages).length} ta rasm yuborildi!`);
+            await axiosClient.post("/tests/save", submissionData);
+            toast.success("Javoblar muvaffaqiyatli yuborildi!", { transition: Zoom });
+            navigate("/");
         } catch (error) {
-            console.error("Submission error:", error);
+            console.error("Yuborishda xatolik:", error);
+            toast.error("Yuborishda xatolik yuz berdi!", { transition: Zoom });
         }
     };
 
-
-
     // Kamera funksiyalari
-    const handleOpenCamera = async (questionItem) => {
-        setCurrentImageQuestion(questionItem);
-
+    const handleOpenCamera = async (qNumber) => {
+        setCurrentImageQuestion(qNumber);
         try {
-            const stream = await navigator.mediaDevices.getUserMedia({
-                video: { facingMode: 'environment' }
-            });
+            const stream = await navigator.mediaDevices.getUserMedia({ video: true });
             setCameraStream(stream);
             setShowCamera(true);
-
             setTimeout(() => {
-                if (videoRef.current) {
-                    videoRef.current.srcObject = stream;
-                }
+                if (videoRef.current) videoRef.current.srcObject = stream;
             }, 100);
         } catch (err) {
             alert("Kamera ruxsatini bering: " + err.message);
@@ -144,182 +128,91 @@ export const TestTakingPage = () => {
         if (videoRef.current && canvasRef.current) {
             const video = videoRef.current;
             const canvas = canvasRef.current;
-            const context = canvas.getContext('2d');
-
+            const ctx = canvas.getContext("2d");
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
-            context.drawImage(video, 0, 0);
-
-            const imageData = canvas.toDataURL('image/jpeg');
+            ctx.drawImage(video, 0, 0);
+            const imageData = canvas.toDataURL("image/jpeg");
             setCapturedImage(imageData);
         }
     };
 
     const handleSaveImage = () => {
         if (capturedImage && currentImageQuestion) {
-            setUploadedImages(prev => ({
+            setUploadedImages((prev) => ({
                 ...prev,
-                [currentImageQuestion.id]: capturedImage
+                [currentImageQuestion]: capturedImage,
             }));
             handleCloseCamera();
         }
     };
 
     const handleCloseCamera = () => {
-        if (cameraStream) {
-            cameraStream.getTracks().forEach(track => track.stop());
-            setCameraStream(null);
-        }
+        if (cameraStream) cameraStream.getTracks().forEach((t) => t.stop());
         setShowCamera(false);
         setCapturedImage(null);
         setCurrentImageQuestion(null);
     };
 
-
-
-    if (!testStarted) {
-        return (
-            <div className="min-h-screen bg-gray-50 pb-20">
-                <TestHeader testName={testName} />
-
-                {showCamera && <TestCameraModal />}
-
-                <div className="px-4 py-4">
-                    <div className="flex justify-between items-center bg-white rounded-2xl p-4 shadow-sm border border-gray-100 mb-4">
-                        <div className="flex items-center">
-                            <span className="text-gray-600 text-sm">Test kodi:</span>
-                            <span className="text-orange-500 text-lg ml-2">{testCode}</span>
-                        </div>
-                        <div className="flex justify-between items-center">
-                            <span className="text-blue-600 text-lg">
-                                0 / {totalQuestions}
-                            </span>
-                        </div>
-                    </div>
-
-                    <div className="bg-red-50 rounded-2xl p-4 border border-red-200 mb-4">
-                        <div className="flex items-start space-x-3">
-                            <div className="flex-shrink-0 w-6 h-6 bg-red-500 rounded-full flex items-center justify-center text-white font-bold text-sm">
-                                !
-                            </div>
-                            <div className="flex-1">
-                                <CountdownTimer />
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="bg-blue-50 rounded-2xl p-4 border border-blue-200 mb-4">
-                        <h3 className="font-semibold text-blue-900 mb-2">Ko'rsatma:</h3>
-                        <p className="text-sm text-blue-800">
-                            1-35 javoblarni belgilang.<br />
-                            1-35 savollarni tugallaganidan so'ng, savollarning javobini rasmga olib yuklang.
-                        </p>
-                    </div>
-
-                    <div className="space-y-4 mb-4">
-                        {questions.slice(0, 4).map((question) => (
-                            <div key={question.id} className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
-                                <h3 className="font-semibold text-gray-800 mb-3">{question.number}-savol</h3>
-                                <div className="grid grid-cols-4 gap-2">
-                                    {question.options.map((option) => (
-                                        <button
-                                            key={option}
-                                            onClick={() => handleAnswerSelect(question.id, option)}
-                                            className={`py-2.5 rounded-lg font-medium text-sm transition-all ${answers[question.id] === option
-                                                ? "bg-blue-600 text-white shadow-md"
-                                                : "bg-white text-gray-700 border border-gray-300 hover:border-blue-400 hover:bg-blue-50"
-                                                }`}
-                                        >
-                                            {option}
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-
-                    <div className="bg-green-50 rounded-2xl p-4 border border-green-200 mb-4">
-                        <h3 className="font-semibold text-green-900 mb-2">
-                            Yozma javoblarni rasmga olish
-                        </h3>
-                        <p className="text-sm text-green-800 mb-4">
-                            {testInfo.instructions}
-                        </p>
-
-                        <div className="space-y-3">
-                            {testInfo.imageQuestions.map((item) => (
-                                <div key={item.id} className="bg-white rounded-xl p-4 border border-green-200">
-                                    <p className="text-sm text-gray-700 mb-3">{item.label}</p>
-                                    {uploadedImages[item.id] ? (
-                                        <div className="space-y-2">
-                                            <img
-                                                src={uploadedImages[item.id]}
-                                                alt="Uploaded"
-                                                className="w-full h-32 object-cover rounded-lg"
-                                            />
-                                            <button
-                                                onClick={() => handleOpenCamera(item)}
-                                                className="flex items-center justify-center space-x-2 w-full py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
-                                            >
-                                                <Camera size={18} />
-                                                <span className="text-sm font-medium">O'zgartirish</span>
-                                            </button>
-                                        </div>
-                                    ) : (
-                                        <button
-                                            onClick={() => handleOpenCamera(item)}
-                                            className="flex items-center justify-center space-x-2 w-full py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                                        >
-                                            <Camera size={18} />
-                                            <span className="text-sm font-medium">Rasmga olish</span>
-                                        </button>
-                                    )}
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-
-                    <div className="mb-16">
-                        <button
-                            onClick={handleSubmit}
-                            className="w-full py-4 bg-blue-600 text-white rounded-xl font-semibold shadow-lg hover:bg-blue-700 transition-colors"
-                        >
-                            Javoblarni jo'natish
-                        </button>
-                        <p className="text-center text-red-500 text-sm mt-2">
-                            Test boshlanmagan, javob jo'natish mumkin emas
-                        </p>
-                        {/* <ToastContainer
-                            position="bottom-center"
-                            autoClose={5000}
-                            hideProgressBar={false}
-                            newestOnTop={false}
-                            closeOnClick={false}
-                            rtl={false}
-                            pauseOnFocusLoss
-                            draggable
-                            pauseOnHover
-                            theme="light"
-                            transition={Zoom}
-                        /> */}
-                    </div>
-                </div>
+    // Kamera modal
+    const CameraModal = () => (
+        <div className="fixed inset-0 bg-black z-50 flex flex-col">
+            <div className="bg-gray-900 px-4 py-4 flex items-center justify-between">
+                <h2 className="text-white text-lg font-semibold">Rasmga olish</h2>
+                <button onClick={handleCloseCamera} className="text-white">
+                    <X size={24} />
+                </button>
             </div>
-        );
-    }
+
+            <div className="flex-1 relative bg-black">
+                {!capturedImage ? (
+                    <>
+                        <video ref={videoRef} autoPlay playsInline className="w-full h-full object-cover" />
+                        <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2">
+                            <button
+                                onClick={handleCapture}
+                                className="w-16 h-16 rounded-full bg-blue-600 border-4 border-white shadow-lg hover:bg-blue-700 transition-colors flex items-center justify-center"
+                            >
+                                <Camera size={28} className="text-white" />
+                            </button>
+                        </div>
+                    </>
+                ) : (
+                    <>
+                        <img src={capturedImage} alt="Captured" className="w-full h-full object-contain" />
+                        <div className="absolute bottom-8 left-0 right-0 flex justify-center gap-4 px-4">
+                            <button
+                                onClick={() => setCapturedImage(null)}
+                                className="flex-1 max-w-xs py-3 bg-gray-600 text-white rounded-xl font-medium hover:bg-gray-700 transition-colors"
+                            >
+                                Qayta olish
+                            </button>
+                            <button
+                                onClick={handleSaveImage}
+                                className="flex-1 max-w-xs py-3 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition-colors"
+                            >
+                                Saqlash
+                            </button>
+                        </div>
+                    </>
+                )}
+            </div>
+            <canvas ref={canvasRef} style={{ display: "none" }} />
+        </div>
+    );
 
     return (
         <div className="min-h-screen bg-gray-50 pb-32">
-            <TopHeader testName={testName} />
-
-            {showCamera && <TestCameraModal />}
+            <TopHeader testName={name} />
+            {showCamera && <CameraModal />}
 
             <div className="px-4 py-4">
+                {/* Test info */}
                 <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 mb-4">
                     <div className="flex justify-between items-center mb-3">
                         <div>
                             <span className="text-gray-600 text-sm">Test kodi: </span>
-                            <span className="text-orange-500 font-bold">{testCode}</span>
+                            <span className="text-orange-500 font-bold">{code}</span>
                         </div>
                         <div>
                             <span className="text-blue-600 font-bold text-lg">
@@ -328,41 +221,36 @@ export const TestTakingPage = () => {
                         </div>
                     </div>
 
-                    <div className="mb-3">
-                        <p className="text-xs text-gray-600 mb-2">Jarayon:</p>
-                        <div className="w-full bg-gray-200 rounded-full h-2 mb-1">
-                            <div
-                                className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                                style={{ width: `${progressPercentage}%` }}
-                            ></div>
-                        </div>
-                        <p className="text-xs text-gray-500 text-right">{progressPercentage}% tayyor</p>
+                    <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
+                        <div
+                            className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                            style={{ width: `${progressPercentage}%` }}
+                        ></div>
                     </div>
+                    <p className="text-xs text-gray-500 text-right">{progressPercentage}% tayyor</p>
                 </div>
 
-                <div className="bg-blue-50 rounded-2xl p-4 border border-blue-200 mb-4">
-                    <h3 className="font-semibold text-blue-900 mb-2">Ko'rsatma:</h3>
-                    <p className="text-sm text-blue-800 mb-2">
-                        1-35 javoblarni belgilang.<br />
-                        1-35 savollarni tugallaganidan so'ng, savollarning javobini rasmga olib yuklang.
-                    </p>
-                </div>
-
-                <div className="space-y-4 mb-24">
-                    {questions.map((question) => (
-                        <div key={question.id} className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
-                            <h3 className="font-semibold text-gray-800 mb-3">{question.number}-savol</h3>
+                {/* Variantli savollar */}
+                <div className="space-y-4 mb-8">
+                    {Object.entries(allQuestions).map(([num, q]) => (
+                        <div
+                            key={num}
+                            className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100"
+                        >
+                            <h3 className="font-semibold text-gray-800 mb-3">
+                                {num}-savol
+                            </h3>
                             <div className="grid grid-cols-4 gap-2">
-                                {question.options.map((option) => (
+                                {["A", "B", "C", "D"].map((opt) => (
                                     <button
-                                        key={option}
-                                        onClick={() => handleAnswerSelect(question.id, option)}
-                                        className={`py-2.5 rounded-lg font-medium text-sm transition-all ${answers[question.id] === option
+                                        key={opt}
+                                        onClick={() => handleAnswerSelect(num, opt)}
+                                        className={`py-2.5 rounded-lg font-medium text-sm transition-all ${answers[num] === opt
                                             ? "bg-blue-600 text-white shadow-md"
                                             : "bg-white text-gray-700 border border-gray-300 hover:border-blue-400 hover:bg-blue-50"
                                             }`}
                                     >
-                                        {option}
+                                        {opt}
                                     </button>
                                 ))}
                             </div>
@@ -370,74 +258,48 @@ export const TestTakingPage = () => {
                     ))}
                 </div>
 
-                <div className="bg-green-50 rounded-2xl p-4 border border-green-200 mb-4">
-                    <h3 className="font-semibold text-green-900 mb-2">
-                        Yozma javoblarni rasmga olish
-                    </h3>
-                    <p className="text-sm text-green-800 mb-4">
-                        {testInfo.instructions}
-                    </p>
-
-                    <div className="space-y-3">
-                        {testInfo.imageQuestions.map((item) => (
-                            <div key={item.id} className="bg-white rounded-xl p-4 border border-green-200">
-                                <p className="text-sm text-gray-700 mb-3">{item.label}</p>
-                                {uploadedImages[item.id] ? (
-                                    <div className="space-y-2">
-                                        <img
-                                            src={uploadedImages[item.id]}
-                                            alt="Uploaded"
-                                            className="w-full h-32 object-cover rounded-lg"
-                                        />
-                                        <button
-                                            onClick={() => handleOpenCamera(item)}
-                                            className="flex items-center justify-center space-x-2 w-full py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
-                                        >
-                                            <Camera size={18} />
-                                            <span className="text-sm font-medium">O'zgartirish</span>
-                                        </button>
-                                    </div>
-                                ) : (
-                                    <button
-                                        onClick={() => handleOpenCamera(item)}
-                                        className="flex items-center justify-center space-x-2 w-full py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                                    >
-                                        <Camera size={18} />
-                                        <span className="text-sm font-medium">Rasmga olish</span>
-                                    </button>
-                                )}
-                            </div>
-                        ))}
-                    </div>
+                {/* Rasmli savollar */}
+                <div className="space-y-4 mb-24">
+                    {Array.from({ length: 10 }, (_, i) => 36 + i).map((num) => (
+                        <div
+                            key={num}
+                            className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex flex-col items-center"
+                        >
+                            <h3 className="font-semibold text-gray-800 mb-3">
+                                {num}-savol (Rasm)
+                            </h3>
+                            {uploadedImages[num] ? (
+                                <img
+                                    src={uploadedImages[num]}
+                                    alt={`Savol ${num}`}
+                                    className="w-48 h-48 object-cover rounded-lg border mb-3"
+                                />
+                            ) : (
+                                <div className="w-48 h-48 bg-gray-100 border rounded-lg mb-3 flex items-center justify-center text-gray-400">
+                                    Rasm yo‘q
+                                </div>
+                            )}
+                            <button
+                                onClick={() => handleOpenCamera(num)}
+                                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2"
+                            >
+                                <Camera size={18} /> Rasm olish
+                            </button>
+                        </div>
+                    ))}
                 </div>
-            </div>
 
-            <div className="fixed bottom-12 left-0 right-0 bg-white border-t border-gray-200 p-4 shadow-lg">
-                <button
-                    onClick={handleSubmit}
-                    className="w-full py-4 bg-blue-600 text-white rounded-xl font-semibold shadow-lg hover:bg-blue-700 transition-colors"
-                >
-                    Javoblarni jo'natish
-                </button>
-                <ToastContainer
-                    position="bottom-center"
-                    autoClose={5000}
-                    hideProgressBar={false}
-                    newestOnTop={false}
-                    closeOnClick={false}
-                    rtl={false}
-                    pauseOnFocusLoss
-                    draggable
-                    pauseOnHover
-                    theme="light"
-                    transition={Zoom}
-                />
-                {answeredCount === 0 && (
-                    <p className="text-center text-red-500 text-sm mt-2">
-                        Test boshlanmagan, javob jo'natish mumkin emas
-                    </p>
-                )}
+                {/* Javob yuborish tugmasi */}
+                <div className="bottom-12 left-0 right-0 bg-white border-t border-gray-200 p-4 shadow-lg">
+                    <button
+                        onClick={handleSubmit}
+                        className="w-full py-4 bg-blue-600 text-white rounded-xl font-semibold shadow-lg hover:bg-blue-700 transition-colors"
+                    >
+                        Javoblarni jo'natish
+                    </button>
+                    <ToastContainer position="bottom-center" autoClose={5000} theme="light" transition={Zoom} />
+                </div>
             </div>
         </div>
     );
-}
+};

@@ -1,4 +1,4 @@
-import { Camera } from "lucide-react"
+import { Camera, X } from "lucide-react"
 
 export const TestCameraModal = () => {
 

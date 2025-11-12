@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import {
     CreditCard,
@@ -10,7 +9,7 @@ import {
     X,
 } from "lucide-react";
 import { useStateContext } from "../contexts/ContextProvider";
-import { FadeContent, AnimatedContent } from "./ui";
+import { FadeContent } from "./ui";
 import { FooterNavbar } from "./FooterNavbar";
 import axiosClient from "../api/axios-client";
 
@@ -24,20 +23,15 @@ export const TesterDashboard = () => {
 
     const toggleTestsTab = () => {
         setActiveTab(activeTab === "created" ? "taken" : "created");
-    }
-
-    const filteredTests = tests.filter(test => {
-        if (activeTab === "created") {
-            return test.status === "Ochiq";
-        } else {
-            return test.status === "Yopiq";
-        }
-    });
+    };
 
     useEffect(() => {
-        axiosClient.get("tests/list")
+        setLoading(true);
+        axiosClient
+            .get("/tests")
             .then(({ data }) => {
-                setTests(data.tests);
+                // backend format: data.data = testlar ro‘yxati
+                setTests(data.data || []);
                 setLoading(false);
             })
             .catch((error) => {
@@ -46,26 +40,34 @@ export const TesterDashboard = () => {
             });
     }, []);
 
+    // testlarni tab bo‘yicha ajratish
+    const filteredTests = tests.filter((test) => {
+        if (activeTab === "created") {
+            return test.status === "upcoming" || test.status === "active";
+        } else {
+            return test.status === "finished" || test.status === "closed";
+        }
+    });
+
     return (
         <>
-
             {/* User Info Card */}
             <div className="px-4 mt-4 space-y-3">
                 <div className="bg-white text-gray-800 rounded-2xl p-4 shadow-md">
                     <div className="flex items-center justify-between mb-3">
                         <div>
                             <span className="text-lg font-semibold">
-                                {user?.first_name} {user?.last_name}
+                                {user[0]?.first_name} {user[0]?.last_name}
                             </span>
                             <span className="text-blue-600 text-sm ml-3">
-                                {user?.user_type}
+                                {user[0]?.user_type === "tester" && "Test oluvchi"}
                             </span>
                         </div>
                     </div>
                     <div className="text-sm text-gray-600">
                         <span>Telegram ID: </span>
                         <span className="font-semibold text-gray-800">
-                            {user?.telegram_user_id}
+                            {user[0]?.bot_user?.user_id}
                         </span>
                     </div>
                 </div>
@@ -73,24 +75,18 @@ export const TesterDashboard = () => {
 
             {/* Balance & Credits Cards */}
             <div className="px-4 mt-4 space-y-3">
-                {/* Balance Card */}
                 <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
-                    <div className="flex items-start justify-between">
-                        <div className="flex items-center space-x-3">
-                            <div className="bg-blue-100 p-3 rounded-xl">
-                                <CreditCard
-                                    className="text-blue-600"
-                                    size={24}
-                                />
-                            </div>
-                            <div>
-                                <p className="text-gray-600 text-sm">
-                                    Balansingiz: {user?.balance} so'm
-                                </p>
-                                <p className="text-xs text-gray-400 mt-1">
-                                    Pullik testlardan tushgan daromad
-                                </p>
-                            </div>
+                    <div className="flex items-center space-x-3">
+                        <div className="bg-blue-100 p-3 rounded-xl">
+                            <CreditCard className="text-blue-600" size={24} />
+                        </div>
+                        <div>
+                            <p className="text-gray-600 text-sm">
+                                Balansingiz: {user[0]?.bot_user?.balance || 0} so'm
+                            </p>
+                            <p className="text-xs text-gray-400 mt-1">
+                                Pullik testlardan tushgan daromad
+                            </p>
                         </div>
                     </div>
                     <button className="w-full mt-3 py-2.5 bg-blue-50 text-blue-600 rounded-xl font-medium text-sm hover:bg-blue-100 transition-colors">
@@ -98,22 +94,18 @@ export const TesterDashboard = () => {
                     </button>
                 </div>
 
-                {/* Credits Card */}
                 <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
-                    <div className="flex items-start justify-between">
-                        <div className="flex items-center space-x-3">
-                            <div className="bg-green-100 p-3 rounded-xl">
-                                <Award className="text-green-600" size={24} />
-                            </div>
-                            <div>
-                                <p className="text-gray-600 text-sm">
-                                    Kredit balansi: {user?.credits} ta
-                                </p>
-                                <p className="text-xs text-gray-400 mt-1">
-                                    Har bir o'quvchi natijasi uchun 1 kredit
-                                    sarflanadi
-                                </p>
-                            </div>
+                    <div className="flex items-center space-x-3">
+                        <div className="bg-green-100 p-3 rounded-xl">
+                            <Award className="text-green-600" size={24} />
+                        </div>
+                        <div>
+                            <p className="text-gray-600 text-sm">
+                                Kredit balansi: {user[0]?.credits || 0} ta
+                            </p>
+                            <p className="text-xs text-gray-400 mt-1">
+                                Har bir o'quvchi natijasi uchun 1 kredit sarflanadi
+                            </p>
                         </div>
                     </div>
                     <button className="w-full mt-3 py-2.5 bg-green-50 text-green-600 rounded-xl font-medium text-sm hover:bg-green-100 transition-colors">
@@ -128,18 +120,17 @@ export const TesterDashboard = () => {
                     <h3 className="text-lg font-bold text-gray-800">Testlar</h3>
                     <button
                         onClick={() => setShowModal(true)}
-                        className="bg-blue-600 text-white px-4 py-2 rounded-xl flex items-center space-x-2 shadow-md hover:bg-blue-700 transition-colors">
+                        className="bg-blue-600 text-white px-4 py-2 rounded-xl flex items-center space-x-2 shadow-md hover:bg-blue-700 transition-colors"
+                    >
                         <Plus size={18} />
-                        <span className="text-sm font-medium">
-                            Test qo'shish
-                        </span>
+                        <span className="text-sm font-medium">Test qo'shish</span>
                     </button>
                 </div>
 
                 {/* Tabs */}
                 <div className="flex space-x-1 bg-gray-100 rounded-xl p-1 mb-4">
                     <button
-                        onClick={toggleTestsTab}
+                        onClick={() => setActiveTab("created")}
                         className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-all ${activeTab === "created"
                             ? "bg-white text-blue-600 shadow-sm"
                             : "text-gray-600 hover:text-gray-800"
@@ -148,7 +139,7 @@ export const TesterDashboard = () => {
                         Jarayondagi testlar
                     </button>
                     <button
-                        onClick={toggleTestsTab}
+                        onClick={() => setActiveTab("taken")}
                         className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-all ${activeTab === "taken"
                             ? "bg-white text-blue-600 shadow-sm"
                             : "text-gray-600 hover:text-gray-800"
@@ -160,21 +151,7 @@ export const TesterDashboard = () => {
 
                 {/* Test List */}
                 <div className="space-y-3">
-                    {/* <AnimatedContent
-                        key={activeTab}  // Bu eng muhim qism!
-                        distance={450}
-                        direction="vertical"
-                        reverse={false}  // Yopilgan testlar uchun teskari yo'nalish
-                        duration={0.5}
-                        ease="power3.out"
-                        initialOpacity={0.2}
-                        animateOpacity
-                        scale={1.1}
-                        threshold={0.2}
-                        delay={0.3}
-                    > */}
                     {loading ? (
-                        // Loading spinner - faqat test list uchun
                         <div className="bg-white rounded-2xl p-12 text-center">
                             <div className="flex justify-center">
                                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
@@ -182,7 +159,6 @@ export const TesterDashboard = () => {
                             <p className="text-gray-500 mt-4">Yuklanmoqda...</p>
                         </div>
                     ) : filteredTests.length > 0 ? (
-                        // Test list
                         filteredTests.map((test) => (
                             <div
                                 key={test.id}
@@ -194,31 +170,32 @@ export const TesterDashboard = () => {
                                             <h4 className="font-semibold text-gray-800">
                                                 {test.name}
                                             </h4>
-                                            <span className="px-2 py-0.5 bg-blue-100 text-blue-600 text-xs rounded-full font-medium">
-                                                {test.status === "Ochiq"
+                                            <span
+                                                className={`px-2 py-0.5 text-xs rounded-full font-medium ${test.status === "upcoming"
+                                                    ? "bg-green-100 text-green-600"
+                                                    : "bg-gray-200 text-gray-600"
+                                                    }`}
+                                            >
+                                                {test.status === "upcoming"
                                                     ? "Ochiq test"
                                                     : "Yopiq test"}
                                             </span>
-                                            <span className={`px-2 py-0.5 ${test.statusColor === "green"
-                                                ? "bg-green-100 text-green-600"
-                                                : "bg-red-100 text-red-600"
-                                                } text-xs rounded-full font-medium`}>
-                                                {test.statusColor === "green"
-                                                    ? "Ochiq"
-                                                    : "Yopiq"}
-                                            </span>
                                         </div>
                                         <p className="text-gray-700 text-sm mb-2">
-                                            {test.subject}
+                                            Fan: {test.science_name}
                                         </p>
-                                        <div className="flex flex-col items-start gap-1 text-xs text-gray-500">
+                                        <div className="flex flex-col gap-1 text-xs text-gray-500">
                                             <div className="flex items-center space-x-1">
                                                 <FileText size={14} />
-                                                <span>Test kodi: {test.code}</span>
+                                                <span>Kod: {test.code}</span>
                                             </div>
                                             <div className="flex items-center space-x-1">
                                                 <Clock size={14} />
-                                                <span>Yaratilgan vaqti: {test.created_at}</span>
+                                                <span>Boshlanish: {test.start_time}</span>
+                                            </div>
+                                            <div className="flex items-center space-x-1">
+                                                <Clock size={14} />
+                                                <span>Tugash: {test.end_time}</span>
                                             </div>
                                         </div>
                                     </div>
@@ -230,7 +207,6 @@ export const TesterDashboard = () => {
                             </div>
                         ))
                     ) : (
-                        // Empty state
                         <div className="bg-white rounded-2xl p-8 text-center">
                             <p className="text-gray-500">
                                 {activeTab === "created"
@@ -239,7 +215,6 @@ export const TesterDashboard = () => {
                             </p>
                         </div>
                     )}
-                    {/* </AnimatedContent> */}
                 </div>
             </div>
 
@@ -304,8 +279,6 @@ export const TesterDashboard = () => {
                 </div>
             )}
 
-
-            {/* Bottom Navigation */}
             <FooterNavbar />
         </>
     );
