@@ -4,6 +4,7 @@ import { Camera, X } from "lucide-react";
 import { TopHeader } from "../../components/ui";
 import axiosClient from "../../api/axios-client";
 import { useLocation, useNavigate } from "react-router-dom";
+import { ButtomBar, MainButton } from "@twa-dev/sdk/react"
 
 export const TestTakingPage = () => {
     const [loading, setLoading] = useState(true);
@@ -290,16 +291,19 @@ export const TestTakingPage = () => {
                 </div>
 
                 {/* Javob yuborish tugmasi */}
-                <div className="bottom-12 left-0 right-0 bg-white border-t border-gray-200 p-4 shadow-lg">
+                {/* <div className="bottom-12 left-0 right-0 bg-white border-t border-gray-200 p-4 shadow-lg">
                     <button
                         onClick={handleSubmit}
                         className="w-full py-4 bg-blue-600 text-white rounded-xl font-semibold shadow-lg hover:bg-blue-700 transition-colors"
                     >
                         Javoblarni jo'natish
                     </button>
-                    <ToastContainer position="bottom-center" autoClose={5000} theme="light" transition={Zoom} />
-                </div>
+                </div> */}
+                <ButtomBar bgColor="#2563EB">
+                    <MainButton text="Javoblarni jo'natish" onClick={handleSubmit} />
+                </ButtomBar>
             </div>
+            <ToastContainer position="bottom-center" autoClose={5000} theme="light" transition={Zoom} />
         </div>
     );
 };
