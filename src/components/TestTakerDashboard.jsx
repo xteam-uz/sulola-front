@@ -70,7 +70,7 @@ export const TestTakerDashboard = () => {
         } catch (error) {
             console.error("API xatolik:", error);
             console.error("Response:", error.response?.data);
-            toast.error('Xatolik yuz berdi!', {
+            toast.error(error.response?.data, {
                 position: "bottom-center",
                 autoClose: 5000,
                 hideProgressBar: false,
