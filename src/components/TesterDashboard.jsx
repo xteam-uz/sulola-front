@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
     CreditCard,
     Award,
@@ -11,37 +11,15 @@ import {
 import { useStateContext } from "../contexts/ContextProvider";
 import { FadeContent } from "./ui";
 import { FooterNavbar } from "./FooterNavbar";
-import axiosClient from "../api/axios-client";
 
 export const TesterDashboard = () => {
-    const [tests, setTests] = useState([]);
-    const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
     const [activeTab, setActiveTab] = useState("created");
 
-    const { user } = useStateContext();
+    const { user, tests, testsLoading } = useStateContext();
 
-    const toggleTestsTab = () => {
-        setActiveTab(activeTab === "created" ? "taken" : "created");
-    };
-
-    useEffect(() => {
-        setLoading(true);
-        axiosClient
-            .get("/tests")
-            .then(({ data }) => {
-                // backend format: data.data = testlar ro‘yxati
-                setTests(data.data || []);
-                setLoading(false);
-            })
-            .catch((error) => {
-                console.error("Testlarni olishda xatolik:", error);
-                setLoading(false);
-            });
-    }, []);
-
-    // testlarni tab bo‘yicha ajratish
-    const filteredTests = tests.filter((test) => {
+    // testlarni tab bo'yicha ajratish
+    const filteredTests = (tests || []).filter((test) => {
         if (activeTab === "created") {
             return test.status === "upcoming" || test.status === "active";
         } else {
@@ -151,7 +129,7 @@ export const TesterDashboard = () => {
 
                 {/* Test List */}
                 <div className="space-y-3">
-                    {loading ? (
+                    {testsLoading ? (
                         <div className="bg-white rounded-2xl p-12 text-center">
                             <div className="flex justify-center">
                                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
@@ -173,12 +151,16 @@ export const TesterDashboard = () => {
                                             <span
                                                 className={`px-2 py-0.5 text-xs rounded-full font-medium ${test.status === "upcoming"
                                                     ? "bg-green-100 text-green-600"
-                                                    : "bg-gray-200 text-gray-600"
+                                                    : test.status === "active"
+                                                        ? "bg-blue-100 text-blue-600"
+                                                        : "bg-gray-200 text-gray-600"
                                                     }`}
                                             >
                                                 {test.status === "upcoming"
-                                                    ? "Ochiq test"
-                                                    : "Yopiq test"}
+                                                    ? "Kutilmoqda"
+                                                    : test.status === "active"
+                                                        ? "Faol"
+                                                        : "Yopiq"}
                                             </span>
                                         </div>
                                         <p className="text-gray-700 text-sm mb-2">

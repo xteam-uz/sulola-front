@@ -6,7 +6,7 @@ import axiosClient from "../api/axios-client";
 import { useNavigate } from "react-router-dom";
 
 export const Profile = () => {
-    const { user, setUser } = useStateContext();
+    const { user, refreshUser } = useStateContext();
 
     const [selectedRole, setSelectedRole] = useState(user[0]?.user_type || "tester");
     const [originalRole, setOriginalRole] = useState(user[0]?.user_type || "tester");
@@ -16,13 +16,15 @@ export const Profile = () => {
         last_name: user[0]?.last_name || ""
     });
 
+    const [saving, setSaving] = useState(false);
+
     const handleRoleChange = (role) => {
         setSelectedRole(role);
     };
 
     const navigate = useNavigate();
 
-    const handleSave = () => {
+    const handleSave = async () => {
         const firstName = formData.first_name?.trim() || "";
         const lastName = formData.last_name?.trim() || "";
 
@@ -31,42 +33,45 @@ export const Profile = () => {
             return;
         }
 
-        axiosClient.put("/user", {
-            user_type: selectedRole,
-            first_name: firstName,
-            last_name: lastName,
-        })
-            .then(({ data }) => {
-                setUser(data);
+        setSaving(true);
 
-                // Original rolni yangilash
-                setOriginalRole(data[0]?.user_type || selectedRole);
-
-                // Form datani yangilash
-                setFormData({
-                    first_name: data[0]?.first_name || "",
-                    last_name: data[0]?.last_name || ""
-                });
-
-                toast.success('Malumotlar saqlandi', {
-                    position: "bottom-center",
-                    autoClose: 5000,
-                    hideProgressBar: false,
-                    closeOnClick: false,
-                    pauseOnHover: true,
-                    draggable: true,
-                    progress: undefined,
-                    theme: "light",
-                    transition: Zoom,
-                });
-
-                navigate('/');
-            })
-            .catch((error) => {
-                console.error("Save error:", error);
-                const errorMsg = error.response?.data?.message || "Xatolik yuz berdi!";
-                toast.error(errorMsg);
+        try {
+            await axiosClient.put("/user", {
+                user_type: selectedRole,
+                first_name: firstName,
+                last_name: lastName,
             });
+
+            toast.success('Malumotlar saqlandi', {
+                position: "bottom-center",
+                autoClose: 2000,
+                hideProgressBar: false,
+                closeOnClick: false,
+                pauseOnHover: true,
+                draggable: true,
+                progress: undefined,
+                theme: "light",
+                transition: Zoom,
+            });
+
+            // User ma'lumotlarini yangilash
+            await refreshUser();
+
+            // Original rolni yangilash
+            setOriginalRole(selectedRole);
+
+            // Qisqa timeout bilan navigate
+            setTimeout(() => {
+                navigate('/');
+            }, 1000);
+
+        } catch (error) {
+            console.error("Save error:", error);
+            const errorMsg = error.response?.data?.message || "Xatolik yuz berdi!";
+            toast.error(errorMsg);
+        } finally {
+            setSaving(false);
+        }
     };
 
     const handleCancel = () => {
@@ -142,7 +147,8 @@ export const Profile = () => {
                                     first_name: e.target.value,
                                 })
                             }
-                            className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            disabled={saving}
+                            className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
                             placeholder="Ism"
                         />
                     </div>
@@ -159,7 +165,8 @@ export const Profile = () => {
                                     last_name: e.target.value,
                                 })
                             }
-                            className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            disabled={saving}
+                            className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
                             placeholder="Familiya"
                         />
                     </div>
@@ -170,7 +177,8 @@ export const Profile = () => {
                         <div className="flex gap-2">
                             <button
                                 onClick={() => handleRoleChange("tester")}
-                                className={`flex-1 py-3 px-4 rounded-xl font-medium text-sm transition-all ${selectedRole === "tester"
+                                disabled={saving}
+                                className={`flex-1 py-3 px-4 rounded-xl font-medium text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed ${selectedRole === "tester"
                                     ? "bg-blue-600 text-white shadow-md"
                                     : "bg-white text-gray-700 border border-gray-200 hover:border-blue-300"
                                     }`}
@@ -179,7 +187,8 @@ export const Profile = () => {
                             </button>
                             <button
                                 onClick={() => handleRoleChange("test_taker")}
-                                className={`flex-1 py-3 px-4 rounded-xl font-medium text-sm transition-all ${selectedRole === "test_taker"
+                                disabled={saving}
+                                className={`flex-1 py-3 px-4 rounded-xl font-medium text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed ${selectedRole === "test_taker"
                                     ? "bg-blue-600 text-white shadow-md"
                                     : "bg-white text-gray-700 border border-gray-200 hover:border-blue-300"
                                     }`}
@@ -230,13 +239,20 @@ export const Profile = () => {
                 <div className="flex flex-col gap-3">
                     <button
                         onClick={handleSave}
-                        disabled={!hasChanges()}
-                        className={`flex-1 py-3 px-4 rounded-xl font-medium text-sm transition-colors shadow-md ${hasChanges()
+                        disabled={!hasChanges() || saving}
+                        className={`flex-1 py-3 px-4 rounded-xl font-medium text-sm transition-colors shadow-md flex items-center justify-center gap-2 ${hasChanges() && !saving
                             ? "bg-blue-600 text-white hover:bg-blue-700"
                             : "bg-gray-300 text-gray-500 cursor-not-allowed"
                             }`}
                     >
-                        O'zgarishlarni saqlash
+                        {saving ? (
+                            <>
+                                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                Saqlanmoqda...
+                            </>
+                        ) : (
+                            "O'zgarishlarni saqlash"
+                        )}
                     </button>
                     <ToastContainer
                         position="bottom-center"
@@ -253,8 +269,8 @@ export const Profile = () => {
                     />
                     <button
                         onClick={handleCancel}
-                        disabled={!hasChanges()}
-                        className={`flex-1 py-3 px-4 rounded-xl font-medium text-sm transition-colors ${hasChanges()
+                        disabled={!hasChanges() || saving}
+                        className={`flex-1 py-3 px-4 rounded-xl font-medium text-sm transition-colors ${hasChanges() && !saving
                             ? "bg-white text-gray-700 border border-gray-200 hover:bg-gray-50"
                             : "bg-gray-100 text-gray-400 border border-gray-200 cursor-not-allowed"
                             }`}
