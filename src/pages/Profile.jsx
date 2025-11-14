@@ -1,10 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { TopHeader } from "../components/ui";
 import { useStateContext } from "../contexts/ContextProvider";
 import { toast, ToastContainer, Zoom } from "react-toastify";
 import axiosClient from "../api/axios-client";
 import { useNavigate } from "react-router-dom";
-import { BottomBar, MainButton } from "@twa-dev/sdk/react";
+import { MainButton, BackButton } from "@twa-dev/sdk/react";
 
 export const Profile = () => {
     const { user, refreshUser } = useStateContext();
@@ -24,6 +24,14 @@ export const Profile = () => {
     };
 
     const navigate = useNavigate();
+
+    const hasChanges = () => {
+        return (
+            selectedRole !== originalRole ||
+            formData.first_name !== user[0]?.first_name ||
+            formData.last_name !== user[0]?.last_name
+        );
+    };
 
     const handleSave = async () => {
         const firstName = formData.first_name?.trim() || "";
@@ -83,14 +91,6 @@ export const Profile = () => {
         });
     };
 
-    const hasChanges = () => {
-        return (
-            selectedRole !== originalRole ||
-            formData.first_name !== user[0]?.first_name ||
-            formData.last_name !== user[0]?.last_name
-        );
-    };
-
     const getRoleChangeText = () => {
         const roleNames = {
             tester: "Test oluvchi",
@@ -103,7 +103,7 @@ export const Profile = () => {
     };
 
     return (
-        <div className="min-h-screen bg-gray-50 pb-20">
+        <div className="min-h-screen bg-gray-50 pb-24">
             <TopHeader />
 
             <div className="px-4 mt-6">
@@ -235,83 +235,45 @@ export const Profile = () => {
                         </div>
                     </div>
                 )}
-
-                {/* Action Buttons */}
-                <BottomBar bgColor="#9ff29b">
-                    <MainButton
-                        onClick={handleSave}
-                        disabled={!hasChanges() || saving}
-                        className={`flex-1 py-3 px-4 rounded-xl font-medium text-sm transition-colors shadow-md flex items-center justify-center gap-2 ${hasChanges() && !saving
-                            ? "bg-blue-600 text-white hover:bg-blue-700"
-                            : "bg-gray-300 text-gray-500 cursor-not-allowed"
-                            }`}
-                    >
-                        {saving ? (
-                            <>
-                                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                                Saqlanmoqda...
-                            </>
-                        ) : (
-                            "O'zgarishlarni saqlash"
-                        )}
-                    </MainButton>
-                </BottomBar>
-                <ToastContainer
-                    position="bottom-center"
-                    autoClose={5000}
-                    hideProgressBar={false}
-                    newestOnTop={false}
-                    closeOnClick={false}
-                    rtl={false}
-                    pauseOnFocusLoss
-                    draggable
-                    pauseOnHover
-                    theme="light"
-                    transition={Zoom}
-                />
-                {/* <div className="flex flex-col gap-3">
-                    <button
-                        onClick={handleSave}
-                        disabled={!hasChanges() || saving}
-                        className={`flex-1 py-3 px-4 rounded-xl font-medium text-sm transition-colors shadow-md flex items-center justify-center gap-2 ${hasChanges() && !saving
-                            ? "bg-blue-600 text-white hover:bg-blue-700"
-                            : "bg-gray-300 text-gray-500 cursor-not-allowed"
-                            }`}
-                    >
-                        {saving ? (
-                            <>
-                                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                                Saqlanmoqda...
-                            </>
-                        ) : (
-                            "O'zgarishlarni saqlash"
-                        )}
-                    </button>
-                    <ToastContainer
-                        position="bottom-center"
-                        autoClose={5000}
-                        hideProgressBar={false}
-                        newestOnTop={false}
-                        closeOnClick={false}
-                        rtl={false}
-                        pauseOnFocusLoss
-                        draggable
-                        pauseOnHover
-                        theme="light"
-                        transition={Zoom}
-                    />
-                    <button
-                        onClick={handleCancel}
-                        disabled={!hasChanges() || saving}
-                        className={`flex-1 py-3 px-4 rounded-xl font-medium text-sm transition-colors ${hasChanges() && !saving
-                            ? "bg-white text-gray-700 border border-gray-200 hover:bg-gray-50"
-                            : "bg-gray-100 text-gray-400 border border-gray-200 cursor-not-allowed"
-                            }`}
-                    >
-                        Bekor qilish
-                    </button>
-                </div> */}
             </div>
+
+            {/* Telegram MainButton va BackButton */}
+            {hasChanges() && !saving && (
+                <>
+                    <MainButton
+                        text="O'zgarishlarni saqlash"
+                        onClick={handleSave}
+                        progress={false}
+                    />
+                    <BackButton onClick={handleCancel} />
+                </>
+            )}
+
+            {/* Loading overlay */}
+            {saving && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-2xl p-6 shadow-xl">
+                        <div className="flex items-center gap-3">
+                            <div className="w-6 h-6 border-3 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                            <span className="text-gray-700 font-medium">Saqlanmoqda...</span>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            <ToastContainer
+                position="bottom-center"
+                autoClose={5000}
+                hideProgressBar={false}
+                newestOnTop={false}
+                closeOnClick={false}
+                rtl={false}
+                pauseOnFocusLoss
+                draggable
+                pauseOnHover
+                theme="light"
+                transition={Zoom}
+            />
         </div>
     );
 };
