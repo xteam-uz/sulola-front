@@ -241,7 +241,8 @@ export const Profile = () => {
             {hasChanges() && !saving && (
                 <>
                     <MainButton
-                        bgColor="#0055ff"
+                        color="#2563eb"
+                        textColor="#ffffff"
                         text="O'zgarishlarni saqlash"
                         onClick={handleSave}
                         progress={false}
