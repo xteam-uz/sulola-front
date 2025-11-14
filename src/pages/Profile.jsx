@@ -4,6 +4,7 @@ import { useStateContext } from "../contexts/ContextProvider";
 import { toast, ToastContainer, Zoom } from "react-toastify";
 import axiosClient from "../api/axios-client";
 import { useNavigate } from "react-router-dom";
+import { BottomBar, MainButton } from "@twa-dev/sdk/react";
 
 export const Profile = () => {
     const { user, refreshUser } = useStateContext();
@@ -236,7 +237,39 @@ export const Profile = () => {
                 )}
 
                 {/* Action Buttons */}
-                <div className="flex flex-col gap-3">
+                <BottomBar bgColor="#9ff29b">
+                    <MainButton
+                        onClick={handleSave}
+                        disabled={!hasChanges() || saving}
+                        className={`flex-1 py-3 px-4 rounded-xl font-medium text-sm transition-colors shadow-md flex items-center justify-center gap-2 ${hasChanges() && !saving
+                            ? "bg-blue-600 text-white hover:bg-blue-700"
+                            : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                            }`}
+                    >
+                        {saving ? (
+                            <>
+                                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                Saqlanmoqda...
+                            </>
+                        ) : (
+                            "O'zgarishlarni saqlash"
+                        )}
+                    </MainButton>
+                </BottomBar>
+                <ToastContainer
+                    position="bottom-center"
+                    autoClose={5000}
+                    hideProgressBar={false}
+                    newestOnTop={false}
+                    closeOnClick={false}
+                    rtl={false}
+                    pauseOnFocusLoss
+                    draggable
+                    pauseOnHover
+                    theme="light"
+                    transition={Zoom}
+                />
+                {/* <div className="flex flex-col gap-3">
                     <button
                         onClick={handleSave}
                         disabled={!hasChanges() || saving}
@@ -277,7 +310,7 @@ export const Profile = () => {
                     >
                         Bekor qilish
                     </button>
-                </div>
+                </div> */}
             </div>
         </div>
     );
