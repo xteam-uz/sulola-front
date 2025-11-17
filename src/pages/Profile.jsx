@@ -4,7 +4,7 @@ import { useStateContext } from "../contexts/ContextProvider";
 import { toast, ToastContainer, Zoom } from "react-toastify";
 import axiosClient from "../api/axios-client";
 import { useNavigate } from "react-router-dom";
-import { MainButton, BackButton } from "@twa-dev/sdk/react";
+import { MainButton, BackButton, SecondaryButton } from "@twa-dev/sdk/react";
 
 export const Profile = () => {
     const { user, refreshUser } = useStateContext();
@@ -239,7 +239,7 @@ export const Profile = () => {
 
             {/* Telegram MainButton va BackButton */}
             {hasChanges() && !saving && (
-                <>
+                <BottomBar bgColor="#000">
                     <MainButton
                         color="#2563eb"
                         textColor="#ffffff"
@@ -247,8 +247,15 @@ export const Profile = () => {
                         onClick={handleSave}
                         progress={false}
                     />
-                    <BackButton onClick={handleCancel} />
-                </>
+                    <SecondaryButton
+                        color="#6b7280"
+                        textColor="#ffffff"
+                        text="Bekor qilish"
+                        position="bottom"
+                        onClick={handleCancel}
+                    />
+                    {/* <BackButton onClick={handleCancel} /> */}
+                </BottomBar>
             )}
 
             {/* Loading overlay */}
