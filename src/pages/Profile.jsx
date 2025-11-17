@@ -70,9 +70,9 @@ export const Profile = () => {
             setOriginalRole(selectedRole);
 
             // Qisqa timeout bilan navigate
-            setTimeout(() => {
-                navigate('/');
-            }, 1000);
+            // setTimeout(() => {
+            //     navigate('/');
+            // }, 1000);
 
         } catch (error) {
             console.error("Save error:", error);
