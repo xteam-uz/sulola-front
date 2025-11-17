@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useStateContext } from "../contexts/ContextProvider";
 import axiosClient from "../api/axios-client";
 import { toast, ToastContainer, Zoom } from "react-toastify";
+import { FadeContent } from "./ui";
 
 export const TestTakerDashboard = () => {
     const [activeTests, setActiveTests] = useState([]);
@@ -146,49 +147,51 @@ export const TestTakerDashboard = () => {
                     className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 animate-fadeIn"
                     onClick={() => setShowModal(false)}
                 >
-                    <div
-                        onClick={(e) => e.stopPropagation()}
-                        className="bg-white w-80 rounded-2xl shadow-lg p-6 relative animate-fadeInUp"
-                    >
-                        <h2 className="text-xl text-center text-gray-800 mb-2">
-                            Test kodini kiriting
-                        </h2>
-                        <p className="text-xs text-gray-500 text-center mb-4">
-                            O‘qituvchidan olgan test kodingizni kiriting
-                        </p>
+                    <FadeContent blur={true} duration={300} easing="ease-in" initialOpacity={0}>
+                        <div
+                            onClick={(e) => e.stopPropagation()}
+                            className="bg-white w-80 rounded-2xl shadow-lg p-6 relative animate-fadeInUp"
+                        >
+                            <h2 className="text-xl text-center text-gray-800 mb-2">
+                                Test kodini kiriting
+                            </h2>
+                            <p className="text-xs text-gray-500 text-center mb-4">
+                                O‘qituvchidan olgan test kodingizni kiriting
+                            </p>
 
-                        <input
-                            className="border rounded-xl p-3 w-full focus:border-blue-500 focus:outline-none"
-                            type="text"
-                            value={testCode}
-                            onChange={(e) => setTestCode(e.target.value)}
-                            placeholder="Masalan: ABC123"
-                            required
-                        />
+                            <input
+                                className="border rounded-xl p-3 w-full focus:border-blue-500 focus:outline-none"
+                                type="text"
+                                value={testCode}
+                                onChange={(e) => setTestCode(e.target.value)}
+                                placeholder="Masalan: ABC123"
+                                required
+                            />
 
-                        <div className="flex justify-end mt-5 space-x-2">
-                            <button
-                                type="button"
-                                onClick={() => setShowModal(false)}
-                                className="px-4 py-2 text-gray-500 rounded-lg hover:bg-gray-100 text-sm"
-                            >
-                                Bekor qilish
-                            </button>
-                            <button
-                                type="submit"
-                                disabled={!testCode.trim() || checking}
-                                className={`px-4 py-2 rounded-lg text-sm transition-colors flex items-center gap-2 ${testCode.trim()
-                                    ? "bg-blue-600 text-white hover:bg-blue-700"
-                                    : "bg-gray-300 text-gray-500 cursor-not-allowed"
-                                    }`}
-                            >
-                                {checking && (
-                                    <span className="animate-spin rounded-full h-4 w-4 border-2 border-t-transparent border-white"></span>
-                                )}
-                                {checking ? "Tekshirilmoqda..." : "Davom etish"}
-                            </button>
+                            <div className="flex justify-end mt-5 space-x-2">
+                                <button
+                                    type="button"
+                                    onClick={() => setShowModal(false)}
+                                    className="px-4 py-2 text-gray-500 rounded-lg hover:bg-gray-100 text-sm"
+                                >
+                                    Bekor qilish
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={!testCode.trim() || checking}
+                                    className={`px-4 py-2 rounded-lg text-sm transition-colors flex items-center gap-2 ${testCode.trim()
+                                        ? "bg-blue-600 text-white hover:bg-blue-700"
+                                        : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                                        }`}
+                                >
+                                    {checking && (
+                                        <span className="animate-spin rounded-full h-4 w-4 border-2 border-t-transparent border-white"></span>
+                                    )}
+                                    {checking ? "Tekshirilmoqda..." : "Davom etish"}
+                                </button>
+                            </div>
                         </div>
-                    </div>
+                    </FadeContent>
                 </form>
             )}
             <ToastContainer
