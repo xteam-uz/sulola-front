@@ -4,7 +4,7 @@ import { useStateContext } from "../contexts/ContextProvider";
 import { toast, ToastContainer, Zoom } from "react-toastify";
 import axiosClient from "../api/axios-client";
 import { useNavigate } from "react-router-dom";
-import { MainButton, BackButton, SecondaryButton } from "@twa-dev/sdk/react";
+import { MainButton, BottomBar, SecondaryButton } from "@twa-dev/sdk/react";
 
 export const Profile = () => {
     const { user, refreshUser } = useStateContext();
