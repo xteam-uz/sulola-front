@@ -239,7 +239,7 @@ export const Profile = () => {
 
             {/* Telegram MainButton va BackButton */}
             {hasChanges() && !saving && (
-                <>
+                <BottomBar bgColor="#000000">
                     <MainButton
                         color="#2563eb"
                         textColor="#ffffff"
@@ -255,7 +255,7 @@ export const Profile = () => {
                         onClick={handleCancel}
                     />
                     {/* <BackButton onClick={handleCancel} /> */}
-                </>
+                </BottomBar>
             )}
 
             {/* Loading overlay */}
