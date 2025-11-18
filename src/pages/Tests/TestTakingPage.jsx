@@ -5,10 +5,12 @@ import { TopHeader } from "../../components/ui";
 import axiosClient from "../../api/axios-client";
 import { useLocation, useNavigate } from "react-router-dom";
 import { BottomBar, MainButton } from "@twa-dev/sdk/react"
+import { CountdownTimer } from "../../components/CountDownTimer";
 
 export const TestTakingPage = () => {
     const [loading, setLoading] = useState(true);
     const [testData, setTestData] = useState(null);
+    const [timeRemaining, setTimeRemaining] = useState(null);
     const [answers, setAnswers] = useState({});
     const [uploadedImages, setUploadedImages] = useState({});
     const [textAnswers, setTextAnswers] = useState({}); // ✅ Yozma javoblar uchun
@@ -26,6 +28,7 @@ export const TestTakingPage = () => {
 
     // Testni yuklash
     useEffect(() => {
+
         const fetchTest = async () => {
             try {
                 const { data } = await axiosClient.get(`/tests/${testId}`);
@@ -58,11 +61,14 @@ export const TestTakingPage = () => {
         );
     }
 
-    const { name, code, details } = testData;
+    const { name, code, details, start_time, end_time } = testData;
+
     const allQuestions = {
         ...details.questions_1_32,
         ...details.questions_33_35,
     };
+
+    const isTestNotStarted = new Date().getTime() < new Date(start_time).getTime();
 
     const handleAnswerSelect = (questionId, answer) => {
         setAnswers((prev) => ({
@@ -165,9 +171,9 @@ export const TestTakingPage = () => {
                 transition: Zoom,
             });
 
-            setTimeout(() => {
-                navigate("/");
-            }, 2000);
+            // setTimeout(() => {
+            //     navigate("/");
+            // }, 2000);
         } catch (error) {
             console.error("Yuborishda xatolik:", error);
             toast.error("Yuborishda xatolik yuz berdi!", {
@@ -386,6 +392,12 @@ export const TestTakingPage = () => {
                     <p className="text-xs text-gray-500 text-right">{progressPercentage}% tayyor</p>
                 </div>
 
+                {isTestNotStarted && (
+                    <div className="bg-yellow-100 text-yellow-800 p-3 rounded-lg mb-4 border border-red-700">
+                        <CountdownTimer deadline={start_time} />
+                    </div>
+                )}
+
                 {/* Variantli savollar */}
                 <div className="space-y-4 mb-8">
                     {Object.entries(allQuestions).map(([num, q]) => {
@@ -431,13 +443,13 @@ export const TestTakingPage = () => {
                 {/* <button
                     onClick={handleSubmit}
                     disabled={isSubmitted || (Object.keys(answers).length === 0 && Object.keys(uploadedImages).length === 0)}
-                    className={`w-full py-3 rounded-xl font-medium text-white ${isSubmitted ? "bg-gray-400 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700"} transition-colors mb-6`}
+                    className={`w-full py-3 rounded-xl font-medium text-white ${isSubmitted || isTestNotStarted ? "bg-gray-400 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700"} transition-colors mb-6`}
                 >
                     Javoblarni yuborish
                 </button> */}
 
                 <BottomBar bgColor="#000000">
-                    {!isSubmitted ? (
+                    {!isSubmitted && !isTestNotStarted ? (
                         <MainButton
                             color="#2563eb"
                             textColor="#ffffff"

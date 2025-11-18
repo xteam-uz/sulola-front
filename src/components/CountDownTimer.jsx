@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 
-export const CountdownTimer = () => {
-    const deadline = new Date("2025-11-15T12:00:00").getTime();
 
-    const [timeLeft, setTimeLeft] = useState(getTimeLeft(deadline));
+export const CountdownTimer = ({ deadline }) => {
+    const deadlineTime = new Date(deadline).getTime();
+    const [timeLeft, setTimeLeft] = useState(getTimeLeft(deadlineTime));
 
     function getTimeLeft(target) {
         const now = new Date().getTime();
@@ -11,10 +11,9 @@ export const CountdownTimer = () => {
 
         if (diff <= 0) return { days: 0, hours: 0, minutes: 0, seconds: 0 };
 
-        const totalHours = Math.floor(diff / (1000 * 60 * 60)); // jami soat
+        const totalHours = Math.floor(diff / (1000 * 60 * 60));
         const minutes = Math.floor((diff / (1000 * 60)) % 60);
         const seconds = Math.floor((diff / 1000) % 60);
-
         const days = Math.floor(diff / (1000 * 60 * 60 * 24));
 
         return { days, totalHours, minutes, seconds };
@@ -22,10 +21,10 @@ export const CountdownTimer = () => {
 
     useEffect(() => {
         const timer = setInterval(() => {
-            setTimeLeft(getTimeLeft(deadline));
+            setTimeLeft(getTimeLeft(deadlineTime));
         }, 1000);
         return () => clearInterval(timer);
-    }, []);
+    }, [deadlineTime]);
 
     return (
         <>
@@ -44,4 +43,4 @@ export const CountdownTimer = () => {
             </p>
         </>
     );
-}
+};
