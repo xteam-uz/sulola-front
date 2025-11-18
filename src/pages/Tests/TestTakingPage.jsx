@@ -317,15 +317,15 @@ export const TestTakingPage = () => {
                         <MainButton
                             color="#2563eb"
                             textColor="#ffffff"
-                            text="Javoblarni yuborish"
+                            text="📤 Javoblarni yuborish"
                             progress={false}
                             onClick={handleSubmit}
                         />
                     ) : (
                         <MainButton
-                            color="#2563eb"
+                            color="#438ea4"
                             textColor="#ffffff"
-                            text="Asosiy sahifaga qaytish"
+                            text="🏠 Asosiy sahifaga qaytish"
                             progress={false}
                             onClick={() => navigate('/')}
                         />
