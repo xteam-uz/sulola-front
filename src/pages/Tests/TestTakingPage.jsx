@@ -290,17 +290,13 @@ export const TestTakingPage = () => {
                     ))}
                 </div>
 
-                {/* Javob yuborish tugmasi */}
-                {/* <div className="bottom-12 left-0 right-0 bg-white border-t border-gray-200 p-4 shadow-lg">
-                    <button
-                        onClick={handleSubmit}
-                        className="w-full py-4 bg-blue-600 text-white rounded-xl font-semibold shadow-lg hover:bg-blue-700 transition-colors"
-                    >
-                        Javoblarni jo'natish
-                    </button>
-                </div> */}
-                <BottomBar bgColor="#2563EB">
-                    <MainButton text="Javoblarni jo'natish" onClick={handleSubmit} />
+                <BottomBar bgColor="#00000">
+                    <MainButton
+                        color="#2563eb"
+                        textColor="#ffffff"
+                        text="Javoblarni yuborish"
+                        progress={false}
+                        onClick={handleSubmit} />
                 </BottomBar>
             </div>
             <ToastContainer position="bottom-center" autoClose={5000} theme="light" transition={Zoom} />
