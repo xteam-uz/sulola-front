@@ -165,6 +165,7 @@ export const TestTakerDashboard = () => {
                                 value={testCode}
                                 onChange={(e) => setTestCode(e.target.value)}
                                 placeholder="Masalan: ABC123"
+                                autoFocus
                                 required
                             />
 

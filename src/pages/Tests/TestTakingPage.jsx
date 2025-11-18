@@ -11,6 +11,7 @@ export const TestTakingPage = () => {
     const [testData, setTestData] = useState(null);
     const [answers, setAnswers] = useState({});
     const [uploadedImages, setUploadedImages] = useState({});
+    const [textAnswers, setTextAnswers] = useState({}); // ✅ Yozma javoblar uchun
     const [showCamera, setShowCamera] = useState(false);
     const [cameraStream, setCameraStream] = useState(null);
     const [capturedImage, setCapturedImage] = useState(null);
@@ -20,7 +21,6 @@ export const TestTakingPage = () => {
     const canvasRef = useRef(null);
 
     const navigate = useNavigate();
-
     const { state } = useLocation();
     const testId = state?.testId;
 
@@ -71,15 +71,54 @@ export const TestTakingPage = () => {
         }));
     };
 
-    const answeredCount = Object.keys(answers).length;
-    const totalQuestions = Object.keys(allQuestions).length + 10; // 36–45 rasmli qism ham qo‘shiladi
+    // Yozma javoblarni saqlash
+    const handleTextAnswerChange = (questionNum, variantIndex, value) => {
+        setTextAnswers((prev) => ({
+            ...prev,
+            [questionNum]: {
+                ...prev[questionNum],
+                [variantIndex]: value,
+            },
+        }));
+    };
+
+    // Variantlar sonini aniqlash funksiyasi
+    const getOptionsForQuestion = (questionNum) => {
+        const num = Number(questionNum);
+        // 33, 34, 35 savollar uchun 6 ta variant
+        if (num >= 33 && num <= 35) {
+            return ["A", "B", "C", "D", "E", "F"];
+        }
+        // Qolgan savollar uchun 4 ta variant
+        return ["A", "B", "C", "D"];
+    };
+
+    // answeredCount va progressni to'g'ri hisoblash
+    const answeredCount =
+        Object.keys(answers).length +
+        Object.keys(uploadedImages).length +
+        Object.keys(textAnswers).length;
+
+    const totalQuestions = Object.keys(allQuestions).length + 10;
     const progressPercentage = Math.round((answeredCount / totalQuestions) * 100);
 
-    // Javoblarni yuborish
+    // handleSubmit funksiyasini yangilash
     const handleSubmit = async () => {
-        if (answeredCount === 0) {
+        const totalAnswered =
+            Object.keys(answers).length +
+            Object.keys(uploadedImages).length +
+            Object.keys(textAnswers).length;
+
+        if (totalAnswered === 0) {
             toast.error("Hech qanday javob belgilanmagan!");
             return;
+        }
+
+        if (totalAnswered < totalQuestions) {
+            const confirmSubmit = window.confirm(
+                `Siz ${totalQuestions} ta savoldan faqat ${totalAnswered} tasiga javob berdingiz. Baribir yuborasizmi?`
+            );
+            if (!confirmSubmit) return;
         }
 
         const questions_1_32 = {};
@@ -91,18 +130,28 @@ export const TestTakingPage = () => {
             else if (qid >= 33 && qid <= 35) questions_33_35[qid] = { correct_answer: answer };
         });
 
+        // ✅ questions_36_45 ni mode ga qarab yuborish
+        const questions36_45 =
+            details.questions_36_45.mode === "image"
+                ? {
+                    mode: "image",
+                    images: uploadedImages,
+                }
+                : {
+                    mode: "write",
+                    answers: textAnswers,
+                };
+
         const submissionData = {
             type: details.type,
             questions_1_32,
             questions_33_35,
-            questions_36_45: {
-                mode: "image",
-                images: uploadedImages,
-            },
+            questions_36_45: questions36_45,
         };
 
         try {
             await axiosClient.post("/tests/save", submissionData);
+            console.log(submissionData);
             setIsSubmitted(true);
             toast.success("Javoblar muvaffaqiyatli yuborildi!", {
                 position: "top-center",
@@ -115,7 +164,10 @@ export const TestTakingPage = () => {
                 theme: "light",
                 transition: Zoom,
             });
-            // navigate("/");
+
+            setTimeout(() => {
+                navigate("/");
+            }, 2000);
         } catch (error) {
             console.error("Yuborishda xatolik:", error);
             toast.error("Yuborishda xatolik yuz berdi!", {
@@ -130,6 +182,87 @@ export const TestTakingPage = () => {
                 transition: Zoom,
             });
         }
+    };
+
+    const render36_45Questions = () => {
+        const q36_45 = details.questions_36_45;
+
+        if (q36_45.mode === "image") {
+            // Rasmli savollar (eski variant)
+            return (
+                <div className="space-y-4 mb-24">
+                    {Array.from({ length: 10 }, (_, i) => 36 + i).map((num) => (
+                        <div
+                            key={num}
+                            className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex flex-col items-center"
+                        >
+                            <h3 className="font-semibold text-gray-800 mb-3">
+                                {num}-savol
+                            </h3>
+                            {uploadedImages[num] ? (
+                                <img
+                                    src={uploadedImages[num]}
+                                    alt={`Savol ${num}`}
+                                    className="w-48 h-48 object-cover rounded-lg border mb-3"
+                                />
+                            ) : (
+                                <div className="w-48 h-48 bg-gray-100 border rounded-lg mb-3 flex items-center justify-center text-gray-400">
+                                    Rasm yo'q
+                                </div>
+                            )}
+                            <button
+                                onClick={() => handleOpenCamera(num)}
+                                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2"
+                            >
+                                <Camera size={18} /> Rasmga olish
+                            </button>
+                        </div>
+                    ))}
+                </div>
+            );
+        } else if (q36_45.mode === "write") {
+            // Yozma savollar (yangi variant)
+            return (
+                <div className="space-y-4 mb-24">
+                    {Object.entries(q36_45.questions).map(([qNum, qData]) => {
+                        const variantCount = qData.variant_count || 1;
+                        return (
+                            <div
+                                key={qNum}
+                                className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100"
+                            >
+                                <h3 className="font-semibold text-gray-800 mb-3">
+                                    {qNum}-savol (Yozma)
+                                    <span className="ml-2 text-xs text-purple-600 font-normal">
+                                        ({variantCount} ta variant)
+                                    </span>
+                                </h3>
+                                <div className="space-y-3">
+                                    {Array.from({ length: variantCount }, (_, i) => (
+                                        <div key={i}>
+                                            <label className="block text-sm text-gray-600 mb-1">
+                                                Variant {i + 1}:
+                                            </label>
+                                            <textarea
+                                                value={textAnswers[qNum]?.[i] || ""}
+                                                onChange={(e) =>
+                                                    handleTextAnswerChange(qNum, i, e.target.value)
+                                                }
+                                                placeholder={`${qNum}-savol, ${i + 1}-variant javobini kiriting...`}
+                                                className="w-full p-3 border border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none resize-none"
+                                                rows={3}
+                                            />
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+            );
+        }
+
+        return null;
     };
 
     // Kamera funksiyalari
@@ -255,62 +388,53 @@ export const TestTakingPage = () => {
 
                 {/* Variantli savollar */}
                 <div className="space-y-4 mb-8">
-                    {Object.entries(allQuestions).map(([num, q]) => (
-                        <div
-                            key={num}
-                            className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100"
-                        >
-                            <h3 className="font-semibold text-gray-800 mb-3">
-                                {num}-savol
-                            </h3>
-                            <div className="grid grid-cols-4 gap-2">
-                                {["A", "B", "C", "D"].map((opt) => (
-                                    <button
-                                        key={opt}
-                                        onClick={() => handleAnswerSelect(num, opt)}
-                                        className={`py-2.5 rounded-lg font-medium text-sm transition-all ${answers[num] === opt
-                                            ? "bg-blue-600 text-white shadow-md"
-                                            : "bg-white text-gray-700 border border-gray-300 hover:border-blue-400 hover:bg-blue-50"
-                                            }`}
-                                    >
-                                        {opt}
-                                    </button>
-                                ))}
+                    {Object.entries(allQuestions).map(([num, q]) => {
+                        const options = getOptionsForQuestion(num);
+                        const gridCols = options.length === 6 ? "grid-cols-3" : "grid-cols-4";
+
+                        return (
+                            <div
+                                key={num}
+                                className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100"
+                            >
+                                <h3 className="font-semibold text-gray-800 mb-3">
+                                    {num}-savol
+                                    {Number(num) >= 33 && Number(num) <= 35 && (
+                                        <span className="ml-2 text-xs text-blue-600 font-normal">
+                                            (6 ta variant)
+                                        </span>
+                                    )}
+                                </h3>
+                                <div className={`grid ${gridCols} gap-2`}>
+                                    {options.map((opt) => (
+                                        <button
+                                            key={opt}
+                                            onClick={() => handleAnswerSelect(num, opt)}
+                                            className={`py-2.5 rounded-lg font-medium text-sm transition-all ${answers[num] === opt
+                                                ? "bg-blue-600 text-white shadow-md"
+                                                : "bg-white text-gray-700 border border-gray-300 hover:border-blue-400 hover:bg-blue-50"
+                                                }`}
+                                        >
+                                            {opt}
+                                        </button>
+                                    ))}
+                                </div>
                             </div>
-                        </div>
-                    ))}
+                        );
+                    })}
                 </div>
 
-                {/* Rasmli savollar */}
-                <div className="space-y-4 mb-24">
-                    {Array.from({ length: 10 }, (_, i) => 36 + i).map((num) => (
-                        <div
-                            key={num}
-                            className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex flex-col items-center"
-                        >
-                            <h3 className="font-semibold text-gray-800 mb-3">
-                                {num}-savol (Rasm)
-                            </h3>
-                            {uploadedImages[num] ? (
-                                <img
-                                    src={uploadedImages[num]}
-                                    alt={`Savol ${num}`}
-                                    className="w-48 h-48 object-cover rounded-lg border mb-3"
-                                />
-                            ) : (
-                                <div className="w-48 h-48 bg-gray-100 border rounded-lg mb-3 flex items-center justify-center text-gray-400">
-                                    Rasm yo‘q
-                                </div>
-                            )}
-                            <button
-                                onClick={() => handleOpenCamera(num)}
-                                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2"
-                            >
-                                <Camera size={18} /> Rasm olish
-                            </button>
-                        </div>
-                    ))}
-                </div>
+                {/* Rasmli yoki textli savollar */}
+                {render36_45Questions()}
+
+                {/* TEST UCHUN */}
+                {/* <button
+                    onClick={handleSubmit}
+                    disabled={isSubmitted || (Object.keys(answers).length === 0 && Object.keys(uploadedImages).length === 0)}
+                    className={`w-full py-3 rounded-xl font-medium text-white ${isSubmitted ? "bg-gray-400 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700"} transition-colors mb-6`}
+                >
+                    Javoblarni yuborish
+                </button> */}
 
                 <BottomBar bgColor="#000000">
                     {!isSubmitted ? (
