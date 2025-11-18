@@ -290,7 +290,7 @@ export const TestTakingPage = () => {
                     ))}
                 </div>
 
-                <BottomBar bgColor="#00000">
+                <BottomBar bgColor="#000000">
                     <MainButton
                         color="#2563eb"
                         textColor="#ffffff"
