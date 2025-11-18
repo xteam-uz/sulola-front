@@ -57,7 +57,7 @@ export const TestTakerDashboard = () => {
                 console.log("Navigate bajarildi");
             } else {
                 toast.warning('Bunday kodli test bazada mavjud emas', {
-                    position: "bottom-center",
+                    position: "top-center",
                     autoClose: 5000,
                     hideProgressBar: false,
                     closeOnClick: false,
@@ -72,7 +72,7 @@ export const TestTakerDashboard = () => {
             console.error("API xatolik:", error);
             console.error("Response:", error.response?.data);
             toast.error(error.response?.data, {
-                position: "bottom-center",
+                position: "top-center",
                 autoClose: 5000,
                 hideProgressBar: false,
                 closeOnClick: false,
@@ -195,7 +195,7 @@ export const TestTakerDashboard = () => {
                 </form>
             )}
             <ToastContainer
-                position="bottom-center"
+                position="top-center"
                 autoClose={5000}
                 hideProgressBar={false}
                 newestOnTop={false}

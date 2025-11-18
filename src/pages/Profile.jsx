@@ -52,7 +52,7 @@ export const Profile = () => {
             });
 
             toast.success('Malumotlar saqlandi', {
-                position: "bottom-center",
+                position: "top-center",
                 autoClose: 2000,
                 hideProgressBar: false,
                 closeOnClick: false,
@@ -271,7 +271,7 @@ export const Profile = () => {
             )}
 
             <ToastContainer
-                position="bottom-center"
+                position="top-center"
                 autoClose={5000}
                 hideProgressBar={false}
                 newestOnTop={false}

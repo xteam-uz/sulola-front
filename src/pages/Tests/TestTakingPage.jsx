@@ -105,7 +105,7 @@ export const TestTakingPage = () => {
             await axiosClient.post("/tests/save", submissionData);
             setIsSubmitted(true);
             toast.success("Javoblar muvaffaqiyatli yuborildi!", {
-                position: "bottom-center",
+                position: "top-center",
                 autoClose: 2000,
                 hideProgressBar: false,
                 closeOnClick: false,
@@ -119,7 +119,7 @@ export const TestTakingPage = () => {
         } catch (error) {
             console.error("Yuborishda xatolik:", error);
             toast.error("Yuborishda xatolik yuz berdi!", {
-                position: "bottom-center",
+                position: "top-center",
                 autoClose: 2000,
                 hideProgressBar: false,
                 closeOnClick: false,
@@ -333,7 +333,7 @@ export const TestTakingPage = () => {
                 </BottomBar>
 
                 <ToastContainer
-                    position="bottom-center"
+                    position="top-center"
                     autoClose={5000}
                     hideProgressBar={false}
                     newestOnTop={false}
