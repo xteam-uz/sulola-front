@@ -15,6 +15,7 @@ export const TestTakingPage = () => {
     const [cameraStream, setCameraStream] = useState(null);
     const [capturedImage, setCapturedImage] = useState(null);
     const [currentImageQuestion, setCurrentImageQuestion] = useState(null);
+    const [isSubmitted, setIsSubmitted] = useState(false);
     const videoRef = useRef(null);
     const canvasRef = useRef(null);
 
@@ -102,6 +103,7 @@ export const TestTakingPage = () => {
 
         try {
             await axiosClient.post("/tests/save", submissionData);
+            setIsSubmitted(true);
             toast.success("Javoblar muvaffaqiyatli yuborildi!", {
                 position: "bottom-center",
                 autoClose: 2000,
@@ -311,12 +313,23 @@ export const TestTakingPage = () => {
                 </div>
 
                 <BottomBar bgColor="#000000">
-                    <MainButton
-                        color="#2563eb"
-                        textColor="#ffffff"
-                        text="Javoblarni yuborish"
-                        progress={false}
-                        onClick={handleSubmit} />
+                    {!isSubmitted ? (
+                        <MainButton
+                            color="#2563eb"
+                            textColor="#ffffff"
+                            text="Javoblarni yuborish"
+                            progress={false}
+                            onClick={handleSubmit}
+                        />
+                    ) : (
+                        <MainButton
+                            color="#2563eb"
+                            textColor="#ffffff"
+                            text="Asosiy sahifaga qaytish"
+                            progress={false}
+                            onClick={() => navigate('/')}
+                        />
+                    )}
                 </BottomBar>
 
                 <ToastContainer
