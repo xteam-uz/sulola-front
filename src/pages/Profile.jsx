@@ -243,14 +243,14 @@ export const Profile = () => {
                     <MainButton
                         color="#2563eb"
                         textColor="#ffffff"
-                        text="✅ O'zgarishlarni saqlash"
+                        text="O'zgarishlarni saqlash"
                         onClick={handleSave}
                         progress={false}
                     />
                     <SecondaryButton
                         color="#6b7280"
                         textColor="#ffffff"
-                        text="❎ Bekor qilish"
+                        text="Bekor qilish"
                         position="bottom"
                         onClick={handleCancel}
                     />
