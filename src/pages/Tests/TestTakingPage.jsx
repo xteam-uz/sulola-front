@@ -102,11 +102,31 @@ export const TestTakingPage = () => {
 
         try {
             await axiosClient.post("/tests/save", submissionData);
-            toast.success("Javoblar muvaffaqiyatli yuborildi!", { transition: Zoom });
-            navigate("/");
+            toast.success("Javoblar muvaffaqiyatli yuborildi!", {
+                position: "bottom-center",
+                autoClose: 2000,
+                hideProgressBar: false,
+                closeOnClick: false,
+                pauseOnHover: true,
+                draggable: true,
+                progress: undefined,
+                theme: "light",
+                transition: Zoom,
+            });
+            // navigate("/");
         } catch (error) {
             console.error("Yuborishda xatolik:", error);
-            toast.error("Yuborishda xatolik yuz berdi!", { transition: Zoom });
+            toast.error("Yuborishda xatolik yuz berdi!", {
+                position: "bottom-center",
+                autoClose: 2000,
+                hideProgressBar: false,
+                closeOnClick: false,
+                pauseOnHover: true,
+                draggable: true,
+                progress: undefined,
+                theme: "light",
+                transition: Zoom,
+            });
         }
     };
 
@@ -298,8 +318,22 @@ export const TestTakingPage = () => {
                         progress={false}
                         onClick={handleSubmit} />
                 </BottomBar>
+
+                <ToastContainer
+                    position="bottom-center"
+                    autoClose={5000}
+                    hideProgressBar={false}
+                    newestOnTop={false}
+                    closeOnClick={false}
+                    rtl={false}
+                    pauseOnFocusLoss
+                    draggable
+                    pauseOnHover
+                    theme="light"
+                    transition={Zoom}
+                />
             </div>
-            <ToastContainer position="bottom-center" autoClose={5000} theme="light" transition={Zoom} />
+
         </div>
     );
 };
