@@ -13,12 +13,13 @@ export const TestTakingPage = () => {
     const [timeRemaining, setTimeRemaining] = useState(null);
     const [answers, setAnswers] = useState({});
     const [uploadedImages, setUploadedImages] = useState({});
-    const [textAnswers, setTextAnswers] = useState({}); // ✅ Yozma javoblar uchun
+    const [textAnswers, setTextAnswers] = useState({});
     const [showCamera, setShowCamera] = useState(false);
     const [cameraStream, setCameraStream] = useState(null);
     const [capturedImage, setCapturedImage] = useState(null);
     const [currentImageQuestion, setCurrentImageQuestion] = useState(null);
     const [isSubmitted, setIsSubmitted] = useState(false);
+    const [isTestExpired, setIsTestExpired] = useState(false); // ✅ Test vaqti tugashi
     const videoRef = useRef(null);
     const canvasRef = useRef(null);
 
@@ -28,12 +29,17 @@ export const TestTakingPage = () => {
 
     // Testni yuklash
     useEffect(() => {
-
         const fetchTest = async () => {
             try {
                 const { data } = await axiosClient.get(`/tests/${testId}`);
-                // console.log("Test ma'lumotlari:", data);
                 setTestData(data.test);
+
+                // Test vaqti tugagan yoki yo'qligini tekshirish
+                const endTime = new Date(data.test.end_time).getTime();
+                const now = new Date().getTime();
+                if (now > endTime) {
+                    setIsTestExpired(true);
+                }
             } catch (error) {
                 console.error("Test yuklashda xatolik:", error);
                 toast.error("Test ma'lumotlarini yuklashda xatolik!");
@@ -71,6 +77,12 @@ export const TestTakingPage = () => {
     const isTestNotStarted = new Date().getTime() < new Date(start_time).getTime();
 
     const handleAnswerSelect = (questionId, answer) => {
+        // Agar test vaqti tugagan bo'lsa, javob tanlashga ruxsat berma
+        if (isTestExpired) {
+            toast.warning("Test vaqti tugagan! Javob yuborib bo'lmaydi.");
+            return;
+        }
+
         setAnswers((prev) => ({
             ...prev,
             [questionId]: answer,
@@ -79,6 +91,11 @@ export const TestTakingPage = () => {
 
     // Yozma javoblarni saqlash
     const handleTextAnswerChange = (questionNum, variantIndex, value) => {
+        if (isTestExpired) {
+            toast.warning("Test vaqti tugagan! Javob yuborib bo'lmaydi.");
+            return;
+        }
+
         setTextAnswers((prev) => ({
             ...prev,
             [questionNum]: {
@@ -91,15 +108,12 @@ export const TestTakingPage = () => {
     // Variantlar sonini aniqlash funksiyasi
     const getOptionsForQuestion = (questionNum) => {
         const num = Number(questionNum);
-        // 33, 34, 35 savollar uchun 6 ta variant
         if (num >= 33 && num <= 35) {
             return ["A", "B", "C", "D", "E", "F"];
         }
-        // Qolgan savollar uchun 4 ta variant
         return ["A", "B", "C", "D"];
     };
 
-    // answeredCount va progressni to'g'ri hisoblash
     const answeredCount =
         Object.keys(answers).length +
         Object.keys(uploadedImages).length +
@@ -110,6 +124,18 @@ export const TestTakingPage = () => {
 
     // handleSubmit funksiyasini yangilash
     const handleSubmit = async () => {
+        // Agar test vaqti tugagan bo'lsa
+        if (isTestExpired) {
+            toast.error("Test vaqti tugagan! Javob yuborib bo'lmaydi.");
+            return;
+        }
+
+        // Agar test hali boshlanmagan bo'lsa
+        if (isTestNotStarted) {
+            toast.warning("Test hali boshlanmagan!");
+            return;
+        }
+
         const totalAnswered =
             Object.keys(answers).length +
             Object.keys(uploadedImages).length +
@@ -136,7 +162,6 @@ export const TestTakingPage = () => {
             else if (qid >= 33 && qid <= 35) questions_33_35[qid] = { correct_answer: answer };
         });
 
-        // ✅ questions_36_45 ni mode ga qarab yuborish
         const questions36_45 =
             details.questions_36_45.mode === "image"
                 ? {
@@ -170,10 +195,6 @@ export const TestTakingPage = () => {
                 theme: "light",
                 transition: Zoom,
             });
-
-            // setTimeout(() => {
-            //     navigate("/");
-            // }, 2000);
         } catch (error) {
             console.error("Yuborishda xatolik:", error);
             toast.error("Yuborishda xatolik yuz berdi!", {
@@ -194,7 +215,6 @@ export const TestTakingPage = () => {
         const q36_45 = details.questions_36_45;
 
         if (q36_45.mode === "image") {
-            // Rasmli savollar (eski variant)
             return (
                 <div className="space-y-4 mb-24">
                     {Array.from({ length: 10 }, (_, i) => 36 + i).map((num) => (
@@ -217,8 +237,12 @@ export const TestTakingPage = () => {
                                 </div>
                             )}
                             <button
-                                onClick={() => handleOpenCamera(num)}
-                                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2"
+                                onClick={() => !isTestExpired && handleOpenCamera(num)}
+                                disabled={isTestExpired}
+                                className={`px-4 py-2 rounded-lg flex items-center gap-2 ${isTestExpired
+                                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                    : 'bg-blue-600 text-white hover:bg-blue-700'
+                                    }`}
                             >
                                 <Camera size={18} /> Rasmga olish
                             </button>
@@ -227,7 +251,6 @@ export const TestTakingPage = () => {
                 </div>
             );
         } else if (q36_45.mode === "write") {
-            // Yozma savollar (yangi variant)
             return (
                 <div className="space-y-4 mb-24">
                     {Object.entries(q36_45.questions).map(([qNum, qData]) => {
@@ -257,6 +280,7 @@ export const TestTakingPage = () => {
                                                 placeholder={`${qNum}-savol, ${i + 1}-variant javobini kiriting...`}
                                                 className="w-full p-3 border border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none resize-none"
                                                 rows={3}
+                                                disabled={isTestExpired}
                                             />
                                         </div>
                                     ))}
@@ -273,6 +297,11 @@ export const TestTakingPage = () => {
 
     // Kamera funksiyalari
     const handleOpenCamera = async (qNumber) => {
+        if (isTestExpired) {
+            toast.warning("Test vaqti tugagan!");
+            return;
+        }
+
         setCurrentImageQuestion(qNumber);
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ video: true });
@@ -314,6 +343,16 @@ export const TestTakingPage = () => {
         setShowCamera(false);
         setCapturedImage(null);
         setCurrentImageQuestion(null);
+    };
+
+    // Test vaqti tugaganda chaqiriladigan callback
+    const handleTestExpire = () => {
+        setIsTestExpired(true);
+        toast.error("⏰ Test vaqti tugadi! Endi javob yuborib bo'lmaydi.", {
+            position: "top-center",
+            autoClose: false,
+            theme: "light",
+        });
     };
 
     // Kamera modal
@@ -392,9 +431,13 @@ export const TestTakingPage = () => {
                     <p className="text-xs text-gray-500 text-right">{progressPercentage}% tayyor</p>
                 </div>
 
-                {isTestNotStarted && (
-                    <div className="bg-yellow-100 text-yellow-800 p-3 rounded-lg mb-4 border border-red-700">
-                        <CountdownTimer deadline={start_time} />
+                {/* Test hali boshlanmagan yoki tugagan */}
+                {(isTestNotStarted || isTestExpired) && (
+                    <div className={`${isTestExpired ? 'bg-red-100 border-red-300' : 'bg-yellow-100 border-yellow-300'} p-3 rounded-lg mb-4 border`}>
+                        <CountdownTimer
+                            deadline={isTestExpired ? end_time : start_time}
+                            onExpire={isTestExpired ? null : handleTestExpire}
+                        />
                     </div>
                 )}
 
@@ -422,9 +465,12 @@ export const TestTakingPage = () => {
                                         <button
                                             key={opt}
                                             onClick={() => handleAnswerSelect(num, opt)}
-                                            className={`py-2.5 rounded-lg font-medium text-sm transition-all ${answers[num] === opt
-                                                ? "bg-blue-600 text-white shadow-md"
-                                                : "bg-white text-gray-700 border border-gray-300 hover:border-blue-400 hover:bg-blue-50"
+                                            disabled={isTestExpired}
+                                            className={`py-2.5 rounded-lg font-medium text-sm transition-all ${isTestExpired
+                                                ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                                                : answers[num] === opt
+                                                    ? "bg-blue-600 text-white shadow-md"
+                                                    : "bg-white text-gray-700 border border-gray-300 hover:border-blue-400 hover:bg-blue-50"
                                                 }`}
                                         >
                                             {opt}
@@ -439,17 +485,8 @@ export const TestTakingPage = () => {
                 {/* Rasmli yoki textli savollar */}
                 {render36_45Questions()}
 
-                {/* TEST UCHUN */}
-                {/* <button
-                    onClick={handleSubmit}
-                    disabled={isSubmitted || (Object.keys(answers).length === 0 && Object.keys(uploadedImages).length === 0)}
-                    className={`w-full py-3 rounded-xl font-medium text-white ${isSubmitted || isTestNotStarted ? "bg-gray-400 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700"} transition-colors mb-6`}
-                >
-                    Javoblarni yuborish
-                </button> */}
-
                 <BottomBar bgColor="#000000">
-                    {!isSubmitted && !isTestNotStarted ? (
+                    {!isSubmitted && !isTestNotStarted && !isTestExpired ? (
                         <MainButton
                             color="#2563eb"
                             textColor="#ffffff"

@@ -13,17 +13,25 @@ export const TestTakerDashboard = () => {
     const [showModal, setShowModal] = useState(false);
     const [testCode, setTestCode] = useState("");
     const [checking, setChecking] = useState(false);
-    const { user } = useStateContext();
+    const [activeTab, setActiveTab] = useState("created");
+
+    const { user, tests, testsLoading } = useStateContext();
 
     const navigate = useNavigate();
 
-    useEffect(() => {
-        setTimeout(() => {
-            setActiveTests([]);
-            setCompletedTests([]);
-            setLoading(false);
-        }, 1000);
-    }, []);
+    // useEffect(() => {
+    //     setTimeout(() => {
+    //         setLoading(false);
+    //     }, 1000);
+    // }, []);
+
+    const filteredTests = (tests || []).filter((test) => {
+        if (activeTab === "created") {
+            return test.status === "upcoming" || test.status === "active";
+        } else {
+            return test.status === "finished" || test.status === "closed";
+        }
+    });
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -86,6 +94,12 @@ export const TestTakerDashboard = () => {
             setChecking(false);
         }
     };
+    const handleTestClick = (testId) => {
+        // To'g'ridan-to'g'ri test sahifasiga o'tish
+        navigate(`/test_taking`, {
+            state: { testId: testId }
+        });
+    };
 
     return (
         <>
@@ -112,8 +126,8 @@ export const TestTakerDashboard = () => {
 
             <div className="px-4 my-6">
                 <div className="mb-6">
-                    <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-base font-bold text-gray-800">Jarayondagi testlar</h3>
+                    <div className="flex items-center justify-center mb-4">
+                        {/* <h3 className="text-base font-bold text-gray-800">Jarayondagi testlar</h3> */}
                         <button
                             onClick={() => setShowModal(true)}
                             className="bg-blue-600 text-white px-4 py-2 rounded-xl text-sm font-medium shadow-md hover:bg-blue-700 transition-colors">
@@ -122,20 +136,99 @@ export const TestTakerDashboard = () => {
                     </div>
 
                     <div className="space-y-3">
-                        {loading ? (
-                            <div className="bg-white rounded-2xl p-12 text-center">
-                                <div className="flex justify-center">
-                                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+                        {/* Tabs */}
+                        <div className="flex space-x-1 bg-gray-100 rounded-xl p-1 mb-4">
+                            <button
+                                onClick={() => setActiveTab("created")}
+                                className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-all ${activeTab === "created"
+                                    ? "bg-white text-blue-600 shadow-sm"
+                                    : "text-gray-600 hover:text-gray-800"
+                                    }`}
+                            >
+                                Jarayondagi testlar
+                            </button>
+                            <button
+                                onClick={() => setActiveTab("taken")}
+                                className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-all ${activeTab === "taken"
+                                    ? "bg-white text-blue-600 shadow-sm"
+                                    : "text-gray-600 hover:text-gray-800"
+                                    }`}
+                            >
+                                Yopilgan testlar
+                            </button>
+                        </div>
+
+                        {/* Test List */}
+                        <div className="space-y-3">
+                            {testsLoading ? (
+                                <div className="bg-white rounded-2xl p-12 text-center">
+                                    <div className="flex justify-center">
+                                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+                                    </div>
+                                    <p className="text-gray-500 mt-4">Yuklanmoqda...</p>
                                 </div>
-                                <p className="text-gray-500 mt-4">Yuklanmoqda...</p>
-                            </div>
-                        ) : (
-                            <div className="bg-white rounded-2xl p-8 text-center shadow-sm">
-                                <p className="text-gray-500">
-                                    Hozircha sizga hech qanday test belgilanmagan.
-                                </p>
-                            </div>
-                        )}
+                            ) : filteredTests.length > 0 ? (
+                                filteredTests.map((test) => (
+                                    <div
+                                        key={test.id}
+                                        className="bg-white rounded-2xl p-4 mb-2 shadow-sm border border-gray-100 hover:shadow-md transition-shadow cursor-pointer"
+                                    >
+                                        <div onClick={() => handleTestClick(test.id)} className="flex items-center justify-between">
+                                            <div className="flex-1">
+                                                <div className="flex items-center space-x-2 mb-2">
+                                                    <h4 className="font-semibold text-gray-800">
+                                                        {test.name}
+                                                    </h4>
+                                                    <span
+                                                        className={`px-2 py-0.5 text-xs rounded-full font-medium ${test.status === "upcoming"
+                                                            ? "bg-green-100 text-green-600"
+                                                            : test.status === "active"
+                                                                ? "bg-blue-100 text-blue-600"
+                                                                : "bg-gray-200 text-gray-600"
+                                                            }`}
+                                                    >
+                                                        {test.status === "upcoming"
+                                                            ? "Kutilmoqda"
+                                                            : test.status === "active"
+                                                                ? "Faol"
+                                                                : "Yopiq"}
+                                                    </span>
+                                                </div>
+                                                <p className="text-gray-700 text-sm mb-2">
+                                                    Fan: {test.science_name}
+                                                </p>
+                                                <div className="flex flex-col gap-1 text-xs text-gray-500">
+                                                    <div className="flex items-center space-x-1">
+                                                        <FileText size={14} />
+                                                        <span>Kod: {test.code}</span>
+                                                    </div>
+                                                    <div className="flex items-center space-x-1">
+                                                        <Clock size={14} />
+                                                        <span>Boshlanish: {test.start_time}</span>
+                                                    </div>
+                                                    <div className="flex items-center space-x-1">
+                                                        <Clock size={14} />
+                                                        <span>Tugash: {test.end_time}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <ChevronRight
+                                                className="text-gray-400 ml-2 flex-shrink-0"
+                                                size={20}
+                                            />
+                                        </div>
+                                    </div>
+                                ))
+                            ) : (
+                                <div className="bg-white rounded-2xl p-8 text-center">
+                                    <p className="text-gray-500">
+                                        {activeTab === "created"
+                                            ? "Hozircha jarayondagi testlar yo'q"
+                                            : "Hozircha yopilgan testlar yo'q"}
+                                    </p>
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
             </div>
