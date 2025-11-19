@@ -3,6 +3,20 @@ import axiosClient from "../../api/axios-client";
 import { useStateContext } from "../../contexts/ContextProvider";
 import { getUserData, initTelegramApp } from "../../telegram/init";
 
+// Xatoliklarni tarjima qilish uchun
+const errorTranslations = {
+    "The first name field must be at least 3 characters.": "Ism kamida 3 ta harfdan iborat bo'lishi kerak.",
+    "The last name field must be at least 3 characters.": "Familiya kamida 3 ta harfdan iborat bo'lishi kerak.",
+    "The first name field is required.": "Ism maydoni to'ldirilishi shart.",
+    "The last name field is required.": "Familiya maydoni to'ldirilishi shart.",
+    "The telegram user id field is required.": "Telegram foydalanuvchi IDsi topilmadi.",
+};
+
+// Xatolikni tarjima qilish funksiyasi
+const translateError = (error) => {
+    return errorTranslations[error] || error;
+};
+
 export const Signup = () => {
     const { setUser, setToken } = useStateContext();
     const firstNameRef = useRef();
@@ -19,13 +33,6 @@ export const Signup = () => {
 
     const onSubmit = (e) => {
         e.preventDefault();
-
-        if (!telegramUser?.id) {
-            setErrors({
-                telegram_id: ["Telegram foydalanuvchi ma'lumoti topilmadi"],
-            });
-            return;
-        }
 
         const payload = {
             first_name: firstNameRef.current.value,
@@ -44,10 +51,16 @@ export const Signup = () => {
             })
             .catch((error) => {
                 const response = error.response;
-                if (response) {
-                    setErrors(response.data.errors);
+                if (response && response.data) {
+                    if (response.data.data) {
+                        setErrors(response.data.data);
+                    } else if (response.data.errors) {
+                        setErrors(response.data.errors);
+                    } else {
+                        setErrors({ general: ["Xatolik yuz berdi"] });
+                    }
                 } else {
-                    setErrors({ general: ["Xatolik chiqdi"] });
+                    setErrors({ general: ["Tarmoq xatosi yuz berdi"] });
                 }
             });
     };
@@ -58,13 +71,20 @@ export const Signup = () => {
                 Ro'yxatdan o'tish
             </h1>
 
-            {errors && (
-                <div className="text-red-500 text-sm mb-4">
-                    {Object.keys(errors).map((key) => (
-                        <p key={key}>{errors[key][0]}</p>
+            {/* Umumiy xatoliklarni ko'rsatish */}
+            {errors && errors.general ? (
+                <div className="bg-red-50 border border-red-300 text-red-800 px-4 py-3 rounded mb-4">
+                    {errors.general.map((error, index) => (
+                        <p key={index}>{error}</p>
                     ))}
                 </div>
-            )}
+            ) :
+                errors?.telegram_user_id && (
+                    <div className="bg-red-50 border border-red-300 text-red-800 px-4 py-3 rounded mb-4">
+                        <p>{translateError(errors.telegram_user_id[0])}</p>
+                    </div>
+
+                )}
 
             <div className="grid md:grid-cols-2 md:gap-6">
                 {/* Ism */}
@@ -90,6 +110,12 @@ export const Signup = () => {
                     >
                         Ism
                     </label>
+                    {/* Xatolikni ko'rsatish */}
+                    {errors?.first_name && (
+                        <p className="text-red-500 text-xs mt-1">
+                            {translateError(errors.first_name[0])}
+                        </p>
+                    )}
                 </div>
 
                 {/* Familiya */}
@@ -115,6 +141,12 @@ export const Signup = () => {
                     >
                         Familiya
                     </label>
+                    {/* Xatolikni ko'rsatish */}
+                    {errors?.last_name && (
+                        <p className="text-red-500 text-xs mt-1">
+                            {translateError(errors.last_name[0])}
+                        </p>
+                    )}
                 </div>
             </div>
 
