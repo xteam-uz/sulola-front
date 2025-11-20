@@ -282,9 +282,9 @@ export const Profile = () => {
 
             {/* Telegram MainButton va BackButton */}
             {hasChanges() && !saving && (
-                <BottomBar bgColor="#000000">
+                <BottomBar bgColor="#ffffff">
                     <MainButton
-                        color="#2563eb"
+                        color="#2b7fff"
                         textColor="#ffffff"
                         text="✅ O'zgarishlarni saqlash"
                         onClick={handleSave}
