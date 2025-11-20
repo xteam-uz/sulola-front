@@ -549,10 +549,10 @@ export const TestTakingPage = () => {
                 )}*/}
                 {/* END TEST UCHUN*/}
 
-                <BottomBar bgColor="#000000">
+                <BottomBar bgColor="#ffffff">
                     {!isSubmitted && !isTestNotStarted && !isTestExpired ? (
                         <MainButton
-                            color="#2563eb"
+                            color="#2b7fff"
                             textColor="#ffffff"
                             text="📤 Javoblarni yuborish"
                             progress={false}
@@ -560,7 +560,7 @@ export const TestTakingPage = () => {
                         />
                     ) : (
                         <MainButton
-                            color="#438ea4"
+                            color="#2b7fff"
                             textColor="#ffffff"
                             text="🏠 Asosiy sahifaga qaytish"
                             progress={false}
