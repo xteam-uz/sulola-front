@@ -1,19 +1,19 @@
-import { useLayoutEffect, useRef, useState } from 'react';
-import { gsap } from 'gsap';
+import { useLayoutEffect, useRef, useState } from "react";
+import { gsap } from "gsap";
 // use your own icon import if react-icons is not available
-import { GoArrowUpRight } from 'react-icons/go';
-import { Link } from 'react-router-dom';
+import { GoArrowUpRight } from "react-icons/go";
+import { Link } from "react-router-dom";
 
 export const CardNav = ({
     logo,
-    logoAlt = 'Logo',
+    logoAlt = "Logo",
     items,
-    className = '',
-    ease = 'power3.out',
-    baseColor = '#fff',
+    className = "",
+    ease = "power3.out",
+    baseColor = "#fff",
     menuColor,
     buttonBgColor,
-    buttonTextColor
+    buttonTextColor,
 }) => {
     const [isHamburgerOpen, setIsHamburgerOpen] = useState(false);
     const [isExpanded, setIsExpanded] = useState(false);
@@ -25,19 +25,19 @@ export const CardNav = ({
         const navEl = navRef.current;
         if (!navEl) return 260;
 
-        const isMobile = window.matchMedia('(max-width: 768px)').matches;
+        const isMobile = window.matchMedia("(max-width: 768px)").matches;
         if (isMobile) {
-            const contentEl = navEl.querySelector('.card-nav-content');
+            const contentEl = navEl.querySelector(".card-nav-content");
             if (contentEl) {
                 const wasVisible = contentEl.style.visibility;
                 const wasPointerEvents = contentEl.style.pointerEvents;
                 const wasPosition = contentEl.style.position;
                 const wasHeight = contentEl.style.height;
 
-                contentEl.style.visibility = 'visible';
-                contentEl.style.pointerEvents = 'auto';
-                contentEl.style.position = 'static';
-                contentEl.style.height = 'auto';
+                contentEl.style.visibility = "visible";
+                contentEl.style.pointerEvents = "auto";
+                contentEl.style.position = "static";
+                contentEl.style.height = "auto";
 
                 contentEl.offsetHeight;
 
@@ -60,7 +60,7 @@ export const CardNav = ({
         const navEl = navRef.current;
         if (!navEl) return null;
 
-        gsap.set(navEl, { height: 60, overflow: 'hidden' });
+        gsap.set(navEl, { height: 60, overflow: "hidden" });
         gsap.set(cardsRef.current, { y: 50, opacity: 0 });
 
         const tl = gsap.timeline({ paused: true });
@@ -68,10 +68,14 @@ export const CardNav = ({
         tl.to(navEl, {
             height: calculateHeight,
             duration: 0.4,
-            ease
+            ease,
         });
 
-        tl.to(cardsRef.current, { y: 0, opacity: 1, duration: 0.4, ease, stagger: 0.08 }, '-=0.1');
+        tl.to(
+            cardsRef.current,
+            { y: 0, opacity: 1, duration: 0.4, ease, stagger: 0.08 },
+            "-=0.1",
+        );
 
         return tl;
     };
@@ -110,8 +114,8 @@ export const CardNav = ({
             }
         };
 
-        window.addEventListener('resize', handleResize);
-        return () => window.removeEventListener('resize', handleResize);
+        window.addEventListener("resize", handleResize);
+        return () => window.removeEventListener("resize", handleResize);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isExpanded]);
 
@@ -124,12 +128,12 @@ export const CardNav = ({
             tl.play(0);
         } else {
             setIsHamburgerOpen(false);
-            tl.eventCallback('onReverseComplete', () => setIsExpanded(false));
+            tl.eventCallback("onReverseComplete", () => setIsExpanded(false));
             tl.reverse();
         }
     };
 
-    const setCardRef = i => el => {
+    const setCardRef = (i) => (el) => {
         if (el) cardsRef.current[i] = el;
     };
 
@@ -139,46 +143,70 @@ export const CardNav = ({
         >
             <nav
                 ref={navRef}
-                className={`card-nav ${isExpanded ? 'open' : ''}  block h-[60px] p-0 rounded-xl relative overflow-hidden will-change-[height]`}
+                className={`card-nav ${isExpanded ? "open" : ""}  block h-[60px] p-0 rounded-xl relative overflow-hidden will-change-[height]`}
                 style={{ backgroundColor: baseColor }}
             >
                 <div className="card-nav-top absolute inset-x-0 top-0 h-[60px] flex items-center justify-between p-2 pl-[1.1rem] z-[2]">
                     <div
-                        className={`hamburger-menu ${isHamburgerOpen ? 'open' : ''} group h-full flex flex-col items-center justify-center cursor-pointer gap-[6px] order-2 md:order-none`}
+                        className={`hamburger-menu ${isHamburgerOpen ? "open" : ""} group h-full flex flex-col items-center justify-center cursor-pointer gap-[6px] order-2 md:order-none`}
                         onClick={toggleMenu}
                         role="button"
-                        aria-label={isExpanded ? 'Close menu' : 'Open menu'}
+                        aria-label={isExpanded ? "Close menu" : "Open menu"}
                         tabIndex={0}
-                        style={{ color: menuColor || '#000' }}
+                        style={{ color: menuColor || "#000" }}
                     >
                         <div
-                            className={`hamburger-line w-[30px] h-[2px] bg-current transition-[transform,opacity,margin] duration-300 ease-linear [transform-origin:50%_50%] ${isHamburgerOpen ? 'translate-y-[4px] rotate-45' : ''
-                                } group-hover:opacity-75`}
+                            className={`hamburger-line w-[30px] h-[2px] bg-current transition-[transform,opacity,margin] duration-300 ease-linear [transform-origin:50%_50%] ${
+                                isHamburgerOpen
+                                    ? "translate-y-[4px] rotate-45"
+                                    : ""
+                            } group-hover:opacity-75`}
                         />
                         <div
-                            className={`hamburger-line w-[30px] h-[2px] bg-current transition-[transform,opacity,margin] duration-300 ease-linear [transform-origin:50%_50%] ${isHamburgerOpen ? '-translate-y-[4px] -rotate-45' : ''
-                                } group-hover:opacity-75`}
+                            className={`hamburger-line w-[30px] h-[2px] bg-current transition-[transform,opacity,margin] duration-300 ease-linear [transform-origin:50%_50%] ${
+                                isHamburgerOpen
+                                    ? "-translate-y-[4px] -rotate-45"
+                                    : ""
+                            } group-hover:opacity-75`}
                         />
                     </div>
                     <div className="logo-container  md:absolute md:left-1/2 md:top-1/2 md:-translate-x-1/2 md:-translate-y-1/2 order-1 md:order-none">
-                        <Link to="/" className='flex items-center gap-2 text-black uppercase'>
-                            <img src={logo} alt={logoAlt} className="logo h-[28px]" />
-                            Logo
+                        <Link
+                            to="/"
+                            className="flex items-center gap-2 text-black uppercase"
+                        >
+                            {typeof logo === "string" ? (
+                                <img
+                                    src={logo}
+                                    alt={logoAlt}
+                                    className="logo h-[28px]"
+                                />
+                            ) : (
+                                <div className="logo h-auto w-[55px] flex items-center">
+                                    {logo}
+                                </div>
+                            )}
                         </Link>
                     </div>
 
                     <button
                         type="button"
                         className="card-nav-cta-button hidden md:inline-flex border-0 rounded-[calc(0.75rem-0.2rem)] px-4 items-center h-full font-medium cursor-pointer transition-colors duration-300"
-                        style={{ backgroundColor: buttonBgColor, color: buttonTextColor }}
+                        style={{
+                            backgroundColor: buttonBgColor,
+                            color: buttonTextColor,
+                        }}
                     >
                         Get Started
                     </button>
                 </div>
 
                 <div
-                    className={`card-nav-content absolute left-0 right-0 top-[60px] bottom-0 p-2 flex flex-col items-stretch gap-2 justify-start z-[1] ${isExpanded ? 'visible pointer-events-auto' : 'invisible pointer-events-none'
-                        } md:flex-row md:items-end md:gap-[12px]`}
+                    className={`card-nav-content absolute left-0 right-0 top-[60px] bottom-0 p-2 flex flex-col items-stretch gap-2 justify-start z-[1] ${
+                        isExpanded
+                            ? "visible pointer-events-auto"
+                            : "invisible pointer-events-none"
+                    } md:flex-row md:items-end md:gap-[12px]`}
                     aria-hidden={!isExpanded}
                 >
                     {(items || []).slice(0, 3).map((item, idx) => (
@@ -186,7 +214,10 @@ export const CardNav = ({
                             key={`${item.label}-${idx}`}
                             className="nav-card select-none relative flex flex-col justify-center gap-2 p-[12px_16px] rounded-[calc(0.75rem-0.2rem)] min-w-0 flex-[1_1_auto] h-auto min-h-[60px] md:h-full md:min-h-0 md:flex-[1_1_0%]"
                             ref={setCardRef(idx)}
-                            style={{ backgroundColor: item.bgColor, color: item.textColor }}
+                            style={{
+                                backgroundColor: item.bgColor,
+                                color: item.textColor,
+                            }}
                         >
                             {/* <div className="nav-card-label font-normal tracking-[-0.5px] text-[18px] md:text-[22px]">
                                 {item.label}
@@ -199,7 +230,10 @@ export const CardNav = ({
                                         to={lnk.href}
                                         aria-label={lnk.ariaLabel}
                                     >
-                                        <GoArrowUpRight className="nav-card-link-icon shrink-0" aria-hidden="true" />
+                                        <GoArrowUpRight
+                                            className="nav-card-link-icon shrink-0"
+                                            aria-hidden="true"
+                                        />
                                         {lnk.label}
                                     </Link>
                                 ))}

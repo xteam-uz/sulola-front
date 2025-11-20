@@ -4,13 +4,13 @@ import { Camera, X } from "lucide-react";
 import { TopHeader } from "../../components/ui";
 import axiosClient from "../../api/axios-client";
 import { useLocation, useNavigate } from "react-router-dom";
-import { BottomBar, MainButton } from "@twa-dev/sdk/react"
+import { BottomBar, MainButton } from "@twa-dev/sdk/react";
 import { CountdownTimer } from "../../components/CountDownTimer";
 
 export const TestTakingPage = () => {
     const [loading, setLoading] = useState(true);
     const [testData, setTestData] = useState(null);
-    const [timeRemaining, setTimeRemaining] = useState(null);
+    // const [timeRemaining, setTimeRemaining] = useState(null);
     const [answers, setAnswers] = useState({});
     const [uploadedImages, setUploadedImages] = useState({});
     const [textAnswers, setTextAnswers] = useState({});
@@ -74,7 +74,8 @@ export const TestTakingPage = () => {
         ...details.questions_33_35,
     };
 
-    const isTestNotStarted = new Date().getTime() < new Date(start_time).getTime();
+    const isTestNotStarted =
+        new Date().getTime() < new Date(start_time).getTime();
 
     const handleAnswerSelect = (questionId, answer) => {
         // Agar test vaqti tugagan bo'lsa, javob tanlashga ruxsat berma
@@ -120,7 +121,9 @@ export const TestTakingPage = () => {
         Object.keys(textAnswers).length;
 
     const totalQuestions = Object.keys(allQuestions).length + 10;
-    const progressPercentage = Math.round((answeredCount / totalQuestions) * 100);
+    const progressPercentage = Math.round(
+        (answeredCount / totalQuestions) * 100,
+    );
 
     // handleSubmit funksiyasini yangilash
     const handleSubmit = async () => {
@@ -148,7 +151,7 @@ export const TestTakingPage = () => {
 
         if (totalAnswered < totalQuestions) {
             const confirmSubmit = window.confirm(
-                `Siz ${totalQuestions} ta savoldan faqat ${totalAnswered} tasiga javob berdingiz. Baribir yuborasizmi?`
+                `Siz ${totalQuestions} ta savoldan faqat ${totalAnswered} tasiga javob berdingiz. Baribir yuborasizmi?`,
             );
             if (!confirmSubmit) return;
         }
@@ -158,20 +161,22 @@ export const TestTakingPage = () => {
 
         Object.entries(answers).forEach(([id, answer]) => {
             const qid = Number(id);
-            if (qid >= 1 && qid <= 32) questions_1_32[qid] = { correct_answer: answer };
-            else if (qid >= 33 && qid <= 35) questions_33_35[qid] = { correct_answer: answer };
+            if (qid >= 1 && qid <= 32)
+                questions_1_32[qid] = { correct_answer: answer };
+            else if (qid >= 33 && qid <= 35)
+                questions_33_35[qid] = { correct_answer: answer };
         });
 
         const questions36_45 =
             details.questions_36_45.mode === "image"
                 ? {
-                    mode: "image",
-                    images: uploadedImages,
-                }
+                      mode: "image",
+                      images: uploadedImages,
+                  }
                 : {
-                    mode: "write",
-                    answers: textAnswers,
-                };
+                      mode: "write",
+                      answers: textAnswers,
+                  };
 
         const submissionData = {
             type: details.type,
@@ -237,12 +242,15 @@ export const TestTakingPage = () => {
                                 </div>
                             )}
                             <button
-                                onClick={() => !isTestExpired && handleOpenCamera(num)}
+                                onClick={() =>
+                                    !isTestExpired && handleOpenCamera(num)
+                                }
                                 disabled={isTestExpired}
-                                className={`px-4 py-2 rounded-lg flex items-center gap-2 ${isTestExpired
-                                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                                    : 'bg-blue-600 text-white hover:bg-blue-700'
-                                    }`}
+                                className={`px-4 py-2 rounded-lg flex items-center gap-2 ${
+                                    isTestExpired
+                                        ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                                        : "bg-blue-500 text-white hover:bg-blue-700"
+                                }`}
                             >
                                 <Camera size={18} /> Rasmga olish
                             </button>
@@ -267,23 +275,34 @@ export const TestTakingPage = () => {
                                     </span>
                                 </h3>
                                 <div className="space-y-3">
-                                    {Array.from({ length: variantCount }, (_, i) => (
-                                        <div key={i}>
-                                            <label className="block text-sm text-gray-600 mb-1">
-                                                Variant {i + 1}:
-                                            </label>
-                                            <textarea
-                                                value={textAnswers[qNum]?.[i] || ""}
-                                                onChange={(e) =>
-                                                    handleTextAnswerChange(qNum, i, e.target.value)
-                                                }
-                                                placeholder={`${qNum}-savol, ${i + 1}-variant javobini kiriting...`}
-                                                className="w-full p-3 border border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none resize-none"
-                                                rows={3}
-                                                disabled={isTestExpired}
-                                            />
-                                        </div>
-                                    ))}
+                                    {Array.from(
+                                        { length: variantCount },
+                                        (_, i) => (
+                                            <div key={i}>
+                                                <label className="block text-sm text-gray-600 mb-1">
+                                                    Variant {i + 1}:
+                                                </label>
+                                                <textarea
+                                                    value={
+                                                        textAnswers[qNum]?.[
+                                                            i
+                                                        ] || ""
+                                                    }
+                                                    onChange={(e) =>
+                                                        handleTextAnswerChange(
+                                                            qNum,
+                                                            i,
+                                                            e.target.value,
+                                                        )
+                                                    }
+                                                    placeholder={`${qNum}-savol, ${i + 1}-variant javobini kiriting...`}
+                                                    className="w-full p-3 border border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none resize-none"
+                                                    rows={3}
+                                                    disabled={isTestExpired}
+                                                />
+                                            </div>
+                                        ),
+                                    )}
                                 </div>
                             </div>
                         );
@@ -304,7 +323,9 @@ export const TestTakingPage = () => {
 
         setCurrentImageQuestion(qNumber);
         try {
-            const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+            const stream = await navigator.mediaDevices.getUserMedia({
+                video: true,
+            });
             setCameraStream(stream);
             setShowCamera(true);
             setTimeout(() => {
@@ -359,7 +380,9 @@ export const TestTakingPage = () => {
     const CameraModal = () => (
         <div className="fixed inset-0 bg-black z-50 flex flex-col">
             <div className="bg-gray-900 px-4 py-4 flex items-center justify-between">
-                <h2 className="text-white text-lg font-semibold">Rasmga olish</h2>
+                <h2 className="text-white text-lg font-semibold">
+                    Rasmga olish
+                </h2>
                 <button onClick={handleCloseCamera} className="text-white">
                     <X size={24} />
                 </button>
@@ -368,11 +391,16 @@ export const TestTakingPage = () => {
             <div className="flex-1 relative bg-black">
                 {!capturedImage ? (
                     <>
-                        <video ref={videoRef} autoPlay playsInline className="w-full h-full object-cover" />
+                        <video
+                            ref={videoRef}
+                            autoPlay
+                            playsInline
+                            className="w-full h-full object-cover"
+                        />
                         <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2">
                             <button
                                 onClick={handleCapture}
-                                className="w-16 h-16 rounded-full bg-blue-600 border-4 border-white shadow-lg hover:bg-blue-700 transition-colors flex items-center justify-center"
+                                className="w-16 h-16 rounded-full bg-blue-500 border-4 border-white shadow-lg hover:bg-blue-700 transition-colors flex items-center justify-center"
                             >
                                 <Camera size={28} className="text-white" />
                             </button>
@@ -380,7 +408,11 @@ export const TestTakingPage = () => {
                     </>
                 ) : (
                     <>
-                        <img src={capturedImage} alt="Captured" className="w-full h-full object-contain" />
+                        <img
+                            src={capturedImage}
+                            alt="Captured"
+                            className="w-full h-full object-contain"
+                        />
                         <div className="absolute bottom-8 left-0 right-0 flex justify-center gap-4 px-4">
                             <button
                                 onClick={() => setCapturedImage(null)}
@@ -390,7 +422,7 @@ export const TestTakingPage = () => {
                             </button>
                             <button
                                 onClick={handleSaveImage}
-                                className="flex-1 max-w-xs py-3 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition-colors"
+                                className="flex-1 max-w-xs py-3 bg-blue-500 text-white rounded-xl font-medium hover:bg-blue-700 transition-colors"
                             >
                                 Saqlash
                             </button>
@@ -412,8 +444,12 @@ export const TestTakingPage = () => {
                 <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 mb-4">
                     <div className="flex justify-between items-center mb-3">
                         <div>
-                            <span className="text-gray-600 text-sm">Test kodi: </span>
-                            <span className="text-orange-500 font-bold">{code}</span>
+                            <span className="text-gray-600 text-sm">
+                                Test kodi:{" "}
+                            </span>
+                            <span className="text-orange-500 font-bold">
+                                {code}
+                            </span>
                         </div>
                         <div>
                             <span className="text-blue-600 font-bold text-lg">
@@ -424,16 +460,20 @@ export const TestTakingPage = () => {
 
                     <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
                         <div
-                            className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                            className="bg-blue-500 h-2 rounded-full transition-all duration-300"
                             style={{ width: `${progressPercentage}%` }}
                         ></div>
                     </div>
-                    <p className="text-xs text-gray-500 text-right">{progressPercentage}% tayyor</p>
+                    <p className="text-xs text-gray-500 text-right">
+                        {progressPercentage}% tayyor
+                    </p>
                 </div>
 
                 {/* Test hali boshlanmagan yoki tugagan */}
                 {(isTestNotStarted || isTestExpired) && (
-                    <div className={`${isTestExpired ? 'bg-red-100 border-red-300' : 'bg-yellow-100 border-yellow-300'} p-3 rounded-lg mb-4 border`}>
+                    <div
+                        className={`${isTestExpired ? "bg-red-100 border-red-300" : "bg-yellow-100 border-yellow-300"} p-3 rounded-lg mb-4 border`}
+                    >
                         <CountdownTimer
                             deadline={isTestExpired ? end_time : start_time}
                             onExpire={isTestExpired ? null : handleTestExpire}
@@ -445,7 +485,10 @@ export const TestTakingPage = () => {
                 <div className="space-y-4 mb-8">
                     {Object.entries(allQuestions).map(([num, q]) => {
                         const options = getOptionsForQuestion(num);
-                        const gridCols = options.length === 6 ? "grid-cols-3" : "grid-cols-4";
+                        const gridCols =
+                            options.length === 6
+                                ? "grid-cols-3"
+                                : "grid-cols-4";
 
                         return (
                             <div
@@ -464,14 +507,17 @@ export const TestTakingPage = () => {
                                     {options.map((opt) => (
                                         <button
                                             key={opt}
-                                            onClick={() => handleAnswerSelect(num, opt)}
+                                            onClick={() =>
+                                                handleAnswerSelect(num, opt)
+                                            }
                                             disabled={isTestExpired}
-                                            className={`py-2.5 rounded-lg font-medium text-sm transition-all ${isTestExpired
-                                                ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                                                : answers[num] === opt
-                                                    ? "bg-blue-600 text-white shadow-md"
-                                                    : "bg-white text-gray-700 border border-gray-300 hover:border-blue-400 hover:bg-blue-50"
-                                                }`}
+                                            className={`py-2.5 rounded-lg font-medium text-sm transition-all ${
+                                                isTestExpired
+                                                    ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                                                    : answers[num] === opt
+                                                      ? "bg-blue-500 text-white shadow-md"
+                                                      : "bg-white text-gray-700 border border-gray-300 hover:border-blue-400 hover:bg-blue-50"
+                                            }`}
                                         >
                                             {opt}
                                         </button>
@@ -484,6 +530,24 @@ export const TestTakingPage = () => {
 
                 {/* Rasmli yoki textli savollar */}
                 {render36_45Questions()}
+
+                {/* TEST UCHUN*/}
+                {!isSubmitted && !isTestNotStarted && !isTestExpired ? (
+                    <button
+                        onClick={handleSubmit}
+                        className="w-full cursor-pointer mb-24 py-3 bg-blue-500 text-white rounded-xl font-medium hover:bg-blue-700 transition-colors"
+                    >
+                        📤 Javoblarni yuborish
+                    </button>
+                ) : (
+                    <button
+                        onClick={() => navigate("/")}
+                        className="w-full cursor-pointer mb-24 py-3 bg-teal-600 text-white rounded-xl font-medium hover:bg-teal-700 transition-colors"
+                    >
+                        🏠 Asosiy sahifaga qaytish
+                    </button>
+                )}
+                {/* END TEST UCHUN*/}
 
                 <BottomBar bgColor="#000000">
                     {!isSubmitted && !isTestNotStarted && !isTestExpired ? (
@@ -500,7 +564,7 @@ export const TestTakingPage = () => {
                             textColor="#ffffff"
                             text="🏠 Asosiy sahifaga qaytish"
                             progress={false}
-                            onClick={() => navigate('/')}
+                            onClick={() => navigate("/")}
                         />
                     )}
                 </BottomBar>
@@ -519,7 +583,6 @@ export const TestTakingPage = () => {
                     transition={Zoom}
                 />
             </div>
-
         </div>
     );
 };

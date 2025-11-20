@@ -2,14 +2,20 @@ import { useRef, useState, useEffect } from "react";
 import axiosClient from "../../api/axios-client";
 import { useStateContext } from "../../contexts/ContextProvider";
 import { getUserData, initTelegramApp } from "../../telegram/init";
+import Lottie from "lottie-react";
+import TelegramAnimation from "../../assets/Telegram.json";
+import ErrorAnimation from "../../assets/error.json";
 
 // Xatoliklarni tarjima qilish uchun
 const errorTranslations = {
-    "The first name field must be at least 3 characters.": "Ism kamida 3 ta harfdan iborat bo'lishi kerak.",
-    "The last name field must be at least 3 characters.": "Familiya kamida 3 ta harfdan iborat bo'lishi kerak.",
+    "The first name field must be at least 3 characters.":
+        "Ism kamida 3 ta harfdan iborat bo'lishi kerak.",
+    "The last name field must be at least 3 characters.":
+        "Familiya kamida 3 ta harfdan iborat bo'lishi kerak.",
     "The first name field is required.": "Ism maydoni to'ldirilishi shart.",
     "The last name field is required.": "Familiya maydoni to'ldirilishi shart.",
-    "The telegram user id field is required.": "Telegram foydalanuvchi IDsi topilmadi.",
+    "The telegram user id field is required.":
+        "Telegram foydalanuvchi IDsi topilmadi.",
 };
 
 // Xatolikni tarjima qilish funksiyasi
@@ -67,9 +73,27 @@ export const Signup = () => {
 
     return (
         <form onSubmit={onSubmit} className="max-w-md mx-auto p-4">
-            <h1 className="text-xl font-semibold mb-5 text-center">
-                Ro'yxatdan o'tish
-            </h1>
+            <div className="flex flex-col items-center gap-5">
+                {(errors && errors.general) || errors?.telegram_user_id ? (
+                    <Lottie
+                        width={300}
+                        height={300}
+                        className="size-32"
+                        animationData={ErrorAnimation}
+                    />
+                ) : (
+                    <Lottie
+                        width={300}
+                        height={300}
+                        className="size-42"
+                        animationData={TelegramAnimation}
+                    />
+                )}
+
+                <h1 className="text-xl font-semibold mb-5 text-center">
+                    Ro'yxatdan o'tish
+                </h1>
+            </div>
 
             {/* Umumiy xatoliklarni ko'rsatish */}
             {errors && errors.general ? (
@@ -78,13 +102,13 @@ export const Signup = () => {
                         <p key={index}>{error}</p>
                     ))}
                 </div>
-            ) :
+            ) : (
                 errors?.telegram_user_id && (
                     <div className="bg-red-50 border border-red-300 text-red-800 px-4 py-3 rounded mb-4">
                         <p>{translateError(errors.telegram_user_id[0])}</p>
                     </div>
-
-                )}
+                )
+            )}
 
             <div className="grid md:grid-cols-2 md:gap-6">
                 {/* Ism */}
@@ -129,7 +153,7 @@ export const Signup = () => {
                                focus:outline-none focus:ring-0 focus:border-blue-600 peer"
                         placeholder=" "
                         defaultValue={telegramUser?.last_name || ""}
-                    // required
+                        // required
                     />
                     <label
                         htmlFor="floating_last_name"
@@ -157,10 +181,11 @@ export const Signup = () => {
                     <button
                         type="button"
                         onClick={() => setRole("tester")}
-                        className={`flex-1 py-2 rounded border text-xs transition-all ${role === "tester"
-                            ? "bg-blue-600 text-white border-blue-600"
-                            : "bg-white text-gray-700 border-gray-300"
-                            }`}
+                        className={`flex-1 py-2 rounded border text-xs transition-all ${
+                            role === "tester"
+                                ? "bg-blue-500 text-white border-blue-600"
+                                : "bg-white text-gray-700 border-gray-300"
+                        }`}
                     >
                         Test oluvchi
                     </button>
@@ -168,10 +193,11 @@ export const Signup = () => {
                     <button
                         type="button"
                         onClick={() => setRole("test_taker")}
-                        className={`flex-1 py-2 rounded border text-xs transition-all ${role === "test_taker"
-                            ? "bg-blue-600 text-white border-blue-600"
-                            : "bg-white text-gray-700 border-gray-300"
-                            }`}
+                        className={`flex-1 py-2 rounded border text-xs transition-all ${
+                            role === "test_taker"
+                                ? "bg-blue-500 text-white border-blue-600"
+                                : "bg-white text-gray-700 border-gray-300"
+                        }`}
                     >
                         Test topshiruvchi
                     </button>
@@ -187,7 +213,7 @@ export const Signup = () => {
                 type="submit"
                 className="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none cursor-pointer
                            focus:ring-blue-300 font-medium rounded-lg text-sm w-full px-5 py-2.5 text-center
-                           dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
+                           dark:bg-blue-500 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
             >
                 Ro'yxatdan o'tish
             </button>

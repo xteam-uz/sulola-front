@@ -24,7 +24,7 @@ export const Dashboard = () => {
                     <p className="text-gray-600">Ma'lumotlar yuklanmadi</p>
                     <button
                         onClick={() => window.location.reload()}
-                        className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                        className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-700"
                     >
                         Qayta yuklash
                     </button>

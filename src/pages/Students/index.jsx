@@ -1,4 +1,3 @@
-
 import { Plus, MoreVertical } from "lucide-react";
 import { FooterNavbar } from "../../components/FooterNavbar";
 import { TopHeader } from "../../components/ui/TopHeader";
@@ -23,8 +22,12 @@ export const Students = () => {
                     >
                         <div className="flex items-center justify-between">
                             <div>
-                                <h3 className="text-gray-800 font-semibold">{st.name}</h3>
-                                <p className="text-gray-600 text-sm">ID: {st.id}</p>
+                                <h3 className="text-gray-800 font-semibold">
+                                    {st.name}
+                                </h3>
+                                <p className="text-gray-600 text-sm">
+                                    ID: {st.id}
+                                </p>
                                 <p className="text-xs text-gray-400 mt-1">
                                     Qo‘shilgan: {st.joined}
                                 </p>
@@ -38,7 +41,7 @@ export const Students = () => {
             </div>
 
             {/* Add Button */}
-            <button className="fixed bottom-20 right-5 bg-blue-600 hover:bg-blue-700 text-white p-4 rounded-full shadow-lg transition-all">
+            <button className="fixed bottom-20 right-5 bg-blue-500 hover:bg-blue-700 text-white p-4 rounded-full shadow-lg transition-all">
                 <Plus size={22} />
             </button>
 

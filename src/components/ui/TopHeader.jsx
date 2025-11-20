@@ -1,9 +1,10 @@
-import { CardNav } from './CardNav';
-import logo from '../../assets/react.svg';
+import { CardNav } from "./CardNav";
+import { useLottie } from "lottie-react";
+// import logo from "../../assets/react.svg";
+import tgLogo from "../../assets/tg_logo.json";
 
 export const TopHeader = () => {
     const items = [
-
         {
             label: "Profil",
             bgColor: "#fff",
@@ -12,17 +13,23 @@ export const TopHeader = () => {
                 {
                     label: "Profil",
                     ariaLabel: "Profile information",
-                    href: "/profile"
+                    href: "/profile",
                 },
-            ]
-        }
-
+            ],
+        },
     ];
+
+    const options = {
+        animationData: tgLogo,
+        loop: true,
+    };
+
+    const { View } = useLottie(options);
 
     return (
         <>
             <CardNav
-                logo={logo}
+                logo={View}
                 logoAlt="Company Logo"
                 items={items}
                 baseColor="#fff"
@@ -32,5 +39,5 @@ export const TopHeader = () => {
                 ease="power3.out"
             />
         </>
-    )
-}
+    );
+};

@@ -38,7 +38,8 @@ export const TesterDashboard = () => {
                                 {user[0]?.first_name} {user[0]?.last_name}
                             </span>
                             <span className="text-blue-600 text-sm ml-3">
-                                {user[0]?.user_type === "tester" && "Test oluvchi"}
+                                {user[0]?.user_type === "tester" &&
+                                    "Test oluvchi"}
                             </span>
                         </div>
                     </div>
@@ -60,7 +61,8 @@ export const TesterDashboard = () => {
                         </div>
                         <div>
                             <p className="text-gray-600 text-sm">
-                                Balansingiz: {user[0]?.bot_user?.balance || 0} so'm
+                                Balansingiz: {user[0]?.bot_user?.balance || 0}{" "}
+                                so'm
                             </p>
                             <p className="text-xs text-gray-400 mt-1">
                                 Pullik testlardan tushgan daromad
@@ -82,7 +84,8 @@ export const TesterDashboard = () => {
                                 Kredit balansi: {user[0]?.credits || 0} ta
                             </p>
                             <p className="text-xs text-gray-400 mt-1">
-                                Har bir o'quvchi natijasi uchun 1 kredit sarflanadi
+                                Har bir o'quvchi natijasi uchun 1 kredit
+                                sarflanadi
                             </p>
                         </div>
                     </div>
@@ -98,10 +101,12 @@ export const TesterDashboard = () => {
                     <h3 className="text-lg font-bold text-gray-800">Testlar</h3>
                     <button
                         onClick={() => setShowModal(true)}
-                        className="bg-blue-600 text-white px-4 py-2 rounded-xl flex items-center space-x-2 shadow-md hover:bg-blue-700 transition-colors"
+                        className="bg-blue-500 text-white px-4 py-2 rounded-xl flex items-center space-x-2 shadow-md hover:bg-blue-700 transition-colors"
                     >
                         <Plus size={18} />
-                        <span className="text-sm font-medium">Test qo'shish</span>
+                        <span className="text-sm font-medium">
+                            Test qo'shish
+                        </span>
                     </button>
                 </div>
 
@@ -109,19 +114,21 @@ export const TesterDashboard = () => {
                 <div className="flex space-x-1 bg-gray-100 rounded-xl p-1 mb-4">
                     <button
                         onClick={() => setActiveTab("created")}
-                        className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-all ${activeTab === "created"
-                            ? "bg-white text-blue-600 shadow-sm"
-                            : "text-gray-600 hover:text-gray-800"
-                            }`}
+                        className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                            activeTab === "created"
+                                ? "bg-white text-blue-600 shadow-sm"
+                                : "text-gray-600 hover:text-gray-800"
+                        }`}
                     >
                         Jarayondagi testlar
                     </button>
                     <button
                         onClick={() => setActiveTab("taken")}
-                        className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-all ${activeTab === "taken"
-                            ? "bg-white text-blue-600 shadow-sm"
-                            : "text-gray-600 hover:text-gray-800"
-                            }`}
+                        className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                            activeTab === "taken"
+                                ? "bg-white text-blue-600 shadow-sm"
+                                : "text-gray-600 hover:text-gray-800"
+                        }`}
                     >
                         Yopilgan testlar
                     </button>
@@ -149,18 +156,20 @@ export const TesterDashboard = () => {
                                                 {test.name}
                                             </h4>
                                             <span
-                                                className={`px-2 py-0.5 text-xs rounded-full font-medium ${test.status === "upcoming"
-                                                    ? "bg-green-100 text-green-600"
-                                                    : test.status === "active"
-                                                        ? "bg-blue-100 text-blue-600"
-                                                        : "bg-gray-200 text-gray-600"
-                                                    }`}
+                                                className={`px-2 py-0.5 text-xs rounded-full font-medium ${
+                                                    test.status === "upcoming"
+                                                        ? "bg-green-100 text-green-600"
+                                                        : test.status ===
+                                                            "active"
+                                                          ? "bg-blue-100 text-blue-600"
+                                                          : "bg-gray-200 text-gray-600"
+                                                }`}
                                             >
                                                 {test.status === "upcoming"
                                                     ? "Kutilmoqda"
                                                     : test.status === "active"
-                                                        ? "Faol"
-                                                        : "Yopiq"}
+                                                      ? "Faol"
+                                                      : "Yopiq"}
                                             </span>
                                         </div>
                                         <p className="text-gray-700 text-sm mb-2">
@@ -173,11 +182,16 @@ export const TesterDashboard = () => {
                                             </div>
                                             <div className="flex items-center space-x-1">
                                                 <Clock size={14} />
-                                                <span>Boshlanish: {test.start_time}</span>
+                                                <span>
+                                                    Boshlanish:{" "}
+                                                    {test.start_time}
+                                                </span>
                                             </div>
                                             <div className="flex items-center space-x-1">
                                                 <Clock size={14} />
-                                                <span>Tugash: {test.end_time}</span>
+                                                <span>
+                                                    Tugash: {test.end_time}
+                                                </span>
                                             </div>
                                         </div>
                                     </div>
@@ -206,7 +220,12 @@ export const TesterDashboard = () => {
                     className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 animate-fadeIn"
                     onClick={() => setShowModal(false)}
                 >
-                    <FadeContent blur={true} duration={300} easing="ease-in" initialOpacity={0}>
+                    <FadeContent
+                        blur={true}
+                        duration={300}
+                        easing="ease-in"
+                        initialOpacity={0}
+                    >
                         <div
                             onClick={(e) => e.stopPropagation()}
                             className="bg-white w-80 rounded-2xl shadow-lg p-6 relative animate-fadeInUp"
@@ -225,11 +244,18 @@ export const TesterDashboard = () => {
 
                             <div className="space-y-3">
                                 <label className="flex items-center space-x-3 border rounded-xl p-3 cursor-pointer hover:bg-gray-50">
-                                    <input type="radio" name="testType" defaultChecked />
+                                    <input
+                                        type="radio"
+                                        name="testType"
+                                        defaultChecked
+                                    />
                                     <div>
-                                        <p className="font-medium">💰 Pullik test</p>
+                                        <p className="font-medium">
+                                            💰 Pullik test
+                                        </p>
                                         <p className="text-xs text-gray-500">
-                                            O'quvchilar Click yoki Payme orqali to'laydi.
+                                            O'quvchilar Click yoki Payme orqali
+                                            to'laydi.
                                         </p>
                                     </div>
                                 </label>
@@ -237,7 +263,9 @@ export const TesterDashboard = () => {
                                 <label className="flex items-center space-x-3 border rounded-xl p-3 cursor-pointer hover:bg-gray-50">
                                     <input type="radio" name="testType" />
                                     <div>
-                                        <p className="font-medium">🎓 Tekin test</p>
+                                        <p className="font-medium">
+                                            🎓 Tekin test
+                                        </p>
                                         <p className="text-xs text-gray-500">
                                             O'quvchilar uchun bepul test.
                                         </p>
@@ -252,7 +280,7 @@ export const TesterDashboard = () => {
                                 >
                                     Bekor qilish
                                 </button>
-                                <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm">
+                                <button className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-700 text-sm">
                                     Boshlash
                                 </button>
                             </div>

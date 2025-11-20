@@ -7,9 +7,9 @@ import { toast, ToastContainer, Zoom } from "react-toastify";
 import { FadeContent } from "./ui";
 
 export const TestTakerDashboard = () => {
-    const [activeTests, setActiveTests] = useState([]);
-    const [completedTests, setCompletedTests] = useState([]);
-    const [loading, setLoading] = useState(true);
+    // const [activeTests, setActiveTests] = useState([]);
+    // const [completedTests, setCompletedTests] = useState([]);
+    // const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
     const [testCode, setTestCode] = useState("");
     const [checking, setChecking] = useState(false);
@@ -39,7 +39,9 @@ export const TestTakerDashboard = () => {
 
         setChecking(true);
         try {
-            const res = await axiosClient.post("/tests/check/test", { code: testCode });
+            const res = await axiosClient.post("/tests/check/test", {
+                code: testCode,
+            });
 
             // ✅ DEBUG: Javobni ko'ring
             console.log("API javob:", res.data);
@@ -55,16 +57,14 @@ export const TestTakerDashboard = () => {
                 setShowModal(false);
                 setTestCode("");
 
-                navigate(
-                    `/test_taking`,
-                    {
-                        state: { testId: testIdToSend }
-                    });
+                navigate(`/test_taking`, {
+                    state: { testId: testIdToSend },
+                });
 
                 // ✅ DEBUG: Navigate qilgandan keyin
                 console.log("Navigate bajarildi");
             } else {
-                toast.warning('Bunday kodli test bazada mavjud emas', {
+                toast.warning("Bunday kodli test bazada mavjud emas", {
                     position: "top-center",
                     autoClose: 5000,
                     hideProgressBar: false,
@@ -97,7 +97,7 @@ export const TestTakerDashboard = () => {
     const handleTestClick = (testId) => {
         // To'g'ridan-to'g'ri test sahifasiga o'tish
         navigate(`/test_taking`, {
-            state: { testId: testId }
+            state: { testId: testId },
         });
     };
 
@@ -111,7 +111,9 @@ export const TestTakerDashboard = () => {
                                 {user[0]?.first_name} {user[0]?.last_name}
                             </span>
                             <span className="text-blue-600 text-sm ml-3">
-                                {user[0]?.user_type === "test_taker" ? "Test topshiruvchi" : ""}
+                                {user[0]?.user_type === "test_taker"
+                                    ? "Test topshiruvchi"
+                                    : ""}
                             </span>
                         </div>
                     </div>
@@ -130,7 +132,8 @@ export const TestTakerDashboard = () => {
                         {/* <h3 className="text-base font-bold text-gray-800">Jarayondagi testlar</h3> */}
                         <button
                             onClick={() => setShowModal(true)}
-                            className="bg-blue-600 text-white px-4 py-2 rounded-xl text-sm font-medium shadow-md hover:bg-blue-700 transition-colors">
+                            className="w-full bg-blue-500 text-white px-4 py-2 rounded-xl text-sm font-medium shadow-md hover:bg-blue-700 transition-colors"
+                        >
                             Test kodini kiritish
                         </button>
                     </div>
@@ -140,19 +143,21 @@ export const TestTakerDashboard = () => {
                         <div className="flex space-x-1 bg-gray-100 rounded-xl p-1 mb-4">
                             <button
                                 onClick={() => setActiveTab("created")}
-                                className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-all ${activeTab === "created"
-                                    ? "bg-white text-blue-600 shadow-sm"
-                                    : "text-gray-600 hover:text-gray-800"
-                                    }`}
+                                className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                                    activeTab === "created"
+                                        ? "bg-white text-blue-600 shadow-sm"
+                                        : "text-gray-600 hover:text-gray-800"
+                                }`}
                             >
                                 Jarayondagi testlar
                             </button>
                             <button
                                 onClick={() => setActiveTab("taken")}
-                                className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-all ${activeTab === "taken"
-                                    ? "bg-white text-blue-600 shadow-sm"
-                                    : "text-gray-600 hover:text-gray-800"
-                                    }`}
+                                className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                                    activeTab === "taken"
+                                        ? "bg-white text-blue-600 shadow-sm"
+                                        : "text-gray-600 hover:text-gray-800"
+                                }`}
                             >
                                 Yopilgan testlar
                             </button>
@@ -165,7 +170,9 @@ export const TestTakerDashboard = () => {
                                     <div className="flex justify-center">
                                         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
                                     </div>
-                                    <p className="text-gray-500 mt-4">Yuklanmoqda...</p>
+                                    <p className="text-gray-500 mt-4">
+                                        Yuklanmoqda...
+                                    </p>
                                 </div>
                             ) : filteredTests.length > 0 ? (
                                 filteredTests.map((test) => (
@@ -173,25 +180,35 @@ export const TestTakerDashboard = () => {
                                         key={test.id}
                                         className="bg-white rounded-2xl p-4 mb-2 shadow-sm border border-gray-100 hover:shadow-md transition-shadow cursor-pointer"
                                     >
-                                        <div onClick={() => handleTestClick(test.id)} className="flex items-center justify-between">
+                                        <div
+                                            onClick={() =>
+                                                handleTestClick(test.id)
+                                            }
+                                            className="flex items-center justify-between"
+                                        >
                                             <div className="flex-1">
                                                 <div className="flex items-center space-x-2 mb-2">
                                                     <h4 className="font-semibold text-gray-800">
                                                         {test.name}
                                                     </h4>
                                                     <span
-                                                        className={`px-2 py-0.5 text-xs rounded-full font-medium ${test.status === "upcoming"
-                                                            ? "bg-green-100 text-green-600"
-                                                            : test.status === "active"
-                                                                ? "bg-blue-100 text-blue-600"
-                                                                : "bg-gray-200 text-gray-600"
-                                                            }`}
+                                                        className={`px-2 py-0.5 text-xs rounded-full font-medium ${
+                                                            test.status ===
+                                                            "upcoming"
+                                                                ? "bg-green-100 text-green-600"
+                                                                : test.status ===
+                                                                    "active"
+                                                                  ? "bg-blue-100 text-blue-600"
+                                                                  : "bg-gray-200 text-gray-600"
+                                                        }`}
                                                     >
-                                                        {test.status === "upcoming"
+                                                        {test.status ===
+                                                        "upcoming"
                                                             ? "Kutilmoqda"
-                                                            : test.status === "active"
-                                                                ? "Faol"
-                                                                : "Yopiq"}
+                                                            : test.status ===
+                                                                "active"
+                                                              ? "Faol"
+                                                              : "Yopiq"}
                                                     </span>
                                                 </div>
                                                 <p className="text-gray-700 text-sm mb-2">
@@ -200,15 +217,23 @@ export const TestTakerDashboard = () => {
                                                 <div className="flex flex-col gap-1 text-xs text-gray-500">
                                                     <div className="flex items-center space-x-1">
                                                         <FileText size={14} />
-                                                        <span>Kod: {test.code}</span>
+                                                        <span>
+                                                            Kod: {test.code}
+                                                        </span>
                                                     </div>
                                                     <div className="flex items-center space-x-1">
                                                         <Clock size={14} />
-                                                        <span>Boshlanish: {test.start_time}</span>
+                                                        <span>
+                                                            Boshlanish:{" "}
+                                                            {test.start_time}
+                                                        </span>
                                                     </div>
                                                     <div className="flex items-center space-x-1">
                                                         <Clock size={14} />
-                                                        <span>Tugash: {test.end_time}</span>
+                                                        <span>
+                                                            Tugash:{" "}
+                                                            {test.end_time}
+                                                        </span>
                                                     </div>
                                                 </div>
                                             </div>
@@ -240,7 +265,12 @@ export const TestTakerDashboard = () => {
                     className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 animate-fadeIn"
                     onClick={() => setShowModal(false)}
                 >
-                    <FadeContent blur={true} duration={300} easing="ease-in" initialOpacity={0}>
+                    <FadeContent
+                        blur={true}
+                        duration={300}
+                        easing="ease-in"
+                        initialOpacity={0}
+                    >
                         <div
                             onClick={(e) => e.stopPropagation()}
                             className="bg-white w-80 rounded-2xl shadow-lg p-6 relative animate-fadeInUp"
@@ -273,15 +303,18 @@ export const TestTakerDashboard = () => {
                                 <button
                                     type="submit"
                                     disabled={!testCode.trim() || checking}
-                                    className={`px-4 py-2 rounded-lg text-sm transition-colors flex items-center gap-2 ${testCode.trim()
-                                        ? "bg-blue-600 text-white hover:bg-blue-700"
-                                        : "bg-gray-300 text-gray-500 cursor-not-allowed"
-                                        }`}
+                                    className={`px-4 py-2 rounded-lg text-sm transition-colors flex items-center gap-2 ${
+                                        testCode.trim()
+                                            ? "bg-blue-500 text-white hover:bg-blue-700"
+                                            : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                                    }`}
                                 >
                                     {checking && (
                                         <span className="animate-spin rounded-full h-4 w-4 border-2 border-t-transparent border-white"></span>
                                     )}
-                                    {checking ? "Tekshirilmoqda..." : "Davom etish"}
+                                    {checking
+                                        ? "Tekshirilmoqda..."
+                                        : "Davom etish"}
                                 </button>
                             </div>
                         </div>
