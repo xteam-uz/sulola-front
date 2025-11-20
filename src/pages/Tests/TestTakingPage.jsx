@@ -532,7 +532,7 @@ export const TestTakingPage = () => {
                 {render36_45Questions()}
 
                 {/* TEST UCHUN*/}
-                {!isSubmitted && !isTestNotStarted && !isTestExpired ? (
+                {/* {!isSubmitted && !isTestNotStarted && !isTestExpired ? (
                     <button
                         onClick={handleSubmit}
                         className="w-full cursor-pointer mb-24 py-3 bg-blue-500 text-white rounded-xl font-medium hover:bg-blue-700 transition-colors"
@@ -546,7 +546,7 @@ export const TestTakingPage = () => {
                     >
                         🏠 Asosiy sahifaga qaytish
                     </button>
-                )}
+                )}*/}
                 {/* END TEST UCHUN*/}
 
                 <BottomBar bgColor="#000000">
