@@ -4,7 +4,12 @@ import { Camera, X } from "lucide-react";
 import { TopHeader } from "../../components/ui";
 import axiosClient from "../../api/axios-client";
 import { useLocation, useNavigate } from "react-router-dom";
-import { BottomBar, MainButton } from "@twa-dev/sdk/react";
+import {
+    BackButton,
+    BottomBar,
+    MainButton,
+    SecondaryButton,
+} from "@twa-dev/sdk/react";
 import { CountdownTimer } from "../../components/CountDownTimer";
 import { useStateContext } from "../../contexts/ContextProvider";
 
@@ -529,7 +534,6 @@ export const TestTakingPage = () => {
                         {progressPercentage}% tayyor
                     </p>
                 </div>
-
                 {/* Countdown Timer - har doim ko'rinadi */}
                 <div
                     className={`p-3 rounded-lg mb-4 border ${getCountdownBgClass()}`}
@@ -541,7 +545,6 @@ export const TestTakingPage = () => {
                         onExpire={handleTestExpire}
                     />
                 </div>
-
                 {/* Variantli savollar */}
                 <div className="space-y-4 mb-8">
                     {Object.entries(allQuestions).map(([num, q]) => {
@@ -588,10 +591,8 @@ export const TestTakingPage = () => {
                         );
                     })}
                 </div>
-
                 {/* Rasmli yoki textli savollar */}
                 {render36_45Questions()}
-
                 {/* TEST UCHUN*/}
                 {/* {!isSubmitted && !isTestNotStarted && !isTestExpired ? (
                     <button
@@ -606,10 +607,9 @@ export const TestTakingPage = () => {
                         className="w-full cursor-pointer mb-24 py-3 bg-teal-500 text-white rounded-xl font-medium hover:bg-blue-600 transition-colors"
                     >
                         🏠 Asosiy sahifaga qaytish
-                    </button>
-                )}*/}
+                    </button>*/}
+                )}
                 {/* END TEST UCHUN*/}
-
                 <BottomBar bgColor="#ffffff">
                     {!isSubmitted && isTestActive ? (
                         <MainButton
@@ -628,8 +628,8 @@ export const TestTakingPage = () => {
                             onClick={() => navigate("/")}
                         />
                     )}
+                    <BackButton onClick={() => window.history.back()} />
                 </BottomBar>
-
                 <ToastContainer
                     position="top-center"
                     autoClose={5000}
