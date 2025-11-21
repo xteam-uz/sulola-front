@@ -310,7 +310,7 @@ export const Profile = () => {
                         position="bottom"
                         onClick={handleCancel}
                     />
-                    {/* <BackButton onClick={handleCancel} /> */}
+                    <BackButton onClick={() => window.history.back()} />
                 </BottomBar>
             )}
 
