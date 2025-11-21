@@ -101,7 +101,7 @@ export const TesterDashboard = () => {
                     <h3 className="text-lg font-bold text-gray-800">Testlar</h3>
                     <button
                         onClick={() => setShowModal(true)}
-                        className="bg-blue-500 text-white px-4 py-2 rounded-xl flex items-center space-x-2 shadow-md hover:bg-blue-700 transition-colors"
+                        className="bg-blue-500 text-white px-4 py-2 rounded-xl flex items-center space-x-2 shadow-md hover:bg-blue-600 transition-colors"
                     >
                         <Plus size={18} />
                         <span className="text-sm font-medium">
@@ -280,7 +280,7 @@ export const TesterDashboard = () => {
                                 >
                                     Bekor qilish
                                 </button>
-                                <button className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-700 text-sm">
+                                <button className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 text-sm">
                                     Boshlash
                                 </button>
                             </div>

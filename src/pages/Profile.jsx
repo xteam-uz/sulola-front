@@ -280,6 +280,19 @@ export const Profile = () => {
                 )}
             </div>
 
+            {/* TEST UCHUN*/}
+            {/* {hasChanges() && !saving && (
+                <div className="px-4 py-4">
+                    <button
+                        onClick={handleSave}
+                        className="w-full cursor-pointer mb-24 py-3 bg-blue-500 text-white rounded-xl font-medium hover:bg-blue-600 transition-colors"
+                    >
+                        📤 Saqlash
+                    </button>
+                </div>
+            )}*/}
+            {/* END TEST UCHUN*/}
+
             {/* Telegram MainButton va BackButton */}
             {hasChanges() && !saving && (
                 <BottomBar bgColor="#ffffff">

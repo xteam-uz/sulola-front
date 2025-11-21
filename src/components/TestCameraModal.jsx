@@ -24,7 +24,7 @@ export const TestCameraModal = () => {
                         <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2">
                             <button
                                 onClick={handleCapture}
-                                className="w-16 h-16 rounded-full bg-blue-500 border-4 border-white shadow-lg hover:bg-blue-700 transition-colors flex items-center justify-center"
+                                className="w-16 h-16 rounded-full bg-blue-500 border-4 border-white shadow-lg hover:bg-blue-600 transition-colors flex items-center justify-center"
                             >
                                 <Camera size={28} className="text-white" />
                             </button>
@@ -46,7 +46,7 @@ export const TestCameraModal = () => {
                             </button>
                             <button
                                 onClick={handleSaveImage}
-                                className="flex-1 max-w-xs py-3 bg-blue-500 text-white rounded-xl font-medium hover:bg-blue-700 transition-colors"
+                                className="flex-1 max-w-xs py-3 bg-blue-500 text-white rounded-xl font-medium hover:bg-blue-600 transition-colors"
                             >
                                 Saqlash
                             </button>

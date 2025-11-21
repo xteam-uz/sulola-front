@@ -7,9 +7,6 @@ import { toast, ToastContainer, Zoom } from "react-toastify";
 import { FadeContent } from "./ui";
 
 export const TestTakerDashboard = () => {
-    // const [activeTests, setActiveTests] = useState([]);
-    // const [completedTests, setCompletedTests] = useState([]);
-    // const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
     const [testCode, setTestCode] = useState("");
     const [checking, setChecking] = useState(false);
@@ -18,12 +15,6 @@ export const TestTakerDashboard = () => {
     const { user, tests, testsLoading } = useStateContext();
 
     const navigate = useNavigate();
-
-    // useEffect(() => {
-    //     setTimeout(() => {
-    //         setLoading(false);
-    //     }, 1000);
-    // }, []);
 
     const filteredTests = (tests || []).filter((test) => {
         if (activeTab === "created") {
@@ -57,8 +48,11 @@ export const TestTakerDashboard = () => {
                 setShowModal(false);
                 setTestCode("");
 
+                // Record the start time when navigating to the test
+                const startTime = new Date().toISOString();
+
                 navigate(`/test_taking`, {
-                    state: { testId: testIdToSend },
+                    state: { testId: testIdToSend, startTime },
                 });
 
                 // ✅ DEBUG: Navigate qilgandan keyin
@@ -95,9 +89,11 @@ export const TestTakerDashboard = () => {
         }
     };
     const handleTestClick = (testId) => {
+        const startTime = new Date().toISOString();
+
         // To'g'ridan-to'g'ri test sahifasiga o'tish
         navigate(`/test_taking`, {
-            state: { testId: testId },
+            state: { testId: testId, startTime },
         });
     };
 
@@ -132,7 +128,7 @@ export const TestTakerDashboard = () => {
                         {/* <h3 className="text-base font-bold text-gray-800">Jarayondagi testlar</h3> */}
                         <button
                             onClick={() => setShowModal(true)}
-                            className="w-full bg-blue-500 text-white px-4 py-2 rounded-xl text-sm font-medium shadow-md hover:bg-blue-700 transition-colors"
+                            className="w-full bg-blue-500 text-white px-4 py-2 rounded-xl text-sm font-medium shadow-md hover:bg-blue-600 transition-colors"
                         >
                             Test kodini kiritish
                         </button>
@@ -305,7 +301,7 @@ export const TestTakerDashboard = () => {
                                     disabled={!testCode.trim() || checking}
                                     className={`px-4 py-2 rounded-lg text-sm transition-colors flex items-center gap-2 ${
                                         testCode.trim()
-                                            ? "bg-blue-500 text-white hover:bg-blue-700"
+                                            ? "bg-blue-500 text-white hover:bg-blue-600"
                                             : "bg-gray-300 text-gray-500 cursor-not-allowed"
                                     }`}
                                 >
