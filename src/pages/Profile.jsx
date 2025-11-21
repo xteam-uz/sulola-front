@@ -317,7 +317,9 @@ export const Profile = () => {
                     />
                 </BottomBar>
             )}
-            <BackButton onClick={() => window.history.back()} />
+            <>
+                <BackButton onClick={() => window.history.back()} />
+            </>
 
             {/* Loading overlay */}
             {saving && (
