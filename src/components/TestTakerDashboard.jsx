@@ -10,28 +10,11 @@ export const TestTakerDashboard = () => {
     const [showModal, setShowModal] = useState(false);
     const [testCode, setTestCode] = useState("");
     const [checking, setChecking] = useState(false);
-    const [activeTab, setActiveTab] = useState("created");
 
     const { user, tests, testsLoading, pagination, fetchTestsPage } =
         useStateContext();
 
-    console.log(pagination);
-
     const navigate = useNavigate();
-
-    const filteredTests = (tests || []).filter((test) => {
-        const now = new Date();
-        const endTime = new Date(test.end_time);
-
-        if (activeTab === "created") {
-            return now < endTime;
-        } else {
-            return now >= endTime;
-        }
-    });
-
-    console.log("Filtered Tests:", filteredTests);
-    console.log("Tests:", tests);
 
     const handlePageChange = (page) => {
         fetchTestsPage(page);
@@ -397,9 +380,8 @@ export const TestTakerDashboard = () => {
                             ) : (
                                 <div className="bg-white rounded-2xl p-8 text-center">
                                     <p className="text-gray-500">
-                                        {activeTab === "created"
-                                            ? "Hozircha jarayondagi testlar yo'q"
-                                            : "Hozircha yopilgan testlar yo'q"}
+                                        {tests === null &&
+                                            "Hozircha jarayondagi testlar yo'q"}
                                     </p>
                                 </div>
                             )}
