@@ -68,7 +68,7 @@ export const ContextProvider = ({ children }) => {
         try {
             const { data } = await axiosClient.get("/test/results", {
                 params: {
-                    user_id: "1367538109", //userId,
+                    user_id: userId,
                 },
             });
             console.log(data.results);
