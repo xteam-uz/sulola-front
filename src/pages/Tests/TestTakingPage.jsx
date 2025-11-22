@@ -239,12 +239,12 @@ export const TestTakingPage = () => {
             return;
         }
 
-        if (totalAnswered < totalQuestions) {
-            const confirmSubmit = window.confirm(
-                `Siz ${totalQuestions} ta savoldan faqat ${totalAnswered} tasiga javob berdingiz. Baribir yuborasizmi?`,
-            );
-            if (!confirmSubmit) return;
-        }
+        // if (totalAnswered < totalQuestions) {
+        //     const confirmSubmit = window.confirm(
+        //         `Siz ${totalQuestions} ta savoldan faqat ${totalAnswered} tasiga javob berdingiz. Baribir yuborasizmi?`,
+        //     );
+        //     if (!confirmSubmit) return;
+        // }
 
         // Calculate duration in minutes
         let duration = 0; // Default value
@@ -681,14 +681,14 @@ export const TestTakingPage = () => {
 
                 {/* TEST UCHUN*/}
                 {
-                    // !isSubmitted && !isTestNotStarted && !isTestExpired && (
-                    //     <button
-                    //         onClick={handleSubmit}
-                    //         className="w-full cursor-pointer mb-24 py-3 bg-blue-500 text-white rounded-xl font-medium hover:bg-blue-600 transition-colors"
-                    //     >
-                    //         📤 Javoblarni yuborish
-                    //     </button>
-                    // )
+                    !isSubmitted && !isTestNotStarted && !isTestExpired && (
+                        <button
+                            onClick={handleSubmit}
+                            className="w-full cursor-pointer mb-24 py-3 bg-blue-500 text-white rounded-xl font-medium hover:bg-blue-600 transition-colors"
+                        >
+                            📤 Javoblarni yuborish
+                        </button>
+                    )
                     // : (
                     //     <button
                     //         onClick={() => navigate("/")}

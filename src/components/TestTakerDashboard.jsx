@@ -12,9 +12,10 @@ export const TestTakerDashboard = () => {
     const [checking, setChecking] = useState(false);
     const [activeTab, setActiveTab] = useState("created");
     const [currentPage, setCurrentPage] = useState(1);
-    const [pagination, setPagination] = useState(null);
+    // const [pagination, setPagination] = useState(null);
 
-    const { user, tests, testsLoading, setTests } = useStateContext();
+    const { user, tests, testsLoading, pagination, fetchTestsPage } =
+        useStateContext();
 
     const navigate = useNavigate();
 
@@ -29,32 +30,8 @@ export const TestTakerDashboard = () => {
         }
     });
 
-    const fetchTestsPage = async (page) => {
-        try {
-            const { data } = await axiosClient.get("/test/results", {
-                params: {
-                    user_id: user[0]?.bot_user?.user_id,
-                    page: page,
-                },
-            });
-            setTests(data.results.data);
-            setPagination({
-                currentPage: data.results.current_page,
-                lastPage: data.results.last_page,
-                total: data.results.total,
-                from: data.results.from,
-                to: data.results.to,
-            });
-            setCurrentPage(page);
-        } catch (error) {
-            console.error("Pagination error:", error);
-        }
-    };
-
     const handlePageChange = (page) => {
-        if (page >= 1 && page <= (pagination?.lastPage || 1)) {
-            fetchTestsPage(page);
-        }
+        fetchTestsPage(page);
     };
 
     const handleSubmit = async (e) => {
@@ -188,7 +165,6 @@ export const TestTakerDashboard = () => {
             <div className="px-4 my-6">
                 <div className="mb-6">
                     <div className="flex items-center justify-center mb-4">
-                        {/* <h3 className="text-base font-bold text-gray-800">Jarayondagi testlar</h3> */}
                         <button
                             onClick={() => setShowModal(true)}
                             className="w-full bg-blue-500 text-white px-4 py-2 rounded-xl text-sm font-medium shadow-md hover:bg-blue-600 transition-colors"

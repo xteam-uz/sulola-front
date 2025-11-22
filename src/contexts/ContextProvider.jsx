@@ -5,12 +5,14 @@ const StateContext = createContext({
     user: null,
     token: null,
     tests: null,
+    pagination: null,
     loading: false,
     testsLoading: false,
     setUser: () => {},
     setToken: () => {},
     refreshUser: () => {},
     fetchTests: () => {},
+    fetchTestsPage: () => {},
     refreshTests: () => {},
 });
 
@@ -18,6 +20,7 @@ export const ContextProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [token, _setToken] = useState(localStorage.getItem("ACCESS_TOKEN"));
     const [tests, setTests] = useState(null);
+    const [pagination, setPagination] = useState(null);
     const [loading, setLoading] = useState(false);
     const [testsLoading, setTestsLoading] = useState(false);
 
@@ -30,7 +33,6 @@ export const ContextProvider = ({ children }) => {
         }
     };
 
-    // User ma'lumotlarini olish funksiyasi
     const fetchUser = async () => {
         if (!token) {
             setUser(null);
@@ -44,7 +46,6 @@ export const ContextProvider = ({ children }) => {
         } catch (error) {
             console.error("User fetch error:", error);
             setUser(null);
-            // Agar token yaroqsiz bo'lsa, uni o'chirish
             if (error.response?.status === 401) {
                 setToken(null);
             }
@@ -53,14 +54,14 @@ export const ContextProvider = ({ children }) => {
         }
     };
 
-    // User ma'lumotlarini yangilash funksiyasi (komponentlardan chaqirish uchun)
     const refreshUser = () => {
         fetchUser();
     };
 
-    const fetchTests = async (userId) => {
+    const fetchTests = async (userId, page = 1) => {
         if (!userId) {
             setTests(null);
+            setPagination(null);
             return;
         }
 
@@ -69,23 +70,40 @@ export const ContextProvider = ({ children }) => {
             const { data } = await axiosClient.get("/test/results", {
                 params: {
                     user_id: userId,
+                    page: page,
                 },
             });
-            console.log(data.results);
             setTests(data.results.data);
+            setPagination({
+                currentPage: data.results.current_page,
+                lastPage: data.results.last_page,
+                total: data.results.total,
+                from: data.results.from,
+                to: data.results.to,
+            });
         } catch (error) {
             console.error("Tests fetch error:", error);
             setTests(null);
+            setPagination(null);
         } finally {
             setTestsLoading(false);
         }
     };
 
-    const refreshTests = () => {
-        fetchTests();
+    const fetchTestsPage = (page) => {
+        const userId = user?.[0]?.bot_user?.user_id;
+        if (userId && page >= 1 && page <= (pagination?.lastPage || 1)) {
+            fetchTests(userId, page);
+        }
     };
 
-    // Token o'zgarganda user ma'lumotlarini olish
+    const refreshTests = () => {
+        const userId = user?.[0]?.bot_user?.user_id;
+        if (userId) {
+            fetchTests(userId, 1);
+        }
+    };
+
     useEffect(() => {
         fetchUser();
     }, [token]);
@@ -106,8 +124,10 @@ export const ContextProvider = ({ children }) => {
                 setToken,
                 refreshUser,
                 tests,
+                pagination,
                 testsLoading,
                 fetchTests,
+                fetchTestsPage,
                 refreshTests,
             }}
         >
@@ -116,5 +136,4 @@ export const ContextProvider = ({ children }) => {
     );
 };
 
-// eslint-disable-next-line react-refresh/only-export-components
 export const useStateContext = () => useContext(StateContext);
