@@ -7,11 +7,11 @@ const StateContext = createContext({
     tests: null,
     loading: false,
     testsLoading: false,
-    setUser: () => { },
-    setToken: () => { },
-    refreshUser: () => { },
-    fetchTests: () => { },
-    refreshTests: () => { },
+    setUser: () => {},
+    setToken: () => {},
+    refreshUser: () => {},
+    fetchTests: () => {},
+    refreshTests: () => {},
 });
 
 export const ContextProvider = ({ children }) => {
@@ -58,16 +58,21 @@ export const ContextProvider = ({ children }) => {
         fetchUser();
     };
 
-    const fetchTests = async () => {
-        if (!token) {
+    const fetchTests = async (userId) => {
+        if (!userId) {
             setTests(null);
             return;
         }
 
         setTestsLoading(true);
         try {
-            const { data } = await axiosClient.get("/tests");
-            setTests(data.data);
+            const { data } = await axiosClient.get("/test/results", {
+                params: {
+                    user_id: "1367538109", //userId,
+                },
+            });
+            console.log(data.results);
+            setTests(data.results.data);
         } catch (error) {
             console.error("Tests fetch error:", error);
             setTests(null);
@@ -83,8 +88,13 @@ export const ContextProvider = ({ children }) => {
     // Token o'zgarganda user ma'lumotlarini olish
     useEffect(() => {
         fetchUser();
-        fetchTests();
     }, [token]);
+
+    useEffect(() => {
+        if (user?.[0]?.bot_user?.user_id) {
+            fetchTests(user[0].bot_user.user_id);
+        }
+    }, [user]);
 
     return (
         <StateContext.Provider
