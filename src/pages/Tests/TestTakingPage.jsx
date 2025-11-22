@@ -308,6 +308,10 @@ export const TestTakingPage = () => {
                     className: "toast-width my-2",
                 },
             );
+
+            setTimeout(() => {
+                navigate("/");
+            }, 10000);
         } catch (error) {
             console.error("Yuborishda xatolik:", error);
             toast.error("Yuborishda xatolik yuz berdi!", {
@@ -676,41 +680,47 @@ export const TestTakingPage = () => {
                 {render36_45Questions()}
 
                 {/* TEST UCHUN*/}
-                {/* {!isSubmitted && !isTestNotStarted && !isTestExpired ? (
-                    <button
-                        onClick={handleSubmit}
-                        className="w-full cursor-pointer mb-24 py-3 bg-blue-500 text-white rounded-xl font-medium hover:bg-blue-600 transition-colors"
-                    >
-                        📤 Javoblarni yuborish
-                    </button>
-                ) : (
-                    <button
-                        onClick={() => navigate("/")}
-                        className="w-full cursor-pointer mb-24 py-3 bg-teal-500 text-white rounded-xl font-medium hover:bg-blue-600 transition-colors"
-                    >
-                        🏠 Asosiy sahifaga qaytish
-                    </button>
-                )}*/}
+                {
+                    // !isSubmitted && !isTestNotStarted && !isTestExpired && (
+                    //     <button
+                    //         onClick={handleSubmit}
+                    //         className="w-full cursor-pointer mb-24 py-3 bg-blue-500 text-white rounded-xl font-medium hover:bg-blue-600 transition-colors"
+                    //     >
+                    //         📤 Javoblarni yuborish
+                    //     </button>
+                    // )
+                    // : (
+                    //     <button
+                    //         onClick={() => navigate("/")}
+                    //         className="w-full cursor-pointer mb-24 py-3 bg-teal-500 text-white rounded-xl font-medium hover:bg-blue-600 transition-colors"
+                    //     >
+                    //         🏠 Asosiy sahifaga qaytish
+                    //     </button>
+                    // )
+                }
                 {/* END TEST UCHUN*/}
 
                 <BottomBar bgColor="#ffffff">
-                    {!isSubmitted && isTestActive ? (
-                        <MainButton
-                            color="#2b7fff"
-                            textColor="#ffffff"
-                            text="📤 Javoblarni yuborish"
-                            progress={false}
-                            onClick={handleSubmit}
-                        />
-                    ) : (
-                        <MainButton
-                            color="#2b7fff"
-                            textColor="#ffffff"
-                            text="🏠 Asosiy sahifaga qaytish"
-                            progress={false}
-                            onClick={() => navigate("/")}
-                        />
-                    )}
+                    {
+                        !isSubmitted && isTestActive && (
+                            <MainButton
+                                color="#2b7fff"
+                                textColor="#ffffff"
+                                text="📤 Javoblarni yuborish"
+                                progress={false}
+                                onClick={handleSubmit}
+                            />
+                        )
+                        // : (
+                        //     <MainButton
+                        //         color="#2b7fff"
+                        //         textColor="#ffffff"
+                        //         text="🏠 Asosiy sahifaga qaytish"
+                        //         progress={false}
+                        //         onClick={() => navigate("/")}
+                        //     />
+                        // )
+                    }
                     <BackButton onClick={() => window.history.back()} />
                 </BottomBar>
 
