@@ -11,11 +11,11 @@ export const TestTakerDashboard = () => {
     const [testCode, setTestCode] = useState("");
     const [checking, setChecking] = useState(false);
     const [activeTab, setActiveTab] = useState("created");
-    const [currentPage, setCurrentPage] = useState(1);
-    // const [pagination, setPagination] = useState(null);
 
     const { user, tests, testsLoading, pagination, fetchTestsPage } =
         useStateContext();
+
+    console.log(pagination);
 
     const navigate = useNavigate();
 
@@ -29,6 +29,9 @@ export const TestTakerDashboard = () => {
             return now >= endTime;
         }
     });
+
+    console.log("Filtered Tests:", filteredTests);
+    console.log("Tests:", tests);
 
     const handlePageChange = (page) => {
         fetchTestsPage(page);
@@ -178,11 +181,7 @@ export const TestTakerDashboard = () => {
                         <div className="flex space-x-1 bg-gray-100 rounded-xl p-1 mb-4">
                             <button
                                 // onClick={() => setActiveTab("created")}
-                                className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-all ${
-                                    activeTab === "created"
-                                        ? "bg-white text-blue-600 shadow-sm"
-                                        : "text-gray-600 hover:text-gray-800"
-                                }`}
+                                className="flex-1 py-2.5 rounded-lg text-sm font-medium transition-all bg-white text-blue-600 shadow-sm"
                             >
                                 Qatnashgan testlar
                             </button>
@@ -199,9 +198,9 @@ export const TestTakerDashboard = () => {
                                         Yuklanmoqda...
                                     </p>
                                 </div>
-                            ) : filteredTests.length > 0 ? (
+                            ) : (tests || []).length > 0 ? (
                                 <>
-                                    {filteredTests.map((test, index) => (
+                                    {(tests || []).map((test, index) => (
                                         <div
                                             key={test.code || index}
                                             className="bg-white rounded-2xl p-4 mb-2 shadow-sm border border-gray-100 hover:shadow-md transition-shadow cursor-pointer"
@@ -295,12 +294,16 @@ export const TestTakerDashboard = () => {
                                                 <button
                                                     onClick={() =>
                                                         handlePageChange(
-                                                            currentPage - 1,
+                                                            pagination.from -
+                                                                pagination.perPage,
                                                         )
                                                     }
-                                                    disabled={currentPage === 1}
+                                                    disabled={
+                                                        pagination.currentPage
+                                                    }
                                                     className={`p-2 rounded-lg transition-colors ${
-                                                        currentPage === 1
+                                                        pagination.currentPage ===
+                                                        1
                                                             ? "text-gray-300 cursor-not-allowed"
                                                             : "text-gray-600 hover:bg-gray-100"
                                                     }`}
@@ -322,7 +325,7 @@ export const TestTakerDashboard = () => {
                                                                     pagination.lastPage ||
                                                                 Math.abs(
                                                                     page -
-                                                                        currentPage,
+                                                                        pagination.currentPage,
                                                                 ) <= 1
                                                             );
                                                         })
@@ -354,7 +357,7 @@ export const TestTakerDashboard = () => {
                                                                             )
                                                                         }
                                                                         className={`w-8 h-8 rounded-lg text-sm font-medium transition-colors ${
-                                                                            currentPage ===
+                                                                            pagination.currentPage ===
                                                                             page
                                                                                 ? "bg-blue-500 text-white"
                                                                                 : "text-gray-600 hover:bg-gray-100"
@@ -370,15 +373,16 @@ export const TestTakerDashboard = () => {
                                                 <button
                                                     onClick={() =>
                                                         handlePageChange(
-                                                            currentPage + 1,
+                                                            pagination.currentPage +
+                                                                1,
                                                         )
                                                     }
                                                     disabled={
-                                                        currentPage ===
+                                                        pagination.currentPage ===
                                                         pagination.lastPage
                                                     }
                                                     className={`p-2 rounded-lg transition-colors ${
-                                                        currentPage ===
+                                                        pagination.currentPage ===
                                                         pagination.lastPage
                                                             ? "text-gray-300 cursor-not-allowed"
                                                             : "text-gray-600 hover:bg-gray-100"
