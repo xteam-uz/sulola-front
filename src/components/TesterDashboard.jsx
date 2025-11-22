@@ -11,12 +11,15 @@ import {
 import { useStateContext } from "../contexts/ContextProvider";
 import { FadeContent } from "./ui";
 import { FooterNavbar } from "./FooterNavbar";
+import { useNavigate } from "react-router-dom";
 
 export const TesterDashboard = () => {
     const [showModal, setShowModal] = useState(false);
     const [activeTab, setActiveTab] = useState("created");
 
     const { user, tests, testsLoading } = useStateContext();
+
+    const navigate = useNavigate();
 
     // testlarni tab bo'yicha ajratish
     const filteredTests = (tests || []).filter((test) => {
@@ -26,6 +29,13 @@ export const TesterDashboard = () => {
             return test.status === "finished" || test.status === "closed";
         }
     });
+
+    const handleTestClick = (testId) => {
+        // testni boshlash uchun funksiya
+        navigate(`/test_checking`, {
+            state: { testId },
+        });
+    };
 
     return (
         <>
@@ -149,7 +159,10 @@ export const TesterDashboard = () => {
                                 key={test.id}
                                 className="bg-white rounded-2xl p-4 mb-2 shadow-sm border border-gray-100 hover:shadow-md transition-shadow cursor-pointer"
                             >
-                                <div className="flex items-center justify-between">
+                                <div
+                                    onClick={() => handleTestClick(test.id)}
+                                    className="flex items-center justify-between"
+                                >
                                     <div className="flex-1">
                                         <div className="flex items-center space-x-2 mb-2">
                                             <h4 className="font-semibold text-gray-800">

@@ -2,6 +2,7 @@ import { createBrowserRouter, Navigate } from "react-router-dom";
 import { DefaultLayout, GuestLayout } from "../components/layouts";
 import { Dashboard, NotFound, Profile, Signup, Students } from "../pages";
 import { TestTakingPage } from "../pages/Tests/TestTakingPage";
+import { TestChecking } from "../pages/Tests/TestChacking";
 
 const router = createBrowserRouter([
     {
@@ -26,8 +27,12 @@ const router = createBrowserRouter([
             },
             {
                 path: "/test_taking",
-                element: <TestTakingPage />
-            }
+                element: <TestTakingPage />,
+            },
+            {
+                path: "/test_checking",
+                element: <TestChecking />,
+            },
         ],
     },
     {

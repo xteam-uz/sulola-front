@@ -22,38 +22,11 @@ export const CardNav = ({
     const tlRef = useRef(null);
 
     const calculateHeight = () => {
-        const navEl = navRef.current;
-        if (!navEl) return 260;
-
         const isMobile = window.matchMedia("(max-width: 768px)").matches;
         if (isMobile) {
-            const contentEl = navEl.querySelector(".card-nav-content");
-            if (contentEl) {
-                const wasVisible = contentEl.style.visibility;
-                const wasPointerEvents = contentEl.style.pointerEvents;
-                const wasPosition = contentEl.style.position;
-                const wasHeight = contentEl.style.height;
-
-                contentEl.style.visibility = "visible";
-                contentEl.style.pointerEvents = "auto";
-                contentEl.style.position = "static";
-                contentEl.style.height = "auto";
-
-                contentEl.offsetHeight;
-
-                const topBar = 60;
-                const padding = 16;
-                const contentHeight = contentEl.scrollHeight;
-
-                contentEl.style.visibility = wasVisible;
-                contentEl.style.pointerEvents = wasPointerEvents;
-                contentEl.style.position = wasPosition;
-                contentEl.style.height = wasHeight;
-
-                return topBar + contentHeight + padding;
-            }
+            return 136;
         }
-        return 260;
+        return 136;
     };
 
     const createTimeline = () => {
@@ -143,7 +116,7 @@ export const CardNav = ({
         >
             <nav
                 ref={navRef}
-                className={`card-nav ${isExpanded ? "open" : ""}  block h-[60px] p-0 rounded-xl relative overflow-hidden will-change-[height]`}
+                className={`card-nav ${isExpanded ? "open" : ""}  block h-[30px] p-0 rounded-xl relative overflow-hidden will-change-[height]`}
                 style={{ backgroundColor: baseColor }}
             >
                 <div className="card-nav-top absolute inset-x-0 top-0 h-[60px] flex items-center justify-between p-2 pl-[1.1rem] z-[2]">

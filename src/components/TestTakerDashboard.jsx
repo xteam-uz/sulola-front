@@ -3,7 +3,7 @@ import { ChevronRight, Clock, FileText } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useStateContext } from "../contexts/ContextProvider";
 import axiosClient from "../api/axios-client";
-import { toast, ToastContainer, Zoom } from "react-toastify";
+import { Bounce, toast, ToastContainer, Zoom } from "react-toastify";
 import { FadeContent } from "./ui";
 
 export const TestTakerDashboard = () => {
@@ -67,7 +67,8 @@ export const TestTakerDashboard = () => {
                     draggable: true,
                     progress: undefined,
                     theme: "light",
-                    transition: Zoom,
+                    transition: Bounce,
+                    className: "toast-width my-2",
                 });
             }
         } catch (error) {
@@ -82,7 +83,8 @@ export const TestTakerDashboard = () => {
                 draggable: true,
                 progress: undefined,
                 theme: "light",
-                transition: Zoom,
+                transition: Bounce,
+                className: "toast-width my-2",
             });
         } finally {
             setChecking(false);
@@ -328,7 +330,7 @@ export const TestTakerDashboard = () => {
                 draggable
                 pauseOnHover
                 theme="light"
-                transition={Zoom}
+                transition={Bounce}
             />
         </>
     );

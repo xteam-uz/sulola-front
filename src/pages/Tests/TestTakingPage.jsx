@@ -1,15 +1,10 @@
 import { useState, useEffect, useRef } from "react";
-import { toast, ToastContainer, Zoom } from "react-toastify";
+import { Bounce, toast, ToastContainer, Zoom } from "react-toastify";
 import { Camera, X } from "lucide-react";
 import { TopHeader } from "../../components/ui";
 import axiosClient from "../../api/axios-client";
 import { useLocation, useNavigate } from "react-router-dom";
-import {
-    BackButton,
-    BottomBar,
-    MainButton,
-    SecondaryButton,
-} from "@twa-dev/sdk/react";
+import { BackButton, BottomBar, MainButton } from "@twa-dev/sdk/react";
 import { CountdownTimer } from "../../components/CountDownTimer";
 import { useStateContext } from "../../contexts/ContextProvider";
 
@@ -62,13 +57,24 @@ export const TestTakingPage = () => {
                 }
             } catch (error) {
                 console.error("Test yuklashda xatolik:", error);
-                toast.error("Test ma'lumotlarini yuklashda xatolik!");
+                toast.error("Test ma'lumotlarini yuklashda xatolik!", {
+                    position: "top-center",
+                    autoClose: 5000,
+                    hideProgressBar: false,
+                    closeOnClick: false,
+                    pauseOnHover: true,
+                    draggable: true,
+                    progress: undefined,
+                    theme: "light",
+                    transition: Bounce,
+                    className: "toast-width my-2",
+                });
             } finally {
                 setLoading(false);
             }
         };
         fetchTest();
-    }, [testId]);
+    }, [testId, testStartTime]);
 
     // Spinner
     if (loading) {
@@ -105,6 +111,18 @@ export const TestTakingPage = () => {
                 isTestExpired
                     ? "Test vaqti tugagan! Javob yuborib bo'lmaydi."
                     : "Test hali boshlanmagan!",
+                {
+                    position: "top-center",
+                    autoClose: 5000,
+                    hideProgressBar: false,
+                    closeOnClick: false,
+                    pauseOnHover: true,
+                    draggable: true,
+                    progress: undefined,
+                    theme: "light",
+                    transition: Bounce,
+                    className: "toast-width my-2",
+                },
             );
             return;
         }
@@ -122,6 +140,18 @@ export const TestTakingPage = () => {
                 isTestExpired
                     ? "Test vaqti tugagan! Javob yuborib bo'lmaydi."
                     : "Test hali boshlanmagan!",
+                {
+                    position: "top-center",
+                    autoClose: 5000,
+                    hideProgressBar: false,
+                    closeOnClick: false,
+                    pauseOnHover: true,
+                    draggable: true,
+                    progress: undefined,
+                    theme: "light",
+                    transition: Bounce,
+                    className: "toast-width my-2",
+                },
             );
             return;
         }
@@ -157,12 +187,34 @@ export const TestTakingPage = () => {
     // handleSubmit funksiyasi
     const handleSubmit = async () => {
         if (isTestExpired) {
-            toast.error("Test vaqti tugagan! Javob yuborib bo'lmaydi.");
+            toast.error("Test vaqti tugagan!", {
+                position: "top-center",
+                autoClose: 5000,
+                hideProgressBar: false,
+                closeOnClick: false,
+                pauseOnHover: true,
+                draggable: true,
+                progress: undefined,
+                theme: "light",
+                transition: Bounce,
+                className: "toast-width my-2",
+            });
             return;
         }
 
         if (isTestNotStarted) {
-            toast.warning("Test hali boshlanmagan!");
+            toast.warning("Test hali boshlanmagan!", {
+                position: "top-center",
+                autoClose: 5000,
+                hideProgressBar: false,
+                closeOnClick: false,
+                pauseOnHover: true,
+                draggable: true,
+                progress: undefined,
+                theme: "light",
+                transition: Bounce,
+                className: "toast-width my-2",
+            });
             return;
         }
 
@@ -172,7 +224,18 @@ export const TestTakingPage = () => {
             Object.keys(textAnswers).length;
 
         if (totalAnswered === 0) {
-            toast.error("Hech qanday javob belgilanmagan!");
+            toast.error("Hech qanday javob belgilanmagan!", {
+                position: "top-center",
+                autoClose: 5000,
+                hideProgressBar: false,
+                closeOnClick: false,
+                pauseOnHover: true,
+                draggable: true,
+                progress: undefined,
+                theme: "light",
+                transition: Bounce,
+                className: "toast-width my-2",
+            });
             return;
         }
 
@@ -241,7 +304,8 @@ export const TestTakingPage = () => {
                     draggable: true,
                     progress: undefined,
                     theme: "light",
-                    transition: Zoom,
+                    transition: Bounce,
+                    className: "toast-width my-2",
                 },
             );
         } catch (error) {
@@ -255,7 +319,8 @@ export const TestTakingPage = () => {
                 draggable: true,
                 progress: undefined,
                 theme: "light",
-                transition: Zoom,
+                transition: Bounce,
+                className: "toast-width my-2",
             });
         }
     };
@@ -419,9 +484,15 @@ export const TestTakingPage = () => {
         setTestStatus("active");
         toast.success("🎉 Test boshlandi! Javoblarni jo'natishingiz mumkin.", {
             position: "top-center",
-            autoClose: 3000,
+            autoClose: 5000,
+            hideProgressBar: false,
+            closeOnClick: false,
+            pauseOnHover: true,
+            draggable: true,
+            progress: undefined,
             theme: "light",
-            transition: Zoom,
+            transition: Bounce,
+            className: "toast-width my-2",
         });
     };
 
@@ -430,8 +501,15 @@ export const TestTakingPage = () => {
         setTestStatus("expired");
         toast.error("⏰ Test vaqti tugadi! Endi javob yuborib bo'lmaydi.", {
             position: "top-center",
-            autoClose: false,
+            autoClose: 5000,
+            hideProgressBar: false,
+            closeOnClick: false,
+            pauseOnHover: true,
+            draggable: true,
+            progress: undefined,
             theme: "light",
+            transition: Bounce,
+            className: "toast-width my-2",
         });
     };
 
@@ -640,14 +718,15 @@ export const TestTakingPage = () => {
                     position="top-center"
                     autoClose={5000}
                     hideProgressBar={false}
-                    newestOnTop={false}
+                    newestOnTop
                     closeOnClick={false}
                     rtl={false}
                     pauseOnFocusLoss
                     draggable
                     pauseOnHover
                     theme="light"
-                    transition={Zoom}
+                    transition={Bounce}
+                    className="w-1/2"
                 />
             </div>
         </div>

@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { TopHeader } from "../components/ui";
 import { useStateContext } from "../contexts/ContextProvider";
-import { toast, ToastContainer, Zoom } from "react-toastify";
+import { Bounce, toast, ToastContainer, Zoom } from "react-toastify";
 import axiosClient from "../api/axios-client";
 import { useNavigate } from "react-router-dom";
 import {
@@ -47,7 +47,18 @@ export const Profile = () => {
         const lastName = formData.last_name?.trim() || "";
 
         if (!firstName || !lastName) {
-            toast.error("Ism va familiya to'ldirilishi shart!");
+            toast.error("Ism va familiya to'ldirilishi shart!", {
+                position: "top-center",
+                autoClose: 5000,
+                hideProgressBar: false,
+                closeOnClick: false,
+                pauseOnHover: true,
+                draggable: true,
+                progress: undefined,
+                theme: "light",
+                transition: Bounce,
+                className: "toast-width my-2",
+            });
             return;
         }
 
@@ -69,7 +80,8 @@ export const Profile = () => {
                 draggable: true,
                 progress: undefined,
                 theme: "light",
-                transition: Zoom,
+                transition: Bounce,
+                className: "toast-width my-2",
             });
 
             // User ma'lumotlarini yangilash
@@ -86,7 +98,18 @@ export const Profile = () => {
             console.error("Save error:", error);
             const errorMsg =
                 error.response?.data?.message || "Xatolik yuz berdi!";
-            toast.error(errorMsg);
+            toast.error(errorMsg, {
+                position: "top-center",
+                autoClose: 5000,
+                hideProgressBar: false,
+                closeOnClick: false,
+                pauseOnHover: true,
+                draggable: true,
+                progress: undefined,
+                theme: "light",
+                transition: Bounce,
+                className: "toast-width my-2",
+            });
         } finally {
             setSaving(false);
         }
@@ -346,7 +369,7 @@ export const Profile = () => {
                 draggable
                 pauseOnHover
                 theme="light"
-                transition={Zoom}
+                transition={Bounce}
             />
         </div>
     );

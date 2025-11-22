@@ -4,3 +4,11 @@
 body {
     font-family: "Inter", sans-serif; /* yoki tanlagan fonting */
 }
+
+@layer utilities {
+    .toast-width {
+        width: 90% !important;
+        margin-left: auto !important;
+        margin-right: auto !important;
+    }
+}
