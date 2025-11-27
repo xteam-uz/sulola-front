@@ -4,6 +4,7 @@ import axiosClient from "../api/axios-client";
 const StateContext = createContext({
     user: null,
     token: null,
+    test: null,
     tests: null,
     testResults: null,
     pagination: null,
@@ -12,17 +13,19 @@ const StateContext = createContext({
     setUser: () => {},
     setToken: () => {},
     refreshUser: () => {},
+    fetchTestById: () => {},
     fetchTestsResults: () => {},
     fetchTestsResultsPage: () => {},
     refreshTestResults: () => {},
     refreshTests: () => {},
-    sciences: null, // ✅ To'g'ri yozildi
+    sciences: null,
 });
 
 export const ContextProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [token, _setToken] = useState(localStorage.getItem("ACCESS_TOKEN"));
     const [tests, setTests] = useState(null);
+    const [test, setTest] = useState(null);
     const [testResults, setTestResults] = useState(null);
     const [pagination, setPagination] = useState(null);
     const [loading, setLoading] = useState(false);
@@ -65,6 +68,19 @@ export const ContextProvider = ({ children }) => {
     };
 
     // tests data
+    const fetchTestById = async (testId) => {
+        setLoading(true);
+        try {
+            const { data } = await axiosClient.get(`/tests/${testId}`);
+            setTest(data);
+        } catch (error) {
+            console.error("Test fetch error:", error);
+            setTest(null);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const fetchTests = async (userId, page = 1) => {
         if (!userId) {
             setPagination(null);
@@ -185,6 +201,7 @@ export const ContextProvider = ({ children }) => {
                 setUser,
                 setToken,
                 refreshUser,
+                test,
                 tests,
                 setTests,
                 testResults,
@@ -192,6 +209,7 @@ export const ContextProvider = ({ children }) => {
                 testsLoading,
                 fetchTestsResults,
                 fetchTestsResultsPage,
+                fetchTestById,
                 refreshTestResults,
                 refreshTests,
                 sciences, // ✅ To'g'ri yozildi

@@ -25,10 +25,8 @@ export const PaidTests = () => {
     const [showSuccessModal, setShowSuccessModal] = useState(false);
     const [createdTestCode, setCreatedTestCode] = useState("");
 
-    // Context API
-    const { user } = useStateContext();
-    const botUserID = user[0]?.bot_user?.user_id;
-    // console.log(botUserID);
+    // Context api
+    const { refreshTests } = useStateContext();
 
     // Step 1: Asosiy ma'lumotlar
     const [testName, setTestName] = useState("");
@@ -236,6 +234,8 @@ export const PaidTests = () => {
         try {
             const response = await axiosClient.post("/tests", testData);
             console.log("Backend javobi:", response.data);
+
+            refreshTests();
 
             // Success modal ko'rsatish
             setCreatedTestCode(response.data.test.code);
@@ -669,7 +669,14 @@ export const PaidTests = () => {
         toast.success("Kod nusxalandi!", {
             position: "top-center",
             autoClose: 2000,
+            hideProgressBar: false,
+            closeOnClick: false,
+            pauseOnHover: true,
+            draggable: true,
+            progress: undefined,
+            theme: "light",
             transition: Bounce,
+            className: "toast-width my-2",
         });
     };
 

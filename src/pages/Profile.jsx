@@ -73,7 +73,7 @@ export const Profile = () => {
 
             toast.success("Malumotlar saqlandi", {
                 position: "top-center",
-                autoClose: 2000,
+                autoClose: 1500,
                 hideProgressBar: false,
                 closeOnClick: false,
                 pauseOnHover: true,
@@ -85,7 +85,7 @@ export const Profile = () => {
             });
 
             // User ma'lumotlarini yangilash
-            await refreshUser();
+            refreshUser();
 
             // Original rolni yangilash
             setOriginalRole(selectedRole);
@@ -93,7 +93,7 @@ export const Profile = () => {
             // Qisqa timeout bilan navigate
             setTimeout(() => {
                 navigate("/");
-            }, 2000);
+            }, 1000);
         } catch (error) {
             console.error("Save error:", error);
             const errorMsg =
@@ -309,7 +309,7 @@ export const Profile = () => {
             </div>
 
             {/* TEST UCHUN*/}
-            {/* {hasChanges() && !saving && (
+            {hasChanges() && !saving && (
                 <div className="px-4 py-4">
                     <button
                         onClick={handleSave}
@@ -318,7 +318,7 @@ export const Profile = () => {
                         📤 Saqlash
                     </button>
                 </div>
-            )}*/}
+            )}
             {/* END TEST UCHUN*/}
 
             {/* Telegram MainButton va BackButton */}
