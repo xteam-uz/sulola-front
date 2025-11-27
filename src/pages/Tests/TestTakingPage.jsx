@@ -24,7 +24,7 @@ export const TestTakingPage = () => {
     const videoRef = useRef(null);
     const canvasRef = useRef(null);
 
-    const { user } = useStateContext();
+    const { user, refreshTestResults } = useStateContext();
 
     const navigate = useNavigate();
     const { state } = useLocation();
@@ -293,6 +293,7 @@ export const TestTakingPage = () => {
         try {
             await axiosClient.post("/tests/save", submissionData);
             setIsSubmitted(true);
+            refreshTestResults();
             toast.success(
                 "Javoblar muvaffaqiyatli yuborildi, Tez orada natijalaringizni ko'rishingiz mumkin!",
                 {

@@ -5,24 +5,29 @@ const StateContext = createContext({
     user: null,
     token: null,
     tests: null,
+    testResults: null,
     pagination: null,
     loading: false,
     testsLoading: false,
     setUser: () => {},
     setToken: () => {},
     refreshUser: () => {},
-    fetchTests: () => {},
-    fetchTestsPage: () => {},
+    fetchTestsResults: () => {},
+    fetchTestsResultsPage: () => {},
+    refreshTestResults: () => {},
     refreshTests: () => {},
+    sciences: null, // ✅ To'g'ri yozildi
 });
 
 export const ContextProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [token, _setToken] = useState(localStorage.getItem("ACCESS_TOKEN"));
     const [tests, setTests] = useState(null);
+    const [testResults, setTestResults] = useState(null);
     const [pagination, setPagination] = useState(null);
     const [loading, setLoading] = useState(false);
     const [testsLoading, setTestsLoading] = useState(false);
+    const [sciences, setSciences] = useState([]);
 
     const setToken = (token) => {
         _setToken(token);
@@ -33,6 +38,7 @@ export const ContextProvider = ({ children }) => {
         }
     };
 
+    // user data
     const fetchUser = async () => {
         if (!token) {
             setUser(null);
@@ -58,9 +64,48 @@ export const ContextProvider = ({ children }) => {
         fetchUser();
     };
 
+    // tests data
     const fetchTests = async (userId, page = 1) => {
         if (!userId) {
-            setTests(null);
+            setPagination(null);
+            return;
+        }
+
+        setTestsLoading(true);
+        try {
+            const { data } = await axiosClient.get("/tests/list", {
+                params: {
+                    user_id: userId,
+                    page: page,
+                },
+            });
+
+            setTests(data.tests.data);
+            setPagination({
+                currentPage: data.tests.current_page,
+                lastPage: data.tests.last_page,
+                total: data.tests.total,
+                from: data.tests.from,
+                to: data.tests.to,
+            });
+        } catch (error) {
+            console.error("Tests fetch error:", error);
+            setPagination(null);
+        } finally {
+            setTestsLoading(false);
+        }
+    };
+
+    const refreshTests = () => {
+        const userId = user?.[0]?.bot_user?.user_id;
+        if (userId) {
+            fetchTests(userId, 1);
+        }
+    };
+
+    const fetchTestsResults = async (userId, page = 1) => {
+        if (!userId) {
+            setTestResults(null);
             setPagination(null);
             return;
         }
@@ -73,7 +118,7 @@ export const ContextProvider = ({ children }) => {
                     page: page,
                 },
             });
-            setTests(data.results.data);
+            setTestResults(data.results.data);
             setPagination({
                 currentPage: data.results.current_page,
                 lastPage: data.results.last_page,
@@ -83,33 +128,50 @@ export const ContextProvider = ({ children }) => {
             });
         } catch (error) {
             console.error("Tests fetch error:", error);
-            setTests(null);
+            setTestResults(null);
             setPagination(null);
         } finally {
             setTestsLoading(false);
         }
     };
 
-    const fetchTestsPage = (page) => {
+    const fetchTestsResultsPage = (page) => {
         const userId = user?.[0]?.bot_user?.user_id;
         if (userId && page >= 1 && page <= (pagination?.lastPage || 1)) {
-            fetchTests(userId, page);
+            fetchTestsResults(userId, page);
         }
     };
 
-    const refreshTests = () => {
+    const refreshTestResults = () => {
         const userId = user?.[0]?.bot_user?.user_id;
         if (userId) {
-            fetchTests(userId, 1);
+            fetchTestsResults(userId, 1);
+        }
+    };
+
+    const fetchSciences = async () => {
+        try {
+            const { data } = await axiosClient.get("/sciences");
+            setSciences(data.sciences || []);
+        } catch (error) {
+            console.error("Sciences fetch error:", error);
+            // Default qiymatlar agar backend ishlamasa
+            // setSciences([
+            //     { id: 1, name: "Biologiya" },
+            //     { id: 2, name: "Matematika" },
+            //     { id: 3, name: "Fizika" },
+            // ]);
         }
     };
 
     useEffect(() => {
         fetchUser();
+        fetchSciences();
     }, [token]);
 
     useEffect(() => {
         if (user?.[0]?.bot_user?.user_id) {
+            fetchTestsResults(user[0].bot_user.user_id);
             fetchTests(user[0].bot_user.user_id);
         }
     }, [user]);
@@ -124,11 +186,15 @@ export const ContextProvider = ({ children }) => {
                 setToken,
                 refreshUser,
                 tests,
+                setTests,
+                testResults,
                 pagination,
                 testsLoading,
-                fetchTests,
-                fetchTestsPage,
+                fetchTestsResults,
+                fetchTestsResultsPage,
+                refreshTestResults,
                 refreshTests,
+                sciences, // ✅ To'g'ri yozildi
             }}
         >
             {children}

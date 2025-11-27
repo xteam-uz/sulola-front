@@ -12,29 +12,86 @@ import { useStateContext } from "../contexts/ContextProvider";
 import { FadeContent } from "./ui";
 import { FooterNavbar } from "./FooterNavbar";
 import { useNavigate } from "react-router-dom";
+import axiosClient from "../api/axios-client";
+import { toast } from "react-toastify";
+import { Bounce } from "react-toastify/unstyled";
+import { format } from "date-fns";
 
 export const TesterDashboard = () => {
     const [showModal, setShowModal] = useState(false);
     const [activeTab, setActiveTab] = useState("created");
 
-    const { user, tests, testsLoading } = useStateContext();
+    const { user, tests, testsLoading, pagination, fetchTestsResultsPage } =
+        useStateContext();
 
     const navigate = useNavigate();
 
-    // testlarni tab bo'yicha ajratish
-    const filteredTests = (tests || []).filter((test) => {
-        if (activeTab === "created") {
-            return test.status === "upcoming" || test.status === "active";
-        } else {
-            return test.status === "finished" || test.status === "closed";
-        }
-    });
+    const handlePageChange = (page) => {
+        fetchTestsResultsPage(page);
+    };
 
-    const handleTestClick = (testId) => {
-        // testni boshlash uchun funksiya
-        navigate(`/test_checking`, {
-            state: { testId },
-        });
+    const handleTestClick = async (testCode) => {
+        try {
+            const res = await axiosClient.post("/tests/check/test", {
+                code: testCode,
+            });
+            if (res.data.exists) {
+                const testIdToSend = res.data.test_id;
+
+                const startTime = new Date().toISOString();
+
+                navigate(`/test_taking`, {
+                    state: { testId: testIdToSend, startTime },
+                });
+            } else {
+                toast.warning("Bunday kodli test bazada mavjud emas", {
+                    position: "top-center",
+                    autoClose: 5000,
+                    hideProgressBar: false,
+                    closeOnClick: false,
+                    pauseOnHover: true,
+                    draggable: true,
+                    progress: undefined,
+                    theme: "light",
+                    transition: Bounce,
+                    className: "toast-width my-2",
+                });
+            }
+        } catch (error) {
+            toast.error(error.response?.data, {
+                position: "top-center",
+                autoClose: 5000,
+                hideProgressBar: false,
+                closeOnClick: false,
+                pauseOnHover: true,
+                draggable: true,
+                progress: undefined,
+                theme: "light",
+                transition: Bounce,
+                className: "toast-width my-2",
+            });
+        }
+    };
+
+    const handleFormSubmit = (e) => {
+        e.preventDefault();
+
+        const formData = new FormData(e.target);
+        const testType = formData.get("testType");
+
+        setShowModal(false);
+
+        if (testType === "paid") {
+            navigate("/add_paid_test");
+        } else if (testType === "free") {
+            navigate("/add_free_test");
+        }
+    };
+
+    const handleOverlayClick = (e) => {
+        if (e.target === e.currentTarget) {
+            setShowModal(false);
+        }
     };
 
     return (
@@ -130,17 +187,7 @@ export const TesterDashboard = () => {
                                 : "text-gray-600 hover:text-gray-800"
                         }`}
                     >
-                        Jarayondagi testlar
-                    </button>
-                    <button
-                        onClick={() => setActiveTab("taken")}
-                        className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-all ${
-                            activeTab === "taken"
-                                ? "bg-white text-blue-600 shadow-sm"
-                                : "text-gray-600 hover:text-gray-800"
-                        }`}
-                    >
-                        Yopilgan testlar
+                        Mening testlarim
                     </button>
                 </div>
 
@@ -153,74 +200,196 @@ export const TesterDashboard = () => {
                             </div>
                             <p className="text-gray-500 mt-4">Yuklanmoqda...</p>
                         </div>
-                    ) : filteredTests.length > 0 ? (
-                        filteredTests.map((test) => (
-                            <div
-                                key={test.id}
-                                className="bg-white rounded-2xl p-4 mb-2 shadow-sm border border-gray-100 hover:shadow-md transition-shadow cursor-pointer"
-                            >
+                    ) : (tests || []).length > 0 ? (
+                        <>
+                            {(tests || []).map((test, index) => (
                                 <div
-                                    onClick={() => handleTestClick(test.id)}
-                                    className="flex items-center justify-between"
+                                    key={test.code || index}
+                                    className="bg-white rounded-2xl p-4 mb-2 shadow-sm border border-gray-100 hover:shadow-md transition-shadow cursor-pointer"
                                 >
-                                    <div className="flex-1">
-                                        <div className="flex items-center space-x-2 mb-2">
-                                            <h4 className="font-semibold text-gray-800">
-                                                {test.name}
-                                            </h4>
-                                            <span
-                                                className={`px-2 py-0.5 text-xs rounded-full font-medium ${
-                                                    test.status === "upcoming"
-                                                        ? "bg-green-100 text-green-600"
-                                                        : test.status ===
-                                                            "active"
-                                                          ? "bg-blue-100 text-blue-600"
-                                                          : "bg-gray-200 text-gray-600"
-                                                }`}
-                                            >
-                                                {test.status === "upcoming"
-                                                    ? "Kutilmoqda"
-                                                    : test.status === "active"
-                                                      ? "Faol"
-                                                      : "Yopiq"}
-                                            </span>
-                                        </div>
-                                        <p className="text-gray-700 text-sm mb-2">
-                                            Fan: {test.science_name}
-                                        </p>
-                                        <div className="flex flex-col gap-1 text-xs text-gray-500">
-                                            <div className="flex items-center space-x-1">
-                                                <FileText size={14} />
-                                                <span>Kod: {test.code}</span>
-                                            </div>
-                                            <div className="flex items-center space-x-1">
-                                                <Clock size={14} />
-                                                <span>
-                                                    Boshlanish:{" "}
-                                                    {test.start_time}
+                                    <div
+                                        onClick={() =>
+                                            handleTestClick(test.code)
+                                        }
+                                        className="flex items-center justify-between"
+                                    >
+                                        <div className="flex-1">
+                                            <div className="flex items-center space-x-2 mb-2">
+                                                <h4 className="font-semibold text-gray-800">
+                                                    {test.name}
+                                                </h4>
+                                                <span
+                                                    className={`px-2 py-0.5 text-xs rounded-full font-medium ${
+                                                        new Date() <
+                                                        new Date(
+                                                            test.start_time,
+                                                        )
+                                                            ? "bg-green-100 text-green-600"
+                                                            : new Date() <
+                                                                new Date(
+                                                                    test.end_time,
+                                                                )
+                                                              ? "bg-blue-100 text-blue-600"
+                                                              : "bg-gray-200 text-gray-600"
+                                                    }`}
+                                                >
+                                                    {new Date() <
+                                                    new Date(test.start_time)
+                                                        ? "Kutilmoqda"
+                                                        : new Date() <
+                                                            new Date(
+                                                                test.end_time,
+                                                            )
+                                                          ? "Faol"
+                                                          : "Yopiq"}
                                                 </span>
                                             </div>
-                                            <div className="flex items-center space-x-1">
-                                                <Clock size={14} />
-                                                <span>
-                                                    Tugash: {test.end_time}
-                                                </span>
+                                            <p className="text-gray-700 text-sm mb-2">
+                                                Fan: {test.science_name}
+                                            </p>
+                                            <div className="flex flex-col gap-1 text-xs text-gray-500">
+                                                <div className="flex items-center space-x-1">
+                                                    <FileText size={14} />
+                                                    <span>
+                                                        Kod: {test.code}
+                                                    </span>
+                                                </div>
+                                                <div className="flex items-center space-x-1">
+                                                    <Clock size={14} />
+                                                    <span>
+                                                        Boshlanish:{" "}
+                                                        {format(
+                                                            new Date(
+                                                                test.start_time,
+                                                            ),
+                                                            "dd.MM.yyyy HH:mm",
+                                                        )}
+                                                    </span>
+                                                </div>
+                                                <div className="flex items-center space-x-1">
+                                                    <Clock size={14} />
+                                                    <span>
+                                                        Tugash:{" "}
+                                                        {format(
+                                                            new Date(
+                                                                test.end_time,
+                                                            ),
+                                                            "dd.MM.yyyy HH:mm",
+                                                        )}
+                                                    </span>
+                                                </div>
                                             </div>
                                         </div>
+                                        <ChevronRight
+                                            className="text-gray-400 ml-2 flex-shrink-0"
+                                            size={20}
+                                        />
                                     </div>
-                                    <ChevronRight
-                                        className="text-gray-400 ml-2 flex-shrink-0"
-                                        size={20}
-                                    />
                                 </div>
-                            </div>
-                        ))
+                            ))}
+
+                            {/* Pagination */}
+                            {pagination && pagination.lastPage > 1 && (
+                                <div className="flex items-center justify-between bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+                                    <p className="text-sm text-gray-500">
+                                        {pagination.from}-{pagination.to} /{" "}
+                                        {pagination.total} ta
+                                    </p>
+                                    <div className="flex items-center gap-2">
+                                        <button
+                                            onClick={() =>
+                                                handlePageChange(
+                                                    pagination.from -
+                                                        pagination.perPage,
+                                                )
+                                            }
+                                            disabled={pagination.currentPage}
+                                            className={`p-2 rounded-lg transition-colors ${
+                                                pagination.currentPage === 1
+                                                    ? "text-gray-300 cursor-not-allowed"
+                                                    : "text-gray-600 hover:bg-gray-100"
+                                            }`}
+                                        >
+                                            <ChevronLeft size={20} />
+                                        </button>
+
+                                        <div className="flex items-center gap-1">
+                                            {Array.from(
+                                                {
+                                                    length: pagination.lastPage,
+                                                },
+                                                (_, i) => i + 1,
+                                            )
+                                                .filter((page) => {
+                                                    return (
+                                                        page === 1 ||
+                                                        page ===
+                                                            pagination.lastPage ||
+                                                        Math.abs(
+                                                            page -
+                                                                pagination.currentPage,
+                                                        ) <= 1
+                                                    );
+                                                })
+                                                .map((page, idx, arr) => (
+                                                    <span
+                                                        key={page}
+                                                        className="flex items-center"
+                                                    >
+                                                        {idx > 0 &&
+                                                            arr[idx - 1] !==
+                                                                page - 1 && (
+                                                                <span className="px-1 text-gray-400">
+                                                                    ...
+                                                                </span>
+                                                            )}
+                                                        <button
+                                                            onClick={() =>
+                                                                handlePageChange(
+                                                                    page,
+                                                                )
+                                                            }
+                                                            className={`w-8 h-8 rounded-lg text-sm font-medium transition-colors ${
+                                                                pagination.currentPage ===
+                                                                page
+                                                                    ? "bg-blue-500 text-white"
+                                                                    : "text-gray-600 hover:bg-gray-100"
+                                                            }`}
+                                                        >
+                                                            {page}
+                                                        </button>
+                                                    </span>
+                                                ))}
+                                        </div>
+
+                                        <button
+                                            onClick={() =>
+                                                handlePageChange(
+                                                    pagination.currentPage + 1,
+                                                )
+                                            }
+                                            disabled={
+                                                pagination.currentPage ===
+                                                pagination.lastPage
+                                            }
+                                            className={`p-2 rounded-lg transition-colors ${
+                                                pagination.currentPage ===
+                                                pagination.lastPage
+                                                    ? "text-gray-300 cursor-not-allowed"
+                                                    : "text-gray-600 hover:bg-gray-100"
+                                            }`}
+                                        >
+                                            <ChevronRight size={20} />
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+                        </>
                     ) : (
                         <div className="bg-white rounded-2xl p-8 text-center">
                             <p className="text-gray-500">
-                                {activeTab === "created"
-                                    ? "Hozircha jarayondagi testlar yo'q"
-                                    : "Hozircha yopilgan testlar yo'q"}
+                                {tests === null &&
+                                    "Hozircha jarayondagi testlar yo'q"}
                             </p>
                         </div>
                     )}
@@ -231,7 +400,7 @@ export const TesterDashboard = () => {
             {showModal && (
                 <div
                     className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 animate-fadeIn"
-                    onClick={() => setShowModal(false)}
+                    onClick={handleOverlayClick}
                 >
                     <FadeContent
                         blur={true}
@@ -239,15 +408,17 @@ export const TesterDashboard = () => {
                         easing="ease-in"
                         initialOpacity={0}
                     >
-                        <div
-                            onClick={(e) => e.stopPropagation()}
+                        <form
+                            onSubmit={handleFormSubmit}
                             className="bg-white w-80 rounded-2xl shadow-lg p-6 relative animate-fadeInUp"
+                            onClick={(e) => e.stopPropagation()}
                         >
                             <div className="flex items-center justify-between mb-4">
                                 <h2 className="text-sm text-center text-gray-800">
                                     Test turini tanlang
                                 </h2>
                                 <button
+                                    type="button"
                                     onClick={() => setShowModal(false)}
                                     className="px-4 py-2 text-gray-500 rounded-lg hover:bg-gray-100 text-sm"
                                 >
@@ -260,6 +431,7 @@ export const TesterDashboard = () => {
                                     <input
                                         type="radio"
                                         name="testType"
+                                        value="paid"
                                         defaultChecked
                                     />
                                     <div>
@@ -274,7 +446,11 @@ export const TesterDashboard = () => {
                                 </label>
 
                                 <label className="flex items-center space-x-3 border rounded-xl p-3 cursor-pointer hover:bg-gray-50">
-                                    <input type="radio" name="testType" />
+                                    <input
+                                        type="radio"
+                                        name="testType"
+                                        value="free"
+                                    />
                                     <div>
                                         <p className="font-medium">
                                             🎓 Tekin test
@@ -288,16 +464,20 @@ export const TesterDashboard = () => {
 
                             <div className="flex justify-end mt-5 space-x-2">
                                 <button
+                                    type="button"
                                     onClick={() => setShowModal(false)}
                                     className="px-4 py-2 text-gray-500 rounded-lg hover:bg-gray-100 text-sm"
                                 >
                                     Bekor qilish
                                 </button>
-                                <button className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 text-sm">
+                                <button
+                                    type="submit"
+                                    className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 text-sm"
+                                >
                                     Boshlash
                                 </button>
                             </div>
-                        </div>
+                        </form>
                     </FadeContent>
                 </div>
             )}

@@ -11,13 +11,19 @@ export const TestTakerDashboard = () => {
     const [testCode, setTestCode] = useState("");
     const [checking, setChecking] = useState(false);
 
-    const { user, tests, testsLoading, pagination, fetchTestsPage } =
-        useStateContext();
+    const {
+        user,
+        tests,
+        testResults,
+        testsLoading,
+        pagination,
+        fetchTestsResultsPage,
+    } = useStateContext();
 
     const navigate = useNavigate();
 
     const handlePageChange = (page) => {
-        fetchTestsPage(page);
+        fetchTestsResultsPage(page);
     };
 
     const handleSubmit = async (e) => {
@@ -181,9 +187,9 @@ export const TestTakerDashboard = () => {
                                         Yuklanmoqda...
                                     </p>
                                 </div>
-                            ) : (tests || []).length > 0 ? (
+                            ) : (testResults || []).length > 0 ? (
                                 <>
-                                    {(tests || []).map((test, index) => (
+                                    {(testResults || []).map((test, index) => (
                                         <div
                                             key={test.code || index}
                                             className="bg-white rounded-2xl p-4 mb-2 shadow-sm border border-gray-100 hover:shadow-md transition-shadow cursor-pointer"

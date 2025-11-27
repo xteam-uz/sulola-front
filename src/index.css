@@ -12,3 +12,19 @@ body {
         margin-right: auto !important;
     }
 }
+
+/* tailwind.config.js yoki CSS faylingizda */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.animate-fadeInUp {
+    animation: fadeInUp 0.3s ease-out;
+}

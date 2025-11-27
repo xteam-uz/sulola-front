@@ -170,7 +170,7 @@ export const CardNav = ({
                             color: buttonTextColor,
                         }}
                     >
-                        Get Started
+                        Sulola EDU
                     </button>
                 </div>
 
