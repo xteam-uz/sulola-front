@@ -21,8 +21,14 @@ export const TesterDashboard = () => {
     const [showModal, setShowModal] = useState(false);
     const [activeTab, setActiveTab] = useState("created");
 
-    const { user, tests, testsLoading, pagination, fetchTestsResultsPage } =
-        useStateContext();
+    const {
+        user,
+        tests,
+        checkTestCode,
+        loading,
+        pagination,
+        fetchTestsResultsPage,
+    } = useStateContext();
 
     const navigate = useNavigate();
 
@@ -31,46 +37,7 @@ export const TesterDashboard = () => {
     };
 
     const handleTestClick = async (testCode) => {
-        try {
-            const res = await axiosClient.post("/tests/check/test", {
-                code: testCode,
-            });
-            if (res.data.exists) {
-                const testIdToSend = res.data.test_id;
-
-                const startTime = new Date().toISOString();
-
-                navigate(`/test_taking`, {
-                    state: { testId: testIdToSend, startTime },
-                });
-            } else {
-                toast.warning("Bunday kodli test bazada mavjud emas", {
-                    position: "top-center",
-                    autoClose: 5000,
-                    hideProgressBar: false,
-                    closeOnClick: false,
-                    pauseOnHover: true,
-                    draggable: true,
-                    progress: undefined,
-                    theme: "light",
-                    transition: Bounce,
-                    className: "toast-width my-2",
-                });
-            }
-        } catch (error) {
-            toast.error(error.response?.data, {
-                position: "top-center",
-                autoClose: 5000,
-                hideProgressBar: false,
-                closeOnClick: false,
-                pauseOnHover: true,
-                draggable: true,
-                progress: undefined,
-                theme: "light",
-                transition: Bounce,
-                className: "toast-width my-2",
-            });
-        }
+        await checkTestCode(testCode, navigate);
     };
 
     const handleFormSubmit = (e) => {
@@ -181,11 +148,10 @@ export const TesterDashboard = () => {
                 <div className="flex space-x-1 bg-gray-100 rounded-xl p-1 mb-4">
                     <button
                         onClick={() => setActiveTab("created")}
-                        className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-all ${
-                            activeTab === "created"
-                                ? "bg-white text-blue-600 shadow-sm"
-                                : "text-gray-600 hover:text-gray-800"
-                        }`}
+                        className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-all ${activeTab === "created"
+                            ? "bg-white text-blue-600 shadow-sm"
+                            : "text-gray-600 hover:text-gray-800"
+                            }`}
                     >
                         Mening testlarim
                     </button>
@@ -193,7 +159,7 @@ export const TesterDashboard = () => {
 
                 {/* Test List */}
                 <div className="space-y-3">
-                    {testsLoading ? (
+                    {loading ? (
                         <div className="bg-white rounded-2xl p-12 text-center">
                             <div className="flex justify-center">
                                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
@@ -219,29 +185,28 @@ export const TesterDashboard = () => {
                                                     {test.name}
                                                 </h4>
                                                 <span
-                                                    className={`px-2 py-0.5 text-xs rounded-full font-medium ${
-                                                        new Date() <
+                                                    className={`px-2 py-0.5 text-xs rounded-full font-medium ${new Date() <
                                                         new Date(
                                                             test.start_time,
                                                         )
-                                                            ? "bg-green-100 text-green-600"
-                                                            : new Date() <
-                                                                new Date(
-                                                                    test.end_time,
-                                                                )
-                                                              ? "bg-blue-100 text-blue-600"
-                                                              : "bg-gray-200 text-gray-600"
-                                                    }`}
+                                                        ? "bg-green-100 text-green-600"
+                                                        : new Date() <
+                                                            new Date(
+                                                                test.end_time,
+                                                            )
+                                                            ? "bg-blue-100 text-blue-600"
+                                                            : "bg-gray-200 text-gray-600"
+                                                        }`}
                                                 >
                                                     {new Date() <
-                                                    new Date(test.start_time)
+                                                        new Date(test.start_time)
                                                         ? "Kutilmoqda"
                                                         : new Date() <
                                                             new Date(
                                                                 test.end_time,
                                                             )
-                                                          ? "Faol"
-                                                          : "Yopiq"}
+                                                            ? "Faol"
+                                                            : "Yopiq"}
                                                 </span>
                                             </div>
                                             <p className="text-gray-700 text-sm mb-2">
@@ -300,15 +265,14 @@ export const TesterDashboard = () => {
                                             onClick={() =>
                                                 handlePageChange(
                                                     pagination.from -
-                                                        pagination.perPage,
+                                                    pagination.perPage,
                                                 )
                                             }
                                             disabled={pagination.currentPage}
-                                            className={`p-2 rounded-lg transition-colors ${
-                                                pagination.currentPage === 1
-                                                    ? "text-gray-300 cursor-not-allowed"
-                                                    : "text-gray-600 hover:bg-gray-100"
-                                            }`}
+                                            className={`p-2 rounded-lg transition-colors ${pagination.currentPage === 1
+                                                ? "text-gray-300 cursor-not-allowed"
+                                                : "text-gray-600 hover:bg-gray-100"
+                                                }`}
                                         >
                                             <ChevronLeft size={20} />
                                         </button>
@@ -324,10 +288,10 @@ export const TesterDashboard = () => {
                                                     return (
                                                         page === 1 ||
                                                         page ===
-                                                            pagination.lastPage ||
+                                                        pagination.lastPage ||
                                                         Math.abs(
                                                             page -
-                                                                pagination.currentPage,
+                                                            pagination.currentPage,
                                                         ) <= 1
                                                     );
                                                 })
@@ -338,7 +302,7 @@ export const TesterDashboard = () => {
                                                     >
                                                         {idx > 0 &&
                                                             arr[idx - 1] !==
-                                                                page - 1 && (
+                                                            page - 1 && (
                                                                 <span className="px-1 text-gray-400">
                                                                     ...
                                                                 </span>
@@ -349,12 +313,11 @@ export const TesterDashboard = () => {
                                                                     page,
                                                                 )
                                                             }
-                                                            className={`w-8 h-8 rounded-lg text-sm font-medium transition-colors ${
-                                                                pagination.currentPage ===
+                                                            className={`w-8 h-8 rounded-lg text-sm font-medium transition-colors ${pagination.currentPage ===
                                                                 page
-                                                                    ? "bg-blue-500 text-white"
-                                                                    : "text-gray-600 hover:bg-gray-100"
-                                                            }`}
+                                                                ? "bg-blue-500 text-white"
+                                                                : "text-gray-600 hover:bg-gray-100"
+                                                                }`}
                                                         >
                                                             {page}
                                                         </button>
@@ -372,12 +335,11 @@ export const TesterDashboard = () => {
                                                 pagination.currentPage ===
                                                 pagination.lastPage
                                             }
-                                            className={`p-2 rounded-lg transition-colors ${
-                                                pagination.currentPage ===
+                                            className={`p-2 rounded-lg transition-colors ${pagination.currentPage ===
                                                 pagination.lastPage
-                                                    ? "text-gray-300 cursor-not-allowed"
-                                                    : "text-gray-600 hover:bg-gray-100"
-                                            }`}
+                                                ? "text-gray-300 cursor-not-allowed"
+                                                : "text-gray-600 hover:bg-gray-100"
+                                                }`}
                                         >
                                             <ChevronRight size={20} />
                                         </button>

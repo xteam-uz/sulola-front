@@ -18,6 +18,7 @@ export const TestTakerDashboard = () => {
         testsLoading,
         pagination,
         fetchTestsResultsPage,
+        hasUserSubmittedTest,
     } = useStateContext();
 
     const navigate = useNavigate();
@@ -91,11 +92,21 @@ export const TestTakerDashboard = () => {
 
                 setTestCode("");
 
+                // Check if user has already submitted this test
+                const userId = user?.[0]?.bot_user?.user_id;
+                const hasSubmitted = userId
+                    ? await hasUserSubmittedTest(testCode, userId)
+                    : false;
+
                 // Record the start time when navigating to the test
                 const startTime = new Date().toISOString();
 
                 navigate(`/test_taking`, {
-                    state: { testId: testIdToSend, startTime },
+                    state: {
+                        testId: testIdToSend,
+                        startTime,
+                        readOnly: hasSubmitted, // Set readOnly flag if test is already submitted
+                    },
                 });
             } else {
                 toast.warning("Bunday kodli test bazada mavjud emas", {
@@ -206,31 +217,30 @@ export const TestTakerDashboard = () => {
                                                             {test.name}
                                                         </h4>
                                                         <span
-                                                            className={`px-2 py-0.5 text-xs rounded-full font-medium ${
-                                                                new Date() <
+                                                            className={`px-2 py-0.5 text-xs rounded-full font-medium ${new Date() <
                                                                 new Date(
                                                                     test.start_time,
                                                                 )
-                                                                    ? "bg-green-100 text-green-600"
-                                                                    : new Date() <
-                                                                        new Date(
-                                                                            test.end_time,
-                                                                        )
-                                                                      ? "bg-blue-100 text-blue-600"
-                                                                      : "bg-gray-200 text-gray-600"
-                                                            }`}
+                                                                ? "bg-green-100 text-green-600"
+                                                                : new Date() <
+                                                                    new Date(
+                                                                        test.end_time,
+                                                                    )
+                                                                    ? "bg-blue-100 text-blue-600"
+                                                                    : "bg-gray-200 text-gray-600"
+                                                                }`}
                                                         >
                                                             {new Date() <
-                                                            new Date(
-                                                                test.start_time,
-                                                            )
+                                                                new Date(
+                                                                    test.start_time,
+                                                                )
                                                                 ? "Kutilmoqda"
                                                                 : new Date() <
                                                                     new Date(
                                                                         test.end_time,
                                                                     )
-                                                                  ? "Faol"
-                                                                  : "Yopiq"}
+                                                                    ? "Faol"
+                                                                    : "Yopiq"}
                                                         </span>
                                                     </div>
                                                     <p className="text-gray-700 text-sm mb-2">
@@ -284,18 +294,17 @@ export const TestTakerDashboard = () => {
                                                     onClick={() =>
                                                         handlePageChange(
                                                             pagination.from -
-                                                                pagination.perPage,
+                                                            pagination.perPage,
                                                         )
                                                     }
                                                     disabled={
                                                         pagination.currentPage
                                                     }
-                                                    className={`p-2 rounded-lg transition-colors ${
-                                                        pagination.currentPage ===
+                                                    className={`p-2 rounded-lg transition-colors ${pagination.currentPage ===
                                                         1
-                                                            ? "text-gray-300 cursor-not-allowed"
-                                                            : "text-gray-600 hover:bg-gray-100"
-                                                    }`}
+                                                        ? "text-gray-300 cursor-not-allowed"
+                                                        : "text-gray-600 hover:bg-gray-100"
+                                                        }`}
                                                 >
                                                     <ChevronLeft size={20} />
                                                 </button>
@@ -311,10 +320,10 @@ export const TestTakerDashboard = () => {
                                                             return (
                                                                 page === 1 ||
                                                                 page ===
-                                                                    pagination.lastPage ||
+                                                                pagination.lastPage ||
                                                                 Math.abs(
                                                                     page -
-                                                                        pagination.currentPage,
+                                                                    pagination.currentPage,
                                                                 ) <= 1
                                                             );
                                                         })
@@ -330,11 +339,11 @@ export const TestTakerDashboard = () => {
                                                                 >
                                                                     {idx > 0 &&
                                                                         arr[
-                                                                            idx -
-                                                                                1
+                                                                        idx -
+                                                                        1
                                                                         ] !==
-                                                                            page -
-                                                                                1 && (
+                                                                        page -
+                                                                        1 && (
                                                                             <span className="px-1 text-gray-400">
                                                                                 ...
                                                                             </span>
@@ -345,12 +354,11 @@ export const TestTakerDashboard = () => {
                                                                                 page,
                                                                             )
                                                                         }
-                                                                        className={`w-8 h-8 rounded-lg text-sm font-medium transition-colors ${
-                                                                            pagination.currentPage ===
+                                                                        className={`w-8 h-8 rounded-lg text-sm font-medium transition-colors ${pagination.currentPage ===
                                                                             page
-                                                                                ? "bg-blue-500 text-white"
-                                                                                : "text-gray-600 hover:bg-gray-100"
-                                                                        }`}
+                                                                            ? "bg-blue-500 text-white"
+                                                                            : "text-gray-600 hover:bg-gray-100"
+                                                                            }`}
                                                                     >
                                                                         {page}
                                                                     </button>
@@ -363,19 +371,18 @@ export const TestTakerDashboard = () => {
                                                     onClick={() =>
                                                         handlePageChange(
                                                             pagination.currentPage +
-                                                                1,
+                                                            1,
                                                         )
                                                     }
                                                     disabled={
                                                         pagination.currentPage ===
                                                         pagination.lastPage
                                                     }
-                                                    className={`p-2 rounded-lg transition-colors ${
-                                                        pagination.currentPage ===
+                                                    className={`p-2 rounded-lg transition-colors ${pagination.currentPage ===
                                                         pagination.lastPage
-                                                            ? "text-gray-300 cursor-not-allowed"
-                                                            : "text-gray-600 hover:bg-gray-100"
-                                                    }`}
+                                                        ? "text-gray-300 cursor-not-allowed"
+                                                        : "text-gray-600 hover:bg-gray-100"
+                                                        }`}
                                                 >
                                                     <ChevronRight size={20} />
                                                 </button>
@@ -441,11 +448,10 @@ export const TestTakerDashboard = () => {
                                 <button
                                     type="submit"
                                     disabled={!testCode.trim() || checking}
-                                    className={`px-4 py-2 rounded-lg text-sm transition-colors flex items-center gap-2 ${
-                                        testCode.trim()
-                                            ? "bg-blue-500 text-white hover:bg-blue-600"
-                                            : "bg-gray-300 text-gray-500 cursor-not-allowed"
-                                    }`}
+                                    className={`px-4 py-2 rounded-lg text-sm transition-colors flex items-center gap-2 ${testCode.trim()
+                                        ? "bg-blue-500 text-white hover:bg-blue-600"
+                                        : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                                        }`}
                                 >
                                     {checking && (
                                         <span className="animate-spin rounded-full h-4 w-4 border-2 border-t-transparent border-white"></span>

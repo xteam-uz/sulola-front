@@ -7,6 +7,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { BackButton, BottomBar, MainButton } from "@twa-dev/sdk/react";
 import { CountdownTimer } from "../../components/CountDownTimer";
 import { useStateContext } from "../../contexts/ContextProvider";
+import { TestTypeEnum } from "../../constants/testTypes";
 
 export const TestTakingPage = () => {
     const [loading, setLoading] = useState(true);
@@ -24,12 +25,13 @@ export const TestTakingPage = () => {
     const videoRef = useRef(null);
     const canvasRef = useRef(null);
 
-    const { user, refreshTestResults } = useStateContext();
+    const { user, refreshTestResults, fetchUserTestAnswers } = useStateContext();
 
     const navigate = useNavigate();
     const { state } = useLocation();
     const testId = state?.testId;
     const testStartTime = state?.startTime; // Get start time from navigation state
+    const isReadOnly = state?.readOnly || false; // Get read-only flag from navigation state
 
     // Testni yuklash
     useEffect(() => {
@@ -76,6 +78,76 @@ export const TestTakingPage = () => {
         fetchTest();
     }, [testId, testStartTime]);
 
+    // Avvalgi javoblarni yuklash
+    useEffect(() => {
+        const loadPreviousAnswers = async () => {
+            if (!testData || !user?.[0]?.bot_user?.user_id) return;
+
+            try {
+                const testCode = testData.code;
+                const userId = user[0].bot_user.user_id;
+                const previousResult = await fetchUserTestAnswers(testCode, userId);
+
+                if (previousResult && previousResult.results) {
+                    const results = previousResult.results;
+
+                    // Load answers for questions 1-32
+                    if (results.questions_1_32) {
+                        const loadedAnswers = {};
+                        Object.entries(results.questions_1_32).forEach(
+                            ([qNum, qData]) => {
+                                if (qData.correct_answer) {
+                                    loadedAnswers[qNum] = qData.correct_answer;
+                                }
+                            },
+                        );
+                        setAnswers((prev) => ({ ...prev, ...loadedAnswers }));
+                    }
+
+                    // Load answers for questions 33-35
+                    if (results.questions_33_35) {
+                        const loadedAnswers = {};
+                        Object.entries(results.questions_33_35).forEach(
+                            ([qNum, qData]) => {
+                                if (qData.correct_answer) {
+                                    loadedAnswers[qNum] = qData.correct_answer;
+                                }
+                            },
+                        );
+                        setAnswers((prev) => ({ ...prev, ...loadedAnswers }));
+                    }
+
+                    // Load answers for questions 36-45
+                    if (results.questions_36_45) {
+                        if (results.questions_36_45.mode === "image") {
+                            // Load images if mode is image
+                            if (results.questions_36_45.images) {
+                                setUploadedImages(
+                                    results.questions_36_45.images,
+                                );
+                            }
+                        } else if (results.questions_36_45.mode === "write") {
+                            // Load text answers if mode is write
+                            if (results.questions_36_45.answers) {
+                                setTextAnswers(
+                                    results.questions_36_45.answers,
+                                );
+                            }
+                        }
+                    }
+
+                    // Note: We don't set isSubmitted here because the user might
+                    // want to update their answers if the test is still active
+                }
+            } catch (error) {
+                console.error("Avvalgi javoblarni yuklashda xatolik:", error);
+                // Silent fail - don't show error if no previous answers exist
+            }
+        };
+
+        loadPreviousAnswers();
+    }, [testData, user, fetchUserTestAnswers]);
+
     // Spinner
     if (loading) {
         return (
@@ -100,12 +172,47 @@ export const TestTakingPage = () => {
         ...details.questions_33_35,
     };
 
+    // Test type ni backend formatiga o'tkazish funksiyasi
+    // Backend quyidagi formatlarni kutadi: 'rash', 'blok', 'ochiq-test', 'yopiq-test'
+    const getTestTypeForBackend = (type) => {
+        if (typeof type === "string") {
+            const normalizedType = type.toLowerCase().trim();
+            // To'g'ridan-to'g'ri backend formatida bo'lsa
+            if (["rash", "blok", "ochiq-test", "yopiq-test"].includes(normalizedType)) {
+                return normalizedType;
+            }
+            // Frontend formatidan backend formatiga o'tkazish
+            const typeMap = {
+                rash: "rash",
+                blok: "blok",
+                ochiq: "ochiq-test",
+                yopiq: "yopiq-test",
+            };
+            return typeMap[normalizedType] || "rash";
+        }
+        // Agar integer bo'lsa, TestTypeEnum'dan foydalanib string ga o'tkazish
+        if (typeof type === "number") {
+            const typeMap = {
+                [TestTypeEnum.RASH_TEST]: "rash",
+                [TestTypeEnum.BLOK_TEST]: "blok",
+                [TestTypeEnum.OCHIQ_TEST]: "ochiq-test",
+                [TestTypeEnum.YOPIQ_TEST]: "yopiq-test",
+            };
+            return typeMap[type] || "rash";
+        }
+        return "rash"; // Default
+    };
+
     // Test holatlari uchun qisqa o'zgaruvchilar
     const isTestNotStarted = testStatus === "waiting";
     const isTestExpired = testStatus === "expired";
     const isTestActive = testStatus === "active";
 
     const handleAnswerSelect = (questionId, answer) => {
+        if (isReadOnly) {
+            return; // Don't allow changes in read-only mode
+        }
+
         if (!isTestActive) {
             toast.warning(
                 isTestExpired
@@ -135,6 +242,10 @@ export const TestTakingPage = () => {
 
     // Yozma javoblarni saqlash
     const handleTextAnswerChange = (questionNum, variantIndex, value) => {
+        if (isReadOnly) {
+            return; // Don't allow changes in read-only mode
+        }
+
         if (!isTestActive) {
             toast.warning(
                 isTestExpired
@@ -269,20 +380,20 @@ export const TestTakingPage = () => {
         const questions36_45 =
             details.questions_36_45.mode === "image"
                 ? {
-                      mode: "image",
-                      images: uploadedImages,
-                  }
+                    mode: "image",
+                    images: uploadedImages,
+                }
                 : {
-                      mode: "write",
-                      answers: textAnswers,
-                  };
+                    mode: "write",
+                    answers: textAnswers,
+                };
 
         const submissionData = {
             test_code: code,
             user_id: user[0]?.bot_user?.user_id, // Assuming user ID is available in the user state
             duration: duration,
             results: {
-                type: details.type,
+                type: getTestTypeForBackend(details.type),
                 questions_1_32,
                 questions_33_35,
                 questions_36_45: questions36_45,
@@ -357,14 +468,13 @@ export const TestTakingPage = () => {
                             )}
                             <button
                                 onClick={() =>
-                                    isTestActive && handleOpenCamera(num)
+                                    isTestActive && !isReadOnly && handleOpenCamera(num)
                                 }
-                                disabled={!isTestActive}
-                                className={`px-4 py-2 rounded-lg flex items-center gap-2 ${
-                                    !isTestActive
-                                        ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                                        : "bg-blue-500 text-white hover:bg-blue-600"
-                                }`}
+                                disabled={!isTestActive || isReadOnly}
+                                className={`px-4 py-2 rounded-lg flex items-center gap-2 ${!isTestActive || isReadOnly
+                                    ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                                    : "bg-blue-500 text-white hover:bg-blue-600"
+                                    }`}
                             >
                                 <Camera size={18} /> Rasmga olish
                             </button>
@@ -399,7 +509,7 @@ export const TestTakingPage = () => {
                                                 <textarea
                                                     value={
                                                         textAnswers[qNum]?.[
-                                                            i
+                                                        i
                                                         ] || ""
                                                     }
                                                     onChange={(e) =>
@@ -412,7 +522,8 @@ export const TestTakingPage = () => {
                                                     placeholder={`${qNum}-savol, ${i + 1}-variant javobini kiriting...`}
                                                     className="w-full p-3 border border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none resize-none"
                                                     rows={3}
-                                                    disabled={!isTestActive}
+                                                    disabled={!isTestActive || isReadOnly}
+                                                    readOnly={isReadOnly}
                                                 />
                                             </div>
                                         ),
@@ -589,6 +700,14 @@ export const TestTakingPage = () => {
             {showCamera && <CameraModal />}
 
             <div className="px-4 py-4">
+                {/* Read-only mode warning */}
+                {isReadOnly && (
+                    <div className="bg-yellow-50 border border-yellow-200 rounded-2xl p-4 mb-4">
+                        <p className="text-yellow-800 text-sm font-medium text-center">
+                            📋 Bu testni allaqachon topshirgansiz. Javoblarni ko'rish rejimidasiz.
+                        </p>
+                    </div>
+                )}
                 {/* Test info */}
                 <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 mb-4">
                     <div className="flex justify-between items-center mb-3">
@@ -659,14 +778,13 @@ export const TestTakingPage = () => {
                                             onClick={() =>
                                                 handleAnswerSelect(num, opt)
                                             }
-                                            disabled={!isTestActive}
-                                            className={`py-2.5 rounded-lg font-medium text-sm transition-all ${
-                                                !isTestActive
-                                                    ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                                                    : answers[num] === opt
-                                                      ? "bg-blue-500 text-white shadow-md"
-                                                      : "bg-white text-gray-700 border border-gray-300 hover:border-blue-400 hover:bg-blue-50"
-                                            }`}
+                                            disabled={!isTestActive || isReadOnly}
+                                            className={`py-2.5 rounded-lg font-medium text-sm transition-all ${!isTestActive || isReadOnly
+                                                ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                                                : answers[num] === opt
+                                                    ? "bg-blue-500 text-white shadow-md"
+                                                    : "bg-white text-gray-700 border border-gray-300 hover:border-blue-400 hover:bg-blue-50"
+                                                }`}
                                         >
                                             {opt}
                                         </button>
@@ -682,7 +800,7 @@ export const TestTakingPage = () => {
 
                 {/* TEST UCHUN*/}
                 {
-                    // !isSubmitted && !isTestNotStarted && !isTestExpired && (
+                    // !isReadOnly && !isSubmitted && !isTestNotStarted && !isTestExpired && (
                     //     <button
                     //         onClick={handleSubmit}
                     //         className="w-full cursor-pointer mb-24 py-3 bg-blue-500 text-white rounded-xl font-medium hover:bg-blue-600 transition-colors"
@@ -703,7 +821,7 @@ export const TestTakingPage = () => {
 
                 <BottomBar bgColor="#ffffff">
                     {
-                        !isSubmitted && isTestActive && (
+                        !isReadOnly && !isSubmitted && isTestActive && (
                             <MainButton
                                 color="#2b7fff"
                                 textColor="#ffffff"
