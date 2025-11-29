@@ -3,7 +3,9 @@ import { DefaultLayout, GuestLayout } from "../components/layouts";
 import { Dashboard, NotFound, Profile, Signup, Students } from "../pages";
 import { TestTakingPage } from "../pages/Tests/TestTakingPage";
 import { TestChecking } from "../pages/Tests/TestChacking";
+import { StudentTestChecking } from "../pages/Tests/StudentTestChecking";
 import { PaidTests } from "../pages/Tests/PaidTests";
+import { FreeTests } from "../pages/Tests/FreeTests";
 
 const router = createBrowserRouter([
     {
@@ -35,9 +37,17 @@ const router = createBrowserRouter([
                 element: <TestChecking />,
             },
             {
+                path: "/test/:testId/student/:studentId",
+                element: <StudentTestChecking />,
+            },
+            {
                 path: "/add_paid_test",
                 element: <PaidTests />,
             },
+            {
+                path: "/add_free_test",
+                element: <FreeTests />
+            }
         ],
     },
     {

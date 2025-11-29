@@ -1,4 +1,4 @@
-import { useContext, useState, createContext, useEffect } from "react";
+import { useContext, useState, createContext, useEffect, useCallback } from "react";
 import axiosClient from "../api/axios-client";
 import { toast } from "react-toastify";
 
@@ -21,6 +21,14 @@ const StateContext = createContext({
     refreshTests: () => { },
     fetchUserTestAnswers: () => { },
     hasUserSubmittedTest: () => { },
+    fetchTestStudents: () => { },
+    finishTest: () => { },
+    fetchAllStudents: () => { },
+    testStudents: null,
+    studentsLoading: false,
+    allChecked: false,
+    allStudents: null,
+    allStudentsLoading: false,
     sciences: null,
 });
 
@@ -33,6 +41,11 @@ export const ContextProvider = ({ children }) => {
     const [loading, setLoading] = useState(false);
     const [testsLoading, setTestsLoading] = useState(false);
     const [sciences, setSciences] = useState([]);
+    const [testStudents, setTestStudents] = useState([]);
+    const [studentsLoading, setStudentsLoading] = useState(false);
+    const [allChecked, setAllChecked] = useState(false);
+    const [allStudents, setAllStudents] = useState([]);
+    const [allStudentsLoading, setAllStudentsLoading] = useState(false);
 
     const setToken = (token) => {
         _setToken(token);
@@ -234,6 +247,82 @@ export const ContextProvider = ({ children }) => {
     };
 
     // ============================
+    // TEST STUDENTS (students who submitted a test)
+    // ============================
+    const fetchTestStudents = useCallback(async (testId) => {
+        if (!testId) return null;
+
+        setStudentsLoading(true);
+        try {
+            const { data } = await axiosClient.get(`/tests/${testId}/students`);
+
+            if (data.success && data.students) {
+                setTestStudents(data.students);
+                setAllChecked(data.statistics?.all_written_checked || false);
+                return {
+                    students: data.students,
+                    statistics: data.statistics,
+                    allChecked: data.statistics?.all_written_checked || false,
+                };
+            }
+
+            return null;
+        } catch (error) {
+            console.error("Test students fetch error:", error);
+            setTestStudents([]);
+            return null;
+        } finally {
+            setStudentsLoading(false);
+        }
+    }, []);
+
+    // ============================
+    // FINISH TEST
+    // ============================
+    const finishTest = async (testId) => {
+        if (!testId) return false;
+
+        try {
+            const { data } = await axiosClient.post(`/tests/${testId}/finish`);
+
+            if (data.success) {
+                return true;
+            }
+
+            return false;
+        } catch (error) {
+            console.error("Finish test error:", error);
+            throw error;
+        }
+    };
+
+    // ============================
+    // ALL STUDENTS (general students list)
+    // ============================
+    const fetchAllStudents = useCallback(async (userId) => {
+        if (!userId) return;
+
+        setAllStudentsLoading(true);
+        try {
+            // API endpoint to get all students for a tester
+            const { data } = await axiosClient.get("/tests/students", {
+                params: { user_id: userId },
+            });
+
+            if (data.success && data.students) {
+                setAllStudents(data.students);
+            } else {
+                setAllStudents([]);
+            }
+        } catch (error) {
+            console.error("All students fetch error:", error);
+            setAllStudents([]);
+        } finally {
+            setAllStudentsLoading(false);
+        }
+    }, []);
+
+    // ============================
     // SCIENCES
     // ============================
     const fetchSciences = async () => {
@@ -284,6 +373,15 @@ export const ContextProvider = ({ children }) => {
                 refreshTests,
                 fetchUserTestAnswers,
                 hasUserSubmittedTest,
+                fetchTestStudents,
+                finishTest,
+                fetchAllStudents,
+
+                testStudents,
+                studentsLoading,
+                allChecked,
+                allStudents,
+                allStudentsLoading,
 
                 sciences,
             }}

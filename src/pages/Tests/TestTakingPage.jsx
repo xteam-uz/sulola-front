@@ -800,14 +800,14 @@ export const TestTakingPage = () => {
 
                 {/* TEST UCHUN*/}
                 {
-                    // !isReadOnly && !isSubmitted && !isTestNotStarted && !isTestExpired && (
-                    //     <button
-                    //         onClick={handleSubmit}
-                    //         className="w-full cursor-pointer mb-24 py-3 bg-blue-500 text-white rounded-xl font-medium hover:bg-blue-600 transition-colors"
-                    //     >
-                    //         📤 Javoblarni yuborish
-                    //     </button>
-                    // )
+                    !isReadOnly && !isSubmitted && !isTestNotStarted && !isTestExpired && (
+                        <button
+                            onClick={handleSubmit}
+                            className="w-full cursor-pointer mb-24 py-3 bg-blue-500 text-white rounded-xl font-medium hover:bg-blue-600 transition-colors"
+                        >
+                            📤 Javoblarni yuborish
+                        </button>
+                    )
                     // : (
                     //     <button
                     //         onClick={() => navigate("/")}

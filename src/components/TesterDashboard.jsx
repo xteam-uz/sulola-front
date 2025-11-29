@@ -49,9 +49,9 @@ export const TesterDashboard = () => {
         setShowModal(false);
 
         if (testType === "paid") {
-            navigate("/add_paid_test");
+            navigate("/add_paid_test", { state: { testType } });
         } else if (testType === "free") {
-            navigate("/add_free_test");
+            navigate("/add_free_test", { state: { testType } });
         }
     };
 

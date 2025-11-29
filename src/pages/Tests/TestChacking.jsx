@@ -6,16 +6,23 @@ import { TopHeader } from "../../components/ui";
 import { Search, ChevronRight } from "lucide-react";
 import { format } from "date-fns";
 import { BackButton, BottomBar } from "@twa-dev/sdk/react";
+import { useStateContext } from "../../contexts/ContextProvider";
 
 export const TestChecking = () => {
     // states
     const [loading, setLoading] = useState(true);
     const [testData, setTestData] = useState(null);
     const [testStatus, setTestStatus] = useState("waiting");
-    const [students, setStudents] = useState([]);
     const [searchQuery, setSearchQuery] = useState("");
-    const [studentsLoading, setStudentsLoading] = useState(false);
-    const [allChecked, setAllChecked] = useState(false);
+
+    // Context
+    const {
+        testStudents,
+        studentsLoading,
+        allChecked,
+        fetchTestStudents,
+        finishTest,
+    } = useStateContext();
 
     // props
     const { state } = useLocation();
@@ -65,39 +72,13 @@ export const TestChecking = () => {
 
     // Fetch students who submitted the test
     useEffect(() => {
-        const fetchStudents = async () => {
-            if (!testId) return;
-
-            setStudentsLoading(true);
-            try {
-                // API endpoint to get students who submitted the test
-                const { data } = await axiosClient.get(`/tests/${testId}/students`);
-
-                if (data.students) {
-                    setStudents(data.students);
-
-                    // Check if all students' written answers are checked
-                    const allWrittenChecked = data.students.every((student) => {
-                        // Assuming there's a field indicating if written answers are checked
-                        return student.written_checked || !student.has_written_answers;
-                    });
-                    setAllChecked(allWrittenChecked);
-                }
-            } catch (error) {
-                console.error("O'quvchilarni yuklashda xatolik:", error);
-                // Silent fail - might not have endpoint yet
-            } finally {
-                setStudentsLoading(false);
-            }
-        };
-
-        if (testData) {
-            fetchStudents();
+        if (testData && testId) {
+            fetchTestStudents(testId);
         }
-    }, [testId, testData]);
+    }, [testId, testData, fetchTestStudents]);
 
     // Filter students based on search query
-    const filteredStudents = students.filter((student) => {
+    const filteredStudents = (testStudents || []).filter((student) => {
         if (!searchQuery.trim()) return true;
         const query = searchQuery.toLowerCase();
         const fullName = `${student.first_name || ""} ${student.last_name || ""}`.toLowerCase();
@@ -105,8 +86,8 @@ export const TestChecking = () => {
     });
 
     // Calculate statistics
-    const submittedCount = students.filter((s) => s.submitted).length;
-    const pendingCount = students.length - submittedCount;
+    const submittedCount = (testStudents || []).filter((s) => s.submitted).length;
+    const pendingCount = (testStudents || []).length - submittedCount;
 
     // Test holatlari uchun qisqa o'zgaruvchilar
     const isTestNotStarted = testStatus === "waiting";
@@ -131,8 +112,7 @@ export const TestChecking = () => {
 
     const handleFinishTest = async () => {
         try {
-            // API call to finish test and get results
-            await axiosClient.post(`/tests/${testId}/finish`);
+            await finishTest(testId);
             toast.success("Test yakunlandi va natijalar tayyor!", {
                 position: "top-center",
                 autoClose: 5000,
@@ -145,10 +125,16 @@ export const TestChecking = () => {
                 transition: Bounce,
                 className: "toast-width my-2",
             });
-            // Navigate to results page or refresh
+            // Refresh students list
+            if (testId) {
+                fetchTestStudents(testId);
+            }
         } catch (error) {
             console.error("Testni yakunlashda xatolik:", error);
-            toast.error("Testni yakunlashda xatolik yuz berdi!", {
+            const errorMessage =
+                error.response?.data?.message ||
+                "Testni yakunlashda xatolik yuz berdi!";
+            toast.error(errorMessage, {
                 position: "top-center",
                 autoClose: 5000,
                 hideProgressBar: false,
@@ -248,7 +234,7 @@ export const TestChecking = () => {
                 {/* Students Section */}
                 <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 mb-4">
                     <h3 className="text-lg font-semibold text-gray-800 mb-3">
-                        O'quvchilar ({students.length} ta)
+                        O'quvchilar ({(testStudents || []).length} ta)
                     </h3>
 
                     {/* Statistics */}
@@ -309,7 +295,7 @@ export const TestChecking = () => {
                     )}
 
                     {/* Load Status */}
-                    {!studentsLoading && students.length > 0 && (
+                    {!studentsLoading && (testStudents || []).length > 0 && (
                         <p className="text-center text-gray-500 text-xs mt-4">
                             Barcha o'quvchilar yuklandi
                         </p>
