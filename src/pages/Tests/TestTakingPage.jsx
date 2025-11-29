@@ -81,26 +81,37 @@ export const TestTakingPage = () => {
     // Avvalgi javoblarni yuklash
     useEffect(() => {
         const loadPreviousAnswers = async () => {
-            if (!testData || !user?.[0]?.bot_user?.user_id) return;
+            if (!testData || !user?.[0]?.bot_user?.user_id) {
+                console.log("Missing testData or user:", { testData, user });
+                return;
+            }
 
             try {
                 const testCode = testData.code;
                 const userId = user[0].bot_user.user_id;
+
+                console.log("Fetching previous answers for:", { testCode, userId });
                 const previousResult = await fetchUserTestAnswers(testCode, userId);
+                console.log("Previous result from API:", previousResult);
 
                 if (previousResult && previousResult.results) {
                     const results = previousResult.results;
+                    console.log("Loading previous answers for test:", testCode, results);
 
                     // Load answers for questions 1-32
                     if (results.questions_1_32) {
                         const loadedAnswers = {};
                         Object.entries(results.questions_1_32).forEach(
                             ([qNum, qData]) => {
-                                if (qData.correct_answer) {
-                                    loadedAnswers[qNum] = qData.correct_answer;
+                                // Handle both object format {correct_answer: "A"} and direct value
+                                const answer = qData?.correct_answer || qData;
+                                if (answer) {
+                                    // Ensure question number is string for consistency
+                                    loadedAnswers[String(qNum)] = answer;
                                 }
                             },
                         );
+                        console.log("Loaded answers 1-32:", loadedAnswers);
                         setAnswers((prev) => ({ ...prev, ...loadedAnswers }));
                     }
 
@@ -109,44 +120,129 @@ export const TestTakingPage = () => {
                         const loadedAnswers = {};
                         Object.entries(results.questions_33_35).forEach(
                             ([qNum, qData]) => {
-                                if (qData.correct_answer) {
-                                    loadedAnswers[qNum] = qData.correct_answer;
+                                // Handle both object format {correct_answer: "A"} and direct value
+                                const answer = qData?.correct_answer || qData;
+                                if (answer) {
+                                    // Ensure question number is string for consistency
+                                    loadedAnswers[String(qNum)] = answer;
                                 }
                             },
                         );
+                        console.log("Loaded answers 33-35:", loadedAnswers);
                         setAnswers((prev) => ({ ...prev, ...loadedAnswers }));
                     }
 
                     // Load answers for questions 36-45
                     if (results.questions_36_45) {
+                        console.log("Loading questions 36-45:", results.questions_36_45);
+
                         if (results.questions_36_45.mode === "image") {
                             // Load images if mode is image
                             if (results.questions_36_45.images) {
-                                setUploadedImages(
-                                    results.questions_36_45.images,
-                                );
+                                const loadedImages = {};
+
+                                // Function to get image URL from upload_id
+                                const getImageUrl = async (uploadId) => {
+                                    try {
+                                        // Try to fetch image URL from API
+                                        const { data } = await axiosClient.get(`/uploads/${uploadId}/url`);
+                                        return data.url || data.image_url || null;
+                                    } catch (error) {
+                                        console.error(`Error fetching image URL for upload_id ${uploadId}:`, error);
+                                        // Fallback: construct URL if API endpoint doesn't exist
+                                        // Adjust this based on your backend structure
+                                        return `${axiosClient.defaults.baseURL}/storage/uploads/${uploadId}`;
+                                    }
+                                };
+
+                                // Process images - handle upload_id
+                                const processImages = async () => {
+                                    const imagePromises = Object.entries(results.questions_36_45.images).map(
+                                        async ([qNum, imageData]) => {
+                                            let imageUrl = null;
+
+                                            if (typeof imageData === "string") {
+                                                // Direct base64 string or URL
+                                                imageUrl = imageData;
+                                            } else if (imageData?.url) {
+                                                // Object with url property (already processed by backend)
+                                                imageUrl = imageData.url;
+                                            } else if (imageData?.image_url) {
+                                                // Object with image_url property
+                                                imageUrl = imageData.image_url;
+                                            } else if (imageData?.image) {
+                                                // Object with image property
+                                                imageUrl = imageData.image;
+                                            } else if (imageData?.upload_id) {
+                                                // Object with upload_id - need to fetch URL
+                                                imageUrl = await getImageUrl(imageData.upload_id);
+                                            }
+
+                                            return { qNum, imageUrl };
+                                        }
+                                    );
+
+                                    const processedImages = await Promise.all(imagePromises);
+                                    processedImages.forEach(({ qNum, imageUrl }) => {
+                                        if (imageUrl) {
+                                            loadedImages[String(qNum)] = imageUrl;
+                                        }
+                                    });
+
+                                    console.log("Loaded images:", loadedImages);
+                                    setUploadedImages(loadedImages);
+                                };
+
+                                await processImages();
                             }
                         } else if (results.questions_36_45.mode === "write") {
                             // Load text answers if mode is write
                             if (results.questions_36_45.answers) {
-                                setTextAnswers(
-                                    results.questions_36_45.answers,
+                                const loadedTextAnswers = {};
+                                Object.entries(results.questions_36_45.answers).forEach(
+                                    ([qNum, answerData]) => {
+                                        // Handle both direct object format and nested format
+                                        if (typeof answerData === "object" && answerData !== null && !Array.isArray(answerData)) {
+                                            // It's already an object with variant indices
+                                            loadedTextAnswers[String(qNum)] = answerData;
+                                        } else if (Array.isArray(answerData)) {
+                                            // Array format, convert to object
+                                            const answerObj = {};
+                                            answerData.forEach((val, idx) => {
+                                                answerObj[idx] = val;
+                                            });
+                                            loadedTextAnswers[String(qNum)] = answerObj;
+                                        } else {
+                                            // Single answer value, convert to object format
+                                            loadedTextAnswers[String(qNum)] = { 0: answerData };
+                                        }
+                                    },
                                 );
+                                console.log("Loaded text answers:", loadedTextAnswers);
+                                setTextAnswers(loadedTextAnswers);
                             }
                         }
                     }
 
-                    // Note: We don't set isSubmitted here because the user might
-                    // want to update their answers if the test is still active
+                    // If we loaded previous answers, mark that user has submitted
+                    // But allow editing if test is still active and not in read-only mode
+                    if (isReadOnly) {
+                        setIsSubmitted(true);
+                    }
+
+                    console.log("Successfully loaded all previous answers");
+                } else {
+                    console.log("No previous answers found for test:", testCode);
                 }
             } catch (error) {
                 console.error("Avvalgi javoblarni yuklashda xatolik:", error);
+                console.error("Error details:", error.response?.data);
                 // Silent fail - don't show error if no previous answers exist
             }
         };
 
         loadPreviousAnswers();
-    }, [testData, user, fetchUserTestAnswers]);
+    }, [testData, user, fetchUserTestAnswers, isReadOnly]);
 
     // Spinner
     if (loading) {
@@ -166,7 +262,6 @@ export const TestTakingPage = () => {
     }
 
     const { name, code, details, start_time, end_time } = testData;
-
     const allQuestions = {
         ...details.questions_1_32,
         ...details.questions_33_35,
@@ -447,39 +542,49 @@ export const TestTakingPage = () => {
         if (q36_45.mode === "image") {
             return (
                 <div className="space-y-4 mb-24">
-                    {Array.from({ length: 10 }, (_, i) => 36 + i).map((num) => (
-                        <div
-                            key={num}
-                            className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex flex-col items-center"
-                        >
-                            <h3 className="font-semibold text-gray-800 mb-3">
-                                {num}-savol
-                            </h3>
-                            {uploadedImages[num] ? (
-                                <img
-                                    src={uploadedImages[num]}
-                                    alt={`Savol ${num}`}
-                                    className="w-48 h-48 object-cover rounded-lg border mb-3"
-                                />
-                            ) : (
-                                <div className="w-48 h-48 bg-gray-100 border rounded-lg mb-3 flex items-center justify-center text-gray-400">
-                                    Rasm yo'q
-                                </div>
-                            )}
-                            <button
-                                onClick={() =>
-                                    isTestActive && !isReadOnly && handleOpenCamera(num)
-                                }
-                                disabled={!isTestActive || isReadOnly}
-                                className={`px-4 py-2 rounded-lg flex items-center gap-2 ${!isTestActive || isReadOnly
-                                    ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                                    : "bg-blue-500 text-white hover:bg-blue-600"
-                                    }`}
+                    {Array.from({ length: 10 }, (_, i) => 36 + i).map((num) => {
+                        const numStr = String(num);
+                        const imageSrc = uploadedImages[numStr] || uploadedImages[num];
+                        return (
+                            <div
+                                key={num}
+                                className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex flex-col items-center"
                             >
-                                <Camera size={18} /> Rasmga olish
-                            </button>
-                        </div>
-                    ))}
+                                <h3 className="font-semibold text-gray-800 mb-3">
+                                    {num}-savol
+                                </h3>
+                                {imageSrc ? (
+                                    <img
+                                        src={imageSrc}
+                                        alt={`Savol ${num}`}
+                                        className="w-48 h-48 object-cover rounded-lg border mb-3"
+                                        onError={(e) => {
+                                            console.error(`Image load error for question ${num}:`, imageSrc);
+                                            e.target.style.display = 'none';
+                                            e.target.nextSibling.style.display = 'flex';
+                                        }}
+                                    />
+                                ) : null}
+                                {!imageSrc && (
+                                    <div className="w-48 h-48 bg-gray-100 border rounded-lg mb-3 flex items-center justify-center text-gray-400">
+                                        Rasm yo'q
+                                    </div>
+                                )}
+                                <button
+                                    onClick={() =>
+                                        isTestActive && !isReadOnly && handleOpenCamera(num)
+                                    }
+                                    disabled={!isTestActive || isReadOnly}
+                                    className={`px-4 py-2 rounded-lg flex items-center gap-2 ${!isTestActive || isReadOnly
+                                        ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                                        : "bg-blue-500 text-white hover:bg-blue-600"
+                                        }`}
+                                >
+                                    <Camera size={18} /> Rasmga olish
+                                </button>
+                            </div>
+                        );
+                    })}
                 </div>
             );
         } else if (q36_45.mode === "write") {
@@ -546,6 +651,18 @@ export const TestTakingPage = () => {
                 isTestExpired
                     ? "Test vaqti tugagan!"
                     : "Test hali boshlanmagan!",
+                {
+                    position: "top-center",
+                    autoClose: 5000,
+                    hideProgressBar: false,
+                    closeOnClick: false,
+                    pauseOnHover: true,
+                    draggable: true,
+                    progress: undefined,
+                    theme: "light",
+                    transition: Bounce,
+                    className: "toast-width my-2",
+                }
             );
             return;
         }
@@ -582,7 +699,7 @@ export const TestTakingPage = () => {
         if (capturedImage && currentImageQuestion) {
             setUploadedImages((prev) => ({
                 ...prev,
-                [currentImageQuestion]: capturedImage,
+                [String(currentImageQuestion)]: capturedImage,
             }));
             handleCloseCamera();
         }
@@ -758,6 +875,9 @@ export const TestTakingPage = () => {
                                 ? "grid-cols-3"
                                 : "grid-cols-4";
 
+                        // Get answer for this question (handle both string and number keys)
+                        const selectedAnswer = answers[String(num)] || answers[Number(num)];
+
                         return (
                             <div
                                 key={num}
@@ -781,7 +901,7 @@ export const TestTakingPage = () => {
                                             disabled={!isTestActive || isReadOnly}
                                             className={`py-2.5 rounded-lg font-medium text-sm transition-all ${!isTestActive || isReadOnly
                                                 ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                                                : answers[num] === opt
+                                                : selectedAnswer === opt
                                                     ? "bg-blue-500 text-white shadow-md"
                                                     : "bg-white text-gray-700 border border-gray-300 hover:border-blue-400 hover:bg-blue-50"
                                                 }`}
@@ -800,14 +920,14 @@ export const TestTakingPage = () => {
 
                 {/* TEST UCHUN*/}
                 {
-                    !isReadOnly && !isSubmitted && !isTestNotStarted && !isTestExpired && (
-                        <button
-                            onClick={handleSubmit}
-                            className="w-full cursor-pointer mb-24 py-3 bg-blue-500 text-white rounded-xl font-medium hover:bg-blue-600 transition-colors"
-                        >
-                            📤 Javoblarni yuborish
-                        </button>
-                    )
+                    // !isReadOnly && !isSubmitted && !isTestNotStarted && !isTestExpired && (
+                    //     <button
+                    //         onClick={handleSubmit}
+                    //         className="w-full cursor-pointer mb-24 py-3 bg-blue-500 text-white rounded-xl font-medium hover:bg-blue-600 transition-colors"
+                    //     >
+                    //         📤 Javoblarni yuborish
+                    //     </button>
+                    // )
                     // : (
                     //     <button
                     //         onClick={() => navigate("/")}

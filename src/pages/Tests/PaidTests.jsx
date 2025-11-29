@@ -71,6 +71,7 @@ export const PaidTests = () => {
                 position: "top-center",
                 autoClose: 3000,
                 transition: Bounce,
+                className: "toast-width my-2",
             });
             return;
         }
@@ -79,6 +80,7 @@ export const PaidTests = () => {
                 position: "top-center",
                 autoClose: 3000,
                 transition: Bounce,
+                className: "toast-width my-2",
             });
             return;
         }
@@ -87,6 +89,7 @@ export const PaidTests = () => {
                 position: "top-center",
                 autoClose: 3000,
                 transition: Bounce,
+                className: "toast-width my-2",
             });
             return;
         }
@@ -95,6 +98,7 @@ export const PaidTests = () => {
                 position: "top-center",
                 autoClose: 3000,
                 transition: Bounce,
+                className: "toast-width my-2",
             });
             return;
         }
@@ -105,6 +109,7 @@ export const PaidTests = () => {
                     position: "top-center",
                     autoClose: 3000,
                     transition: Bounce,
+                    className: "toast-width my-2",
                 },
             );
             return;
@@ -125,6 +130,7 @@ export const PaidTests = () => {
                         position: "top-center",
                         autoClose: 3000,
                         transition: Bounce,
+                        className: "toast-width my-2",
                     },
                 );
                 return;
@@ -169,6 +175,7 @@ export const PaidTests = () => {
                     position: "top-center",
                     autoClose: 4000,
                     transition: Bounce,
+                    className: "toast-width my-2",
                 },
             );
             return;
@@ -193,6 +200,7 @@ export const PaidTests = () => {
                     position: "top-center",
                     autoClose: 4000,
                     transition: Bounce,
+                    className: "toast-width my-2",
                 },
             );
             return;
@@ -253,15 +261,17 @@ export const PaidTests = () => {
                     position: "top-center",
                     autoClose: 5000,
                     transition: Bounce,
+                    className: "toast-width my-2",
                 });
             } else {
                 toast.error(
                     error.response?.data?.message ||
-                        "Test yaratishda xatolik yuz berdi!",
+                    "Test yaratishda xatolik yuz berdi!",
                     {
                         position: "top-center",
                         autoClose: 4000,
                         transition: Bounce,
+                        className: "toast-width my-2",
                     },
                 );
             }
@@ -377,11 +387,10 @@ export const PaidTests = () => {
 
                 <div className="space-y-3">
                     <label
-                        className={`flex items-start space-x-3 border-2 rounded-xl p-4 cursor-pointer transition-all ${
-                            selectedMode === "write"
+                        className={`flex items-start space-x-3 border-2 rounded-xl p-4 cursor-pointer transition-all ${selectedMode === "write"
                                 ? "border-blue-500 bg-blue-50"
                                 : "border-gray-200 hover:border-blue-300"
-                        }`}
+                            }`}
                     >
                         <input
                             type="radio"
@@ -406,11 +415,10 @@ export const PaidTests = () => {
                     </label>
 
                     <label
-                        className={`flex items-start space-x-3 border-2 rounded-xl p-4 cursor-pointer transition-all ${
-                            selectedMode === "image"
+                        className={`flex items-start space-x-3 border-2 rounded-xl p-4 cursor-pointer transition-all ${selectedMode === "image"
                                 ? "border-blue-500 bg-blue-50"
                                 : "border-gray-200 hover:border-blue-300"
-                        }`}
+                            }`}
                     >
                         <input
                             type="radio"
@@ -558,12 +566,11 @@ export const PaidTests = () => {
                                                 opt,
                                             )
                                         }
-                                        className={`py-2 rounded-lg font-medium text-sm transition-all ${
-                                            questions1_32[num]
+                                        className={`py-2 rounded-lg font-medium text-sm transition-all ${questions1_32[num]
                                                 ?.correct_answer === opt
                                                 ? "bg-blue-500 text-white shadow-md"
                                                 : "bg-white text-gray-700 border border-gray-300 hover:border-blue-400"
-                                        }`}
+                                            }`}
                                     >
                                         {opt}
                                     </button>
@@ -623,12 +630,11 @@ export const PaidTests = () => {
                                                 opt,
                                             )
                                         }
-                                        className={`py-2 rounded-lg font-medium text-sm transition-all ${
-                                            questions33_35[num]
+                                        className={`py-2 rounded-lg font-medium text-sm transition-all ${questions33_35[num]
                                                 ?.correct_answer === opt
                                                 ? "bg-blue-500 text-white shadow-md"
                                                 : "bg-white text-gray-700 border border-gray-300 hover:border-blue-400"
-                                        }`}
+                                            }`}
                                     >
                                         {opt}
                                     </button>
@@ -763,11 +769,10 @@ export const PaidTests = () => {
                         {[1, 2, 3, 4].map((step) => (
                             <div
                                 key={step}
-                                className={`flex-1 h-2 rounded-full mx-1 transition-all ${
-                                    step <= currentStep
+                                className={`flex-1 h-2 rounded-full mx-1 transition-all ${step <= currentStep
                                         ? "bg-blue-500"
                                         : "bg-gray-200"
-                                }`}
+                                    }`}
                             ></div>
                         ))}
                     </div>

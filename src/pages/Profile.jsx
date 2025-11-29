@@ -230,8 +230,8 @@ export const Profile = () => {
                                 onClick={() => handleRoleChange("tester")}
                                 disabled={saving}
                                 className={`flex-1 py-2 px-3 rounded-xl font-medium text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed ${selectedRole === "tester"
-                                        ? "bg-blue-500 text-white shadow-md"
-                                        : "bg-white text-gray-700 border border-gray-200 hover:border-blue-300"
+                                    ? "bg-blue-500 text-white shadow-md"
+                                    : "bg-white text-gray-700 border border-gray-200 hover:border-blue-300"
                                     }`}
                             >
                                 Test oluvchi
@@ -240,8 +240,8 @@ export const Profile = () => {
                                 onClick={() => handleRoleChange("test_taker")}
                                 disabled={saving}
                                 className={`flex-1 py-2 px-3 rounded-xl font-medium text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed ${selectedRole === "test_taker"
-                                        ? "bg-blue-500 text-white shadow-md"
-                                        : "bg-white text-gray-700 border border-gray-200 hover:border-blue-300"
+                                    ? "bg-blue-500 text-white shadow-md"
+                                    : "bg-white text-gray-700 border border-gray-200 hover:border-blue-300"
                                     }`}
                             >
                                 Test topshiruvchi
@@ -307,7 +307,7 @@ export const Profile = () => {
             </div>
 
             {/* TEST UCHUN*/}
-            {hasChanges() && !saving && (
+            {/* {hasChanges() && !saving && (
                 <div className="px-4 py-4">
                     <button
                         onClick={handleSave}
@@ -316,7 +316,7 @@ export const Profile = () => {
                         📤 Saqlash
                     </button>
                 </div>
-            )}
+            )} */}
             {/* END TEST UCHUN*/}
 
             {/* Telegram MainButton va BackButton */}

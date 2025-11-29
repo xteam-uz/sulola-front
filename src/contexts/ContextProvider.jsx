@@ -166,28 +166,51 @@ export const ContextProvider = ({ children }) => {
                     (result) => result.code === testCode,
                 );
                 if (existingResult) {
-                    // If the result has full details, return it
-                    if (existingResult.results) {
-                        return existingResult;
+                    // Check both results and user_answer fields
+                    const answerData = existingResult.results || existingResult.user_answer;
+                    if (answerData) {
+                        console.log("Found in cache:", existingResult);
+                        return {
+                            ...existingResult,
+                            results: typeof answerData === 'string' ? JSON.parse(answerData) : answerData
+                        };
                     }
                 }
             }
 
             // If not found in cache, fetch all results and search
+            // Fetch without pagination to get all results
             const { data } = await axiosClient.get("/test/results", {
                 params: { user_id: userId },
             });
 
-            if (data.results && data.results.data) {
-                const testResult = data.results.data.find(
+            console.log("Fetched test results:", data);
+
+            if (data.results) {
+                // Handle both paginated and non-paginated responses
+                const resultsArray = data.results.data || data.results || [];
+                const testResult = resultsArray.find(
                     (result) => result.code === testCode,
                 );
-                return testResult || null;
+
+                console.log("Found test result:", testResult);
+
+                if (testResult) {
+                    // Check both results and user_answer fields
+                    const answerData = testResult.results || testResult.user_answer;
+                    if (answerData) {
+                        return {
+                            ...testResult,
+                            results: typeof answerData === 'string' ? JSON.parse(answerData) : answerData
+                        };
+                    }
+                }
             }
 
             return null;
         } catch (error) {
             console.error("User test answers fetch error:", error);
+            console.error("Error details:", error.response?.data);
             return null;
         }
     };
@@ -229,6 +252,7 @@ export const ContextProvider = ({ children }) => {
                     pauseOnHover: true,
                     draggable: true,
                     theme: "light",
+                    className: "toast-width my-2"
                 });
                 return false;
             }
@@ -241,6 +265,7 @@ export const ContextProvider = ({ children }) => {
                 pauseOnHover: true,
                 draggable: true,
                 theme: "light",
+                className: "toast-width my-2"
             });
             return false;
         }

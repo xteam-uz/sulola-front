@@ -73,6 +73,7 @@ export const FreeTests = () => {
                 position: "top-center",
                 autoClose: 3000,
                 transition: Bounce,
+                className: "toast-width my-2"
             });
             return;
         }
@@ -81,6 +82,7 @@ export const FreeTests = () => {
                 position: "top-center",
                 autoClose: 3000,
                 transition: Bounce,
+                className: "toast-width my-2",
             });
             return;
         }
@@ -89,6 +91,7 @@ export const FreeTests = () => {
                 position: "top-center",
                 autoClose: 3000,
                 transition: Bounce,
+                className: "toast-width my-2",
             });
             return;
         }
@@ -97,6 +100,7 @@ export const FreeTests = () => {
                 position: "top-center",
                 autoClose: 3000,
                 transition: Bounce,
+                className: "toast-width my-2",
             });
             return;
         }
@@ -107,6 +111,7 @@ export const FreeTests = () => {
                     position: "top-center",
                     autoClose: 3000,
                     transition: Bounce,
+                    className: "toast-width my-2",
                 },
             );
             return;
@@ -127,6 +132,7 @@ export const FreeTests = () => {
                         position: "top-center",
                         autoClose: 3000,
                         transition: Bounce,
+                        className: "toast-width my-2",
                     },
                 );
                 return;
@@ -171,6 +177,7 @@ export const FreeTests = () => {
                     position: "top-center",
                     autoClose: 4000,
                     transition: Bounce,
+                    className: "toast-width my-2",
                 },
             );
             return;
@@ -195,6 +202,7 @@ export const FreeTests = () => {
                     position: "top-center",
                     autoClose: 4000,
                     transition: Bounce,
+                    className: "toast-width my-2",
                 },
             );
             return;
@@ -255,6 +263,7 @@ export const FreeTests = () => {
                     position: "top-center",
                     autoClose: 5000,
                     transition: Bounce,
+                    className: "toast-width my-2",
                 });
             } else {
                 toast.error(
@@ -264,6 +273,7 @@ export const FreeTests = () => {
                         position: "top-center",
                         autoClose: 4000,
                         transition: Bounce,
+                        className: "toast-width my-2",
                     },
                 );
             }
