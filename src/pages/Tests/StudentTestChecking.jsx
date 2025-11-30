@@ -37,9 +37,42 @@ export const StudentTestChecking = () => {
                     setStudentAnswers(data.answers);
                     setIsChecked(data.checked || false);
 
+                    // Debug: log the answers structure (optional)
+                    console.log("Student answers from backend:", data.answers);
+                    console.log("Scores from backend:", data.scores);
+
                     // Load existing scores for questions 36-45
-                    if (data.scores) {
-                        setScores(data.scores);
+                    const loadedScores = {};
+
+                    // First, try to load from data.scores (backend format)
+                    if (data.scores && typeof data.scores === 'object') {
+                        Object.entries(data.scores).forEach(([qNum, score]) => {
+                            loadedScores[Number(qNum)] = parseFloat(score) || 0;
+                        });
+                    }
+
+                    // Also check in answers.questions_36_45.questions for scores
+                    // This is needed because backend might store scores there
+                    if (data.answers?.questions_36_45?.questions) {
+                        Object.entries(data.answers.questions_36_45.questions).forEach(([qNum, qData]) => {
+                            const qNumInt = Number(qNum);
+                            if (qData && typeof qData === "object") {
+                                // For image mode: single score per question
+                                if (qData.score !== undefined) {
+                                    loadedScores[qNumInt] = parseFloat(qData.score) || 0;
+                                }
+                                // For write mode: points array - sum them up
+                                if (qData.points && Array.isArray(qData.points)) {
+                                    const totalScore = qData.points.reduce((sum, point) => sum + (parseFloat(point) || 0), 0);
+                                    loadedScores[qNumInt] = totalScore;
+                                }
+                            }
+                        });
+                    }
+
+                    if (Object.keys(loadedScores).length > 0) {
+                        console.log("Loaded scores:", loadedScores);
+                        setScores(loadedScores);
                     }
                 }
 
@@ -176,44 +209,229 @@ export const StudentTestChecking = () => {
     // Get answer type for questions 36-45 (image or text)
     const getAnswerType = (questionNum) => {
         if (!studentAnswers?.questions_36_45) return null;
-        const answer = studentAnswers.questions_36_45[questionNum];
+
+        const q36_45 = studentAnswers.questions_36_45;
+        const questionNumStr = String(questionNum);
+
+        // Check if format is { mode: "write", answers: {...} } or { mode: "image", images: {...} }
+        if (q36_45.mode === "write" && q36_45.answers) {
+            const answer = q36_45.answers[questionNumStr] || q36_45.answers[questionNum];
+            if (answer && (typeof answer === "object" && Object.keys(answer).length > 0)) {
+                return "text";
+            }
+        } else if (q36_45.mode === "image" && q36_45.images) {
+            const image = q36_45.images[questionNumStr] || q36_45.images[questionNum];
+            if (image) return "image";
+        }
+
+        // Check direct format: { 36: { type: "text", text_answer: ... }, ... }
+        // Try both string and number keys
+        const answer = q36_45[questionNumStr] || q36_45[questionNum] || q36_45[Number(questionNum)];
         if (!answer) return null;
+
+        // Check if answer has type field
+        if (answer.type === "text" || answer.type === "image") {
+            return answer.type;
+        }
 
         // Check if answer has image
         if (answer.image_url || answer.image) return "image";
         // Check if answer has text
         if (answer.text_answer || answer.answer) return "text";
+        // Check if answer is an object with variant indices (text format)
+        if (typeof answer === "object" && !Array.isArray(answer) && Object.keys(answer).length > 0) {
+            return "text";
+        }
         return null;
     };
 
     // Get answer image URL
     const getAnswerImage = (questionNum) => {
         if (!studentAnswers?.questions_36_45) return null;
-        const answer = studentAnswers.questions_36_45[questionNum];
+
+        const q36_45 = studentAnswers.questions_36_45;
+        const questionNumStr = String(questionNum);
+
+        // Check if format is { mode: "image", images: {...} }
+        if (q36_45.mode === "image" && q36_45.images) {
+            const image = q36_45.images[questionNumStr] || q36_45.images[questionNum];
+            if (image) {
+                // Handle both string URL and object with url property
+                return typeof image === "string" ? image : (image.url || image.image_url || image.image || null);
+            }
+        }
+
+        // Fallback: check direct format
+        const answer = q36_45[questionNumStr] || q36_45[questionNum];
         return answer?.image_url || answer?.image || null;
     };
 
     // Get answer text
     const getAnswerText = (questionNum) => {
         if (!studentAnswers?.questions_36_45) return null;
-        const answer = studentAnswers.questions_36_45[questionNum];
-        return answer?.text_answer || answer?.answer || null;
+
+        const q36_45 = studentAnswers.questions_36_45;
+        const questionNumStr = String(questionNum);
+
+        // Check if format is { mode: "write", answers: {...} }
+        if (q36_45.mode === "write" && q36_45.answers) {
+            const answer = q36_45.answers[questionNumStr] || q36_45.answers[questionNum];
+            if (answer) {
+                // If answer is an object with variant indices { 0: "answer1", 1: "answer2" }
+                if (typeof answer === "object" && !Array.isArray(answer)) {
+                    // Convert object to formatted string showing all variants
+                    const variants = Object.keys(answer)
+                        .sort((a, b) => Number(a) - Number(b))
+                        .map((idx) => `Variant ${Number(idx) + 1}: ${answer[idx]}`)
+                        .join("\n\n");
+                    return variants;
+                }
+                // If answer is a string
+                if (typeof answer === "string") {
+                    return answer;
+                }
+            }
+        }
+
+        // Check direct format: { 36: { type: "text", text_answer: ... }, ... }
+        // Try both string and number keys
+        const answer = q36_45[questionNumStr] || q36_45[questionNum] || q36_45[Number(questionNum)];
+        if (!answer) return null;
+
+        // Check for text_answer field (backend format)
+        if (answer.text_answer !== null && answer.text_answer !== undefined) {
+            // If text_answer is a string, return it
+            if (typeof answer.text_answer === "string") {
+                return answer.text_answer;
+            }
+            // If text_answer is an array ["answer1", "answer2", ...]
+            if (Array.isArray(answer.text_answer)) {
+                if (answer.text_answer.length === 0) {
+                    return null; // Empty array
+                }
+                const variants = answer.text_answer
+                    .filter(text => text && text.trim()) // Filter out empty strings
+                    .map((text, idx) => `Variant ${idx + 1}: ${text}`)
+                    .join("\n\n");
+                return variants || null;
+            }
+            // If text_answer is an object with variant indices { 0: "answer1", 1: "answer2" }
+            if (typeof answer.text_answer === "object" && !Array.isArray(answer.text_answer)) {
+                const variants = Object.keys(answer.text_answer)
+                    .sort((a, b) => Number(a) - Number(b))
+                    .map((idx) => `Variant ${Number(idx) + 1}: ${answer.text_answer[idx]}`)
+                    .join("\n\n");
+                return variants;
+            }
+        }
+
+        // Fallback: check for answer field
+        if (answer.answer) {
+            if (typeof answer.answer === "string") {
+                return answer.answer;
+            }
+            if (typeof answer.answer === "object" && !Array.isArray(answer.answer)) {
+                const variants = Object.keys(answer.answer)
+                    .sort((a, b) => Number(a) - Number(b))
+                    .map((idx) => `Variant ${Number(idx) + 1}: ${answer.answer[idx]}`)
+                    .join("\n\n");
+                return variants;
+            }
+        }
+
+        // Check if answer itself is an object with variant indices (direct format)
+        if (typeof answer === "object" && !Array.isArray(answer) && Object.keys(answer).length > 0) {
+            // Skip if it's the backend format object with type field
+            if (answer.type) {
+                return null; // Backend didn't parse it correctly
+            }
+            const variants = Object.keys(answer)
+                .sort((a, b) => Number(a) - Number(b))
+                .map((idx) => `Variant ${Number(idx) + 1}: ${answer[idx]}`)
+                .join("\n\n");
+            return variants;
+        }
+
+        return null;
     };
 
-    // Get automatic check result for questions 1-36
+    // Get automatic check result for questions 1-35
     const getAutoCheckResult = (questionNum) => {
-        if (!studentAnswers) return null;
+        if (!studentAnswers) {
+            return null;
+        }
+
+        const questionNumStr = String(questionNum);
+        const questionNumNum = Number(questionNum);
 
         // Check questions_1_32
         if (questionNum >= 1 && questionNum <= 32 && studentAnswers.questions_1_32) {
-            const answer = studentAnswers.questions_1_32[questionNum];
-            return answer?.is_correct !== undefined ? answer.is_correct : null;
+            // Try both string and number keys
+            const answer = studentAnswers.questions_1_32[questionNumStr]
+                || studentAnswers.questions_1_32[questionNumNum]
+                || studentAnswers.questions_1_32[questionNum];
+
+            if (answer) {
+                // If is_correct is explicitly set (true or false), use it
+                if (answer.is_correct === true || answer.is_correct === false) {
+                    return answer.is_correct;
+                }
+
+                // If is_correct is null or undefined, try to check manually using test data
+                if (testData && testData.details && testData.details.questions_1_32) {
+                    // Get correct answer from test data
+                    const qData = testData.details.questions_1_32[questionNumStr]
+                        || testData.details.questions_1_32[questionNumNum]
+                        || testData.details.questions_1_32[questionNum];
+                    const correctAnswer = qData?.correct_answer;
+
+                    // Get student answer
+                    const studentAnswer = answer.answer || answer.correct_answer;
+
+                    if (correctAnswer && studentAnswer) {
+                        // Compare answers (case-insensitive)
+                        return correctAnswer.toString().toUpperCase() === studentAnswer.toString().toUpperCase();
+                    }
+                }
+
+                // If we can't determine, return null
+                return null;
+            }
         }
 
         // Check questions_33_35
         if (questionNum >= 33 && questionNum <= 35 && studentAnswers.questions_33_35) {
-            const answer = studentAnswers.questions_33_35[questionNum];
-            return answer?.is_correct !== undefined ? answer.is_correct : null;
+            // Try both string and number keys
+            const answer = studentAnswers.questions_33_35[questionNumStr]
+                || studentAnswers.questions_33_35[questionNumNum]
+                || studentAnswers.questions_33_35[questionNum];
+
+            if (answer) {
+                // If is_correct is explicitly set (true or false), use it
+                if (answer.is_correct === true || answer.is_correct === false) {
+                    return answer.is_correct;
+                }
+
+                // If is_correct is null or undefined, try to check manually using test data
+                if (testData && testData.details && testData.details.questions_33_35) {
+                    // Get correct answer from test data
+                    const qData = testData.details.questions_33_35[questionNumStr]
+                        || testData.details.questions_33_35[questionNumNum]
+                        || testData.details.questions_33_35[questionNum];
+                    const correctAnswer = qData?.correct_answer;
+
+                    // Get student answer
+                    const studentAnswer = answer.answer || answer.correct_answer;
+
+                    if (correctAnswer && studentAnswer) {
+                        // Compare answers (case-insensitive)
+                        return correctAnswer.toString().toUpperCase() === studentAnswer.toString().toUpperCase();
+                    }
+                }
+
+                // If we can't determine, return null
+                return null;
+            }
         }
 
         return null;
@@ -384,31 +602,31 @@ export const StudentTestChecking = () => {
                     </div>
                 </div>
 
-                {/* Auto-checked Questions Summary (1-36) */}
+                {/* Auto-checked Questions Summary (1-35) */}
                 <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 mb-4">
                     <h3 className="text-lg font-semibold text-gray-800 mb-4">
-                        Avtomatik tekshirilgan savollar (1-36)
+                        Avtomatik tekshirilgan savollar (1-35)
                     </h3>
                     <div className="grid grid-cols-6 gap-2">
-                        {Array.from({ length: 36 }, (_, i) => i + 1).map((qNum) => {
+                        {Array.from({ length: 35 }, (_, i) => i + 1).map((qNum) => {
                             const isCorrect = getAutoCheckResult(qNum);
                             return (
                                 <div
                                     key={qNum}
                                     className={`flex items-center justify-center p-2 rounded-lg border ${isCorrect === true
-                                        ? "bg-green-100 border-green-300"
+                                        ? "bg-green-500 border-green-600"
                                         : isCorrect === false
-                                            ? "bg-red-100 border-red-300"
+                                            ? "bg-red-500 border-red-600"
                                             : "bg-gray-100 border-gray-300"
                                         }`}
                                 >
                                     {isCorrect === true ? (
                                         <CheckCircle2
-                                            className="text-green-600"
+                                            className="text-white"
                                             size={20}
                                         />
                                     ) : isCorrect === false ? (
-                                        <XCircle className="text-red-600" size={20} />
+                                        <XCircle className="text-white" size={20} />
                                     ) : (
                                         <span className="text-gray-500 text-xs">
                                             {qNum}

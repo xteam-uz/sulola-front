@@ -11,10 +11,12 @@ import { TestTypeEnum } from "../../constants/testTypes";
 
 export const TestTakingPage = () => {
     const [loading, setLoading] = useState(true);
+    const [loadingAnswers, setLoadingAnswers] = useState(false);
     const [testData, setTestData] = useState(null);
     const [answers, setAnswers] = useState({});
     const [uploadedImages, setUploadedImages] = useState({});
     const [textAnswers, setTextAnswers] = useState({});
+    const [scores, setScores] = useState({}); // Scores for questions 36-45
     const [showCamera, setShowCamera] = useState(false);
     const [cameraStream, setCameraStream] = useState(null);
     const [capturedImage, setCapturedImage] = useState(null);
@@ -83,9 +85,11 @@ export const TestTakingPage = () => {
         const loadPreviousAnswers = async () => {
             if (!testData || !user?.[0]?.bot_user?.user_id) {
                 console.log("Missing testData or user:", { testData, user });
+                setLoadingAnswers(false);
                 return;
             }
 
+            setLoadingAnswers(true);
             try {
                 const testCode = testData.code;
                 const userId = user[0].bot_user.user_id;
@@ -103,11 +107,24 @@ export const TestTakingPage = () => {
                         const loadedAnswers = {};
                         Object.entries(results.questions_1_32).forEach(
                             ([qNum, qData]) => {
-                                // Handle both object format {correct_answer: "A"} and direct value
-                                const answer = qData?.correct_answer || qData;
+                                // Handle multiple formats:
+                                // 1. { correct_answer: "A" }
+                                // 2. { answer: "A" }
+                                // 3. Direct value "A"
+                                let answer = null;
+                                if (typeof qData === "object" && qData !== null) {
+                                    answer = qData.correct_answer || qData.answer;
+                                } else {
+                                    answer = qData;
+                                }
+
                                 if (answer) {
-                                    // Ensure question number is string for consistency
-                                    loadedAnswers[String(qNum)] = answer;
+                                    // Store with both string and number keys to ensure compatibility
+                                    const qNumStr = String(qNum);
+                                    const qNumNum = Number(qNum);
+                                    const answerStr = String(answer).trim();
+                                    loadedAnswers[qNumStr] = answerStr;
+                                    loadedAnswers[qNumNum] = answerStr;
                                 }
                             },
                         );
@@ -120,11 +137,24 @@ export const TestTakingPage = () => {
                         const loadedAnswers = {};
                         Object.entries(results.questions_33_35).forEach(
                             ([qNum, qData]) => {
-                                // Handle both object format {correct_answer: "A"} and direct value
-                                const answer = qData?.correct_answer || qData;
+                                // Handle multiple formats:
+                                // 1. { correct_answer: "A" }
+                                // 2. { answer: "A" }
+                                // 3. Direct value "A"
+                                let answer = null;
+                                if (typeof qData === "object" && qData !== null) {
+                                    answer = qData.correct_answer || qData.answer;
+                                } else {
+                                    answer = qData;
+                                }
+
                                 if (answer) {
-                                    // Ensure question number is string for consistency
-                                    loadedAnswers[String(qNum)] = answer;
+                                    // Store with both string and number keys to ensure compatibility
+                                    const qNumStr = String(qNum);
+                                    const qNumNum = Number(qNum);
+                                    const answerStr = String(answer).trim();
+                                    loadedAnswers[qNumStr] = answerStr;
+                                    loadedAnswers[qNumNum] = answerStr;
                                 }
                             },
                         );
@@ -135,6 +165,33 @@ export const TestTakingPage = () => {
                     // Load answers for questions 36-45
                     if (results.questions_36_45) {
                         console.log("Loading questions 36-45:", results.questions_36_45);
+
+                        // Load scores for questions 36-45 if they exist
+                        if (results.questions_36_45.questions) {
+                            const loadedScores = {};
+                            Object.entries(results.questions_36_45.questions).forEach(
+                                ([qNum, qData]) => {
+                                    if (qData && typeof qData === "object") {
+                                        // For image mode: single score per question
+                                        if (qData.score !== undefined) {
+                                            loadedScores[String(qNum)] = parseFloat(qData.score) || 0;
+                                        }
+                                        // For write mode: points array - sum them up
+                                        if (qData.points && Array.isArray(qData.points)) {
+                                            const totalScore = qData.points.reduce((sum, point) => sum + (parseFloat(point) || 0), 0);
+                                            loadedScores[String(qNum)] = totalScore;
+                                        }
+                                    } else if (typeof qData === "number") {
+                                        // Direct score value
+                                        loadedScores[String(qNum)] = parseFloat(qData) || 0;
+                                    }
+                                },
+                            );
+                            if (Object.keys(loadedScores).length > 0) {
+                                console.log("Loaded scores 36-45:", loadedScores);
+                                setScores(loadedScores);
+                            }
+                        }
 
                         if (results.questions_36_45.mode === "image") {
                             // Load images if mode is image
@@ -238,6 +295,8 @@ export const TestTakingPage = () => {
                 console.error("Avvalgi javoblarni yuklashda xatolik:", error);
                 console.error("Error details:", error.response?.data);
                 // Silent fail - don't show error if no previous answers exist
+            } finally {
+                setLoadingAnswers(false);
             }
         };
 
@@ -245,7 +304,7 @@ export const TestTakingPage = () => {
     }, [testData, user, fetchUserTestAnswers, isReadOnly]);
 
     // Spinner
-    if (loading) {
+    if (loading || loadingAnswers) {
         return (
             <div className="flex items-center justify-center min-h-screen bg-gray-50">
                 <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
@@ -550,9 +609,16 @@ export const TestTakingPage = () => {
                                 key={num}
                                 className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex flex-col items-center"
                             >
-                                <h3 className="font-semibold text-gray-800 mb-3">
-                                    {num}-savol
-                                </h3>
+                                <div className="flex justify-between items-center w-full mb-3">
+                                    <h3 className="font-semibold text-gray-800">
+                                        {num}-savol
+                                    </h3>
+                                    {isReadOnly && scores[num] !== undefined && (
+                                        <span className="px-3 py-1 bg-green-100 text-green-700 rounded-lg text-sm font-medium">
+                                            Ball: {scores[num]}
+                                        </span>
+                                    )}
+                                </div>
                                 {imageSrc ? (
                                     <img
                                         src={imageSrc}
@@ -571,14 +637,8 @@ export const TestTakingPage = () => {
                                     </div>
                                 )}
                                 <button
-                                    onClick={() =>
-                                        isTestActive && !isReadOnly && handleOpenCamera(num)
-                                    }
-                                    disabled={!isTestActive || isReadOnly}
-                                    className={`px-4 py-2 rounded-lg flex items-center gap-2 ${!isTestActive || isReadOnly
-                                        ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                                        : "bg-blue-500 text-white hover:bg-blue-600"
-                                        }`}
+                                    onClick={() => handleOpenCamera(num)}
+                                    className="px-4 py-2 rounded-lg flex items-center gap-2 bg-blue-500 text-white hover:bg-blue-600"
                                 >
                                     <Camera size={18} /> Rasmga olish
                                 </button>
@@ -597,12 +657,19 @@ export const TestTakingPage = () => {
                                 key={qNum}
                                 className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100"
                             >
-                                <h3 className="font-semibold text-gray-800 mb-3">
-                                    {qNum}-savol (Yozma)
-                                    <span className="ml-2 text-xs text-purple-600 font-normal">
-                                        ({variantCount} ta variant)
-                                    </span>
-                                </h3>
+                                <div className="flex justify-between items-center mb-3">
+                                    <h3 className="font-semibold text-gray-800">
+                                        {qNum}-savol (Yozma)
+                                        <span className="ml-2 text-xs text-purple-600 font-normal">
+                                            ({variantCount} ta variant)
+                                        </span>
+                                    </h3>
+                                    {isReadOnly && scores[qNum] !== undefined && (
+                                        <span className="px-3 py-1 bg-green-100 text-green-700 rounded-lg text-sm font-medium">
+                                            Ball: {scores[qNum]}
+                                        </span>
+                                    )}
+                                </div>
                                 <div className="space-y-3">
                                     {Array.from(
                                         { length: variantCount },
@@ -627,8 +694,6 @@ export const TestTakingPage = () => {
                                                     placeholder={`${qNum}-savol, ${i + 1}-variant javobini kiriting...`}
                                                     className="w-full p-3 border border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none resize-none"
                                                     rows={3}
-                                                    disabled={!isTestActive || isReadOnly}
-                                                    readOnly={isReadOnly}
                                                 />
                                             </div>
                                         ),
@@ -825,46 +890,50 @@ export const TestTakingPage = () => {
                         </p>
                     </div>
                 )}
-                {/* Test info */}
-                <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 mb-4">
-                    <div className="flex justify-between items-center mb-3">
-                        <div>
-                            <span className="text-gray-600 text-sm">
-                                Test kodi:{" "}
-                            </span>
-                            <span className="text-orange-500 font-bold">
-                                {code}
-                            </span>
-                        </div>
-                        <div>
-                            <span className="text-blue-600 font-bold text-lg">
-                                {answeredCount} / {totalQuestions}
-                            </span>
-                        </div>
-                    </div>
+                {/* Test info - faqat yangi test uchun */}
+                {!isReadOnly && (
+                    <>
+                        <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 mb-4">
+                            <div className="flex justify-between items-center mb-3">
+                                <div>
+                                    <span className="text-gray-600 text-sm">
+                                        Test kodi:{" "}
+                                    </span>
+                                    <span className="text-orange-500 font-bold">
+                                        {code}
+                                    </span>
+                                </div>
+                                <div>
+                                    <span className="text-blue-600 font-bold text-lg">
+                                        {answeredCount} / {totalQuestions}
+                                    </span>
+                                </div>
+                            </div>
 
-                    <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
+                            <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
+                                <div
+                                    className="bg-blue-500 h-2 rounded-full transition-all duration-300"
+                                    style={{ width: `${progressPercentage}%` }}
+                                ></div>
+                            </div>
+                            <p className="text-xs text-gray-500 text-right">
+                                {progressPercentage}% tayyor
+                            </p>
+                        </div>
+
+                        {/* Countdown Timer - faqat yangi test uchun */}
                         <div
-                            className="bg-blue-500 h-2 rounded-full transition-all duration-300"
-                            style={{ width: `${progressPercentage}%` }}
-                        ></div>
-                    </div>
-                    <p className="text-xs text-gray-500 text-right">
-                        {progressPercentage}% tayyor
-                    </p>
-                </div>
-
-                {/* Countdown Timer - har doim ko'rinadi */}
-                <div
-                    className={`p-3 rounded-lg mb-4 border ${getCountdownBgClass()}`}
-                >
-                    <CountdownTimer
-                        startTime={start_time}
-                        endTime={end_time}
-                        onStart={handleTestStart}
-                        onExpire={handleTestExpire}
-                    />
-                </div>
+                            className={`p-3 rounded-lg mb-4 border ${getCountdownBgClass()}`}
+                        >
+                            <CountdownTimer
+                                startTime={start_time}
+                                endTime={end_time}
+                                onStart={handleTestStart}
+                                onExpire={handleTestExpire}
+                            />
+                        </div>
+                    </>
+                )}
 
                 {/* Variantli savollar */}
                 <div className="space-y-4 mb-8">
@@ -875,8 +944,10 @@ export const TestTakingPage = () => {
                                 ? "grid-cols-3"
                                 : "grid-cols-4";
 
-                        // Get answer for this question (handle both string and number keys)
-                        const selectedAnswer = answers[String(num)] || answers[Number(num)];
+                        // Get answer for this question - try all possible key formats
+                        const numStr = String(num);
+                        const numNum = Number(num);
+                        const selectedAnswer = answers[numStr] || answers[numNum] || answers[String(numNum)] || answers[Number(numStr)];
 
                         return (
                             <div
@@ -892,23 +963,26 @@ export const TestTakingPage = () => {
                                     )}
                                 </h3>
                                 <div className={`grid ${gridCols} gap-2`}>
-                                    {options.map((opt) => (
-                                        <button
-                                            key={opt}
-                                            onClick={() =>
-                                                handleAnswerSelect(num, opt)
-                                            }
-                                            disabled={!isTestActive || isReadOnly}
-                                            className={`py-2.5 rounded-lg font-medium text-sm transition-all ${!isTestActive || isReadOnly
-                                                ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                                                : selectedAnswer === opt
+                                    {options.map((opt) => {
+                                        // Compare selectedAnswer with opt (case-insensitive and type-safe)
+                                        const isSelected = selectedAnswer &&
+                                            String(selectedAnswer).toUpperCase().trim() === String(opt).toUpperCase().trim();
+
+                                        return (
+                                            <button
+                                                key={opt}
+                                                onClick={() =>
+                                                    handleAnswerSelect(num, opt)
+                                                }
+                                                className={`py-2.5 rounded-lg font-medium text-sm transition-all ${isSelected
                                                     ? "bg-blue-500 text-white shadow-md"
                                                     : "bg-white text-gray-700 border border-gray-300 hover:border-blue-400 hover:bg-blue-50"
-                                                }`}
-                                        >
-                                            {opt}
-                                        </button>
-                                    ))}
+                                                    }`}
+                                            >
+                                                {opt}
+                                            </button>
+                                        );
+                                    })}
                                 </div>
                             </div>
                         );
@@ -920,28 +994,28 @@ export const TestTakingPage = () => {
 
                 {/* TEST UCHUN*/}
                 {
-                    // !isReadOnly && !isSubmitted && !isTestNotStarted && !isTestExpired && (
-                    //     <button
-                    //         onClick={handleSubmit}
-                    //         className="w-full cursor-pointer mb-24 py-3 bg-blue-500 text-white rounded-xl font-medium hover:bg-blue-600 transition-colors"
-                    //     >
-                    //         📤 Javoblarni yuborish
-                    //     </button>
-                    // )
-                    // : (
-                    //     <button
-                    //         onClick={() => navigate("/")}
-                    //         className="w-full cursor-pointer mb-24 py-3 bg-teal-500 text-white rounded-xl font-medium hover:bg-blue-600 transition-colors"
-                    //     >
-                    //         🏠 Asosiy sahifaga qaytish
-                    //     </button>
-                    // )
+                    !isReadOnly && !isSubmitted && !isTestNotStarted && !isTestExpired ? (
+                        <button
+                            onClick={handleSubmit}
+                            className="w-full cursor-pointer mb-24 py-3 bg-blue-500 text-white rounded-xl font-medium hover:bg-blue-600 transition-colors"
+                        >
+                            📤 Javoblarni yuborish
+                        </button>
+                    ) :
+                        (
+                            <button
+                                onClick={() => navigate("/")}
+                                className="w-full cursor-pointer mb-24 py-3 bg-blue-500 text-white rounded-xl font-medium hover:bg-blue-600 transition-colors"
+                            >
+                                🏠 Asosiy sahifaga qaytish
+                            </button>
+                        )
                 }
                 {/* END TEST UCHUN*/}
 
                 <BottomBar bgColor="#ffffff">
                     {
-                        !isReadOnly && !isSubmitted && isTestActive && (
+                        !isReadOnly && !isSubmitted && isTestActive ? (
                             <MainButton
                                 color="#2b7fff"
                                 textColor="#ffffff"
@@ -949,16 +1023,15 @@ export const TestTakingPage = () => {
                                 progress={false}
                                 onClick={handleSubmit}
                             />
+                        ) : (
+                            <MainButton
+                                color="#2b7fff"
+                                textColor="#ffffff"
+                                text="🏠 Asosiy sahifaga qaytish"
+                                progress={false}
+                                onClick={() => navigate("/")}
+                            />
                         )
-                        // : (
-                        //     <MainButton
-                        //         color="#2b7fff"
-                        //         textColor="#ffffff"
-                        //         text="🏠 Asosiy sahifaga qaytish"
-                        //         progress={false}
-                        //         onClick={() => navigate("/")}
-                        //     />
-                        // )
                     }
                     <BackButton onClick={() => window.history.back()} />
                 </BottomBar>
