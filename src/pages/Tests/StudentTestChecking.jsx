@@ -43,6 +43,10 @@ export const StudentTestChecking = () => {
                     setStudentData(studentTestData.student);
                     setStudentAnswers(studentTestData.answers);
                     setIsChecked(studentTestData.checked || false);
+
+                    // Debug: log answers structure
+                    console.log("Student answers structure:", studentTestData.answers);
+                    console.log("Questions 36-45:", studentTestData.answers?.questions_36_45);
                 }
 
                 // Load teacher scores from all_result (parsed in fetchStudentTestData)
@@ -201,7 +205,10 @@ export const StudentTestChecking = () => {
 
     // Get answer type for questions 36-45 (image or text)
     const getAnswerType = (questionNum) => {
-        if (!studentAnswers?.questions_36_45) return null;
+        if (!studentAnswers || !studentAnswers.questions_36_45) {
+            console.log(`[getAnswerType] No answers for question ${questionNum}:`, studentAnswers);
+            return null;
+        }
 
         const q36_45 = studentAnswers.questions_36_45;
         const questionNumStr = String(questionNum);
@@ -209,18 +216,33 @@ export const StudentTestChecking = () => {
         // Check if format is { mode: "write", answers: {...} } or { mode: "image", images: {...} }
         if (q36_45.mode === "write" && q36_45.answers) {
             const answer = q36_45.answers[questionNumStr] || q36_45.answers[questionNum];
-            if (answer && (typeof answer === "object" && Object.keys(answer).length > 0)) {
-                return "text";
+            if (answer) {
+                // If answer is an array (most common format from backend)
+                if (Array.isArray(answer) && answer.length > 0) {
+                    return "text";
+                }
+                // If answer is an object with keys (variant indices)
+                if (typeof answer === "object" && !Array.isArray(answer) && Object.keys(answer).length > 0) {
+                    return "text";
+                }
+                // If answer is a string
+                if (typeof answer === "string" && answer.trim().length > 0) {
+                    return "text";
+                }
             }
         } else if (q36_45.mode === "image" && q36_45.images) {
             const image = q36_45.images[questionNumStr] || q36_45.images[questionNum];
-            if (image) return "image";
+            if (image) {
+                return "image";
+            }
         }
 
         // Check direct format: { 36: { type: "text", text_answer: ... }, ... }
         // Try both string and number keys
         const answer = q36_45[questionNumStr] || q36_45[questionNum] || q36_45[Number(questionNum)];
-        if (!answer) return null;
+        if (!answer) {
+            return null;
+        }
 
         // Check if answer has type field
         if (answer.type === "text" || answer.type === "image") {
@@ -228,13 +250,24 @@ export const StudentTestChecking = () => {
         }
 
         // Check if answer has image
-        if (answer.image_url || answer.image) return "image";
+        if (answer.image_url || answer.image || answer.url) {
+            return "image";
+        }
+
         // Check if answer has text
-        if (answer.text_answer || answer.answer) return "text";
-        // Check if answer is an object with variant indices (text format)
-        if (typeof answer === "object" && !Array.isArray(answer) && Object.keys(answer).length > 0) {
+        if (answer.text_answer || answer.answer) {
             return "text";
         }
+
+        // Check if answer is an object with variant indices (text format)
+        if (typeof answer === "object" && !Array.isArray(answer) && Object.keys(answer).length > 0) {
+            // Skip if it's the backend format object with type field but no content
+            if (answer.type && !answer.text_answer && !answer.answer) {
+                return null;
+            }
+            return "text";
+        }
+
         return null;
     };
 
@@ -270,6 +303,15 @@ export const StudentTestChecking = () => {
         if (q36_45.mode === "write" && q36_45.answers) {
             const answer = q36_45.answers[questionNumStr] || q36_45.answers[questionNum];
             if (answer) {
+                // If answer is an array ["answer1", "answer2", ...]
+                if (Array.isArray(answer) && answer.length > 0) {
+                    // Filter out empty strings and format as variants
+                    const variants = answer
+                        .filter(text => text && text.trim()) // Filter out empty strings
+                        .map((text, idx) => `Variant ${idx + 1}: ${text}`)
+                        .join("\n\n");
+                    return variants || null;
+                }
                 // If answer is an object with variant indices { 0: "answer1", 1: "answer2" }
                 if (typeof answer === "object" && !Array.isArray(answer)) {
                     // Convert object to formatted string showing all variants
@@ -280,7 +322,7 @@ export const StudentTestChecking = () => {
                     return variants;
                 }
                 // If answer is a string
-                if (typeof answer === "string") {
+                if (typeof answer === "string" && answer.trim()) {
                     return answer;
                 }
             }

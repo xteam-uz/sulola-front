@@ -428,6 +428,49 @@ export const ContextProvider = ({ children }) => {
                     }
                 }
 
+                // Parse answers FIRST - backend dan answers yoki user_answer kelishi mumkin
+                let parsedAnswers = data.answers || data.user_answer || null;
+
+                // Debug: log backend response
+                console.log("Backend response data:", {
+                    hasAnswers: !!data.answers,
+                    hasUserAnswer: !!data.user_answer,
+                    answersType: typeof data.answers,
+                    userAnswerType: typeof data.user_answer,
+                });
+
+                // Agar answers string bo'lsa, parse qilish
+                if (parsedAnswers && typeof parsedAnswers === 'string') {
+                    try {
+                        parsedAnswers = JSON.parse(parsedAnswers);
+                    } catch (e) {
+                        console.error("Error parsing answers:", e);
+                        parsedAnswers = null;
+                    }
+                }
+
+                // Extract scores from answers.questions_36_45.questions if available
+                // (This is the format where scores are stored in questions field)
+                if (!teacherScores && parsedAnswers?.questions_36_45?.questions) {
+                    teacherScores = {};
+                    Object.entries(parsedAnswers.questions_36_45.questions).forEach(([qNum, qData]) => {
+                        const qNumNum = Number(qNum);
+                        if (!isNaN(qNumNum) && qData && typeof qData === 'object') {
+                            // Check for score field
+                            if (qData.score !== undefined) {
+                                teacherScores[qNumNum] = parseFloat(qData.score) || 0;
+                                checked = true;
+                            }
+                            // Check for points array (sum them up)
+                            if (qData.points && Array.isArray(qData.points)) {
+                                const totalScore = qData.points.reduce((sum, point) => sum + (parseFloat(point) || 0), 0);
+                                teacherScores[qNumNum] = totalScore;
+                                checked = true;
+                            }
+                        }
+                    });
+                }
+
                 // Fallback: also check data.scores if all_result doesn't have teacher_scores
                 if (!teacherScores && data.scores && typeof data.scores === 'object') {
                     teacherScores = {};
@@ -439,9 +482,15 @@ export const ContextProvider = ({ children }) => {
                     });
                 }
 
+                // Debug: log parsed answers structure
+                if (parsedAnswers) {
+                    console.log("Parsed answers structure:", parsedAnswers);
+                    console.log("Questions 36-45:", parsedAnswers.questions_36_45);
+                }
+
                 return {
                     student: data.student,
-                    answers: data.answers,
+                    answers: parsedAnswers,
                     checked: checked,
                     scores: teacherScores || null,
                     all_result: data.all_result || null,
