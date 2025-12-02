@@ -993,7 +993,7 @@ export const TestTakingPage = () => {
                 {render36_45Questions()}
 
                 {/* TEST UCHUN*/}
-                {
+                {/* {
                     !isReadOnly && !isSubmitted && !isTestNotStarted && !isTestExpired ? (
                         <button
                             onClick={handleSubmit}
@@ -1010,7 +1010,7 @@ export const TestTakingPage = () => {
                                 🏠 Asosiy sahifaga qaytish
                             </button>
                         )
-                }
+                } */}
                 {/* END TEST UCHUN*/}
 
                 <BottomBar bgColor="#ffffff">

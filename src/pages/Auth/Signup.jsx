@@ -153,7 +153,7 @@ export const Signup = () => {
                                focus:outline-none focus:ring-0 focus:border-blue-600 peer"
                         placeholder=" "
                         defaultValue={telegramUser?.last_name || ""}
-                        // required
+                    // required
                     />
                     <label
                         htmlFor="floating_last_name"
@@ -181,11 +181,10 @@ export const Signup = () => {
                     <button
                         type="button"
                         onClick={() => setRole("tester")}
-                        className={`flex-1 py-2 rounded border text-xs transition-all ${
-                            role === "tester"
+                        className={`flex-1 py-2 rounded border text-xs transition-all ${role === "tester"
                                 ? "bg-blue-500 text-white border-blue-600"
                                 : "bg-white text-gray-700 border-gray-300"
-                        }`}
+                            }`}
                     >
                         Test oluvchi
                     </button>
@@ -193,11 +192,10 @@ export const Signup = () => {
                     <button
                         type="button"
                         onClick={() => setRole("test_taker")}
-                        className={`flex-1 py-2 rounded border text-xs transition-all ${
-                            role === "test_taker"
+                        className={`flex-1 py-2 rounded border text-xs transition-all ${role === "test_taker"
                                 ? "bg-blue-500 text-white border-blue-600"
                                 : "bg-white text-gray-700 border-gray-300"
-                        }`}
+                            }`}
                     >
                         Test topshiruvchi
                     </button>

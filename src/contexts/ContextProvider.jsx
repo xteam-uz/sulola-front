@@ -24,6 +24,10 @@ const StateContext = createContext({
     fetchTestStudents: () => { },
     finishTest: () => { },
     fetchAllStudents: () => { },
+    fetchTest: () => { },
+    fetchStudentTestData: () => { },
+    fetchTeacherScores: () => { },
+    checkStudentAnswers: () => { },
     testStudents: null,
     studentsLoading: false,
     allChecked: false,
@@ -360,6 +364,182 @@ export const ContextProvider = ({ children }) => {
     };
 
     // ============================
+    // TEST DATA
+    // ============================
+    const fetchTest = useCallback(async (testId) => {
+        if (!testId) return null;
+
+        try {
+            const { data } = await axiosClient.get(`/tests/${testId}`);
+            return data.test || null;
+        } catch (error) {
+            console.error("Test fetch error:", error);
+            return null;
+        }
+    }, []);
+
+    // ============================
+    // STUDENT TEST DATA (answers and student info)
+    // ============================
+    const fetchStudentTestData = useCallback(async (testId, studentId) => {
+        if (!testId || !studentId) return null;
+
+        try {
+            const { data } = await axiosClient.get(
+                `/tests/${testId}/students/${studentId}/answers`
+            );
+
+            if (data.success) {
+                // Parse teacher scores from all_result JSON field
+                let teacherScores = null;
+                let checked = data.checked || false;
+
+                // Parse all_result JSON if it exists
+                if (data.all_result) {
+                    let allResult = data.all_result;
+
+                    // Parse if it's a string
+                    if (typeof allResult === 'string') {
+                        try {
+                            allResult = JSON.parse(allResult);
+                        } catch (e) {
+                            console.error("Error parsing all_result:", e);
+                            allResult = null;
+                        }
+                    }
+
+                    if (allResult && typeof allResult === 'object') {
+                        // Extract teacher_scores from all_result.teacher_scores
+                        if (allResult.teacher_scores && typeof allResult.teacher_scores === 'object') {
+                            teacherScores = {};
+                            Object.entries(allResult.teacher_scores).forEach(([qNum, score]) => {
+                                // Convert question number to Number key
+                                const qNumNum = Number(qNum);
+                                if (!isNaN(qNumNum)) {
+                                    teacherScores[qNumNum] = parseFloat(score) || 0;
+                                }
+                            });
+
+                            // If we have teacher scores, test is checked
+                            if (Object.keys(teacherScores).length > 0) {
+                                checked = true;
+                            }
+                        }
+                    }
+                }
+
+                // Fallback: also check data.scores if all_result doesn't have teacher_scores
+                if (!teacherScores && data.scores && typeof data.scores === 'object') {
+                    teacherScores = {};
+                    Object.entries(data.scores).forEach(([qNum, score]) => {
+                        const qNumNum = Number(qNum);
+                        if (!isNaN(qNumNum)) {
+                            teacherScores[qNumNum] = parseFloat(score) || 0;
+                        }
+                    });
+                }
+
+                return {
+                    student: data.student,
+                    answers: data.answers,
+                    checked: checked,
+                    scores: teacherScores || null,
+                    all_result: data.all_result || null,
+                };
+            }
+
+            return null;
+        } catch (error) {
+            console.error("Student test data fetch error:", error);
+            return null;
+        }
+    }, []);
+
+    // ============================
+    // TEACHER SCORES (scores for questions 36-45 from all_result)
+    // ============================
+    const fetchTeacherScores = useCallback(async (testId, studentId) => {
+        if (!testId || !studentId) return null;
+
+        try {
+            // Fetch from same endpoint as fetchStudentTestData to get all_result
+            const { data } = await axiosClient.get(
+                `/tests/${testId}/students/${studentId}/answers`
+            );
+
+            if (data.success) {
+                const scores = {};
+                let checked = false;
+
+                // Parse all_result JSON if it exists
+                if (data.all_result) {
+                    let allResult = data.all_result;
+
+                    // Parse if it's a string
+                    if (typeof allResult === 'string') {
+                        try {
+                            allResult = JSON.parse(allResult);
+                        } catch (e) {
+                            console.error("Error parsing all_result:", e);
+                            allResult = null;
+                        }
+                    }
+
+                    if (allResult && typeof allResult === 'object') {
+                        // Extract teacher_scores from all_result.teacher_scores
+                        if (allResult.teacher_scores && typeof allResult.teacher_scores === 'object') {
+                            Object.entries(allResult.teacher_scores).forEach(([qNum, score]) => {
+                                const qNumNum = Number(qNum);
+                                if (!isNaN(qNumNum)) {
+                                    scores[qNumNum] = parseFloat(score) || 0;
+                                }
+                            });
+
+                            if (Object.keys(scores).length > 0) {
+                                checked = true;
+                            }
+                        }
+                    }
+                }
+
+                return {
+                    scores: Object.keys(scores).length > 0 ? scores : null,
+                    checked: checked || data.checked || false,
+                };
+            }
+
+            return null;
+        } catch (error) {
+            console.error("Teacher scores fetch error:", error);
+            return null;
+        }
+    }, []);
+
+    // ============================
+    // CHECK STUDENT ANSWERS (finish checking - save to all_result)
+    // ============================
+    const checkStudentAnswers = useCallback(async (testId, studentId, scores) => {
+        if (!testId || !studentId || !scores) return null;
+
+        try {
+            // Backend will save scores to all_result JSON field automatically
+            // We just send scores, backend should save it in all_result.teacher_scores
+            const { data } = await axiosClient.post(
+                `/tests/${testId}/students/${studentId}/check`,
+                {
+                    scores,
+                    teacher_scores: scores, // For backward compatibility
+                }
+            );
+
+            return data.success ? data : null;
+        } catch (error) {
+            console.error("Check student answers error:", error);
+            throw error;
+        }
+    }, []);
+
+    // ============================
     // EFFECTS
     // ============================
     useEffect(() => {
@@ -401,6 +581,10 @@ export const ContextProvider = ({ children }) => {
                 fetchTestStudents,
                 finishTest,
                 fetchAllStudents,
+                fetchTest,
+                fetchStudentTestData,
+                fetchTeacherScores,
+                checkStudentAnswers,
 
                 testStudents,
                 studentsLoading,

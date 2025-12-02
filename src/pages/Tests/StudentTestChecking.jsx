@@ -1,18 +1,27 @@
 import { useEffect, useState } from "react";
 import { useParams, useLocation, useNavigate } from "react-router-dom";
-import axiosClient from "../../api/axios-client";
 import { Bounce, toast, ToastContainer } from "react-toastify";
 import { TopHeader } from "../../components/ui";
 import { Image as ImageIcon, CheckCircle2, XCircle } from "lucide-react";
 import { BackButton, BottomBar } from "@twa-dev/sdk/react";
+import { useStateContext } from "../../contexts/ContextProvider";
 
 export const StudentTestChecking = () => {
     const { testId, studentId } = useParams();
     const { state } = useLocation();
     const navigate = useNavigate();
 
+    // Context
+    const {
+        fetchTest,
+        fetchStudentTestData,
+        fetchTeacherScores,
+        checkStudentAnswers,
+    } = useStateContext();
+
     // States
     const [loading, setLoading] = useState(true);
+    const [loadingScores, setLoadingScores] = useState(false);
     const [studentData, setStudentData] = useState(null);
     const [testData, setTestData] = useState(state?.testData || null);
     const [studentAnswers, setStudentAnswers] = useState(null);
@@ -27,59 +36,27 @@ export const StudentTestChecking = () => {
 
             setLoading(true);
             try {
-                // Fetch student test answers
-                const { data } = await axiosClient.get(
-                    `/tests/${testId}/students/${studentId}/answers`
-                );
+                // Fetch student test data (answers and student info)
+                const studentTestData = await fetchStudentTestData(testId, studentId);
 
-                if (data.success) {
-                    setStudentData(data.student);
-                    setStudentAnswers(data.answers);
-                    setIsChecked(data.checked || false);
+                if (studentTestData) {
+                    setStudentData(studentTestData.student);
+                    setStudentAnswers(studentTestData.answers);
+                    setIsChecked(studentTestData.checked || false);
+                }
 
-                    // Debug: log the answers structure (optional)
-                    console.log("Student answers from backend:", data.answers);
-                    console.log("Scores from backend:", data.scores);
-
-                    // Load existing scores for questions 36-45
-                    const loadedScores = {};
-
-                    // First, try to load from data.scores (backend format)
-                    if (data.scores && typeof data.scores === 'object') {
-                        Object.entries(data.scores).forEach(([qNum, score]) => {
-                            loadedScores[Number(qNum)] = parseFloat(score) || 0;
-                        });
-                    }
-
-                    // Also check in answers.questions_36_45.questions for scores
-                    // This is needed because backend might store scores there
-                    if (data.answers?.questions_36_45?.questions) {
-                        Object.entries(data.answers.questions_36_45.questions).forEach(([qNum, qData]) => {
-                            const qNumInt = Number(qNum);
-                            if (qData && typeof qData === "object") {
-                                // For image mode: single score per question
-                                if (qData.score !== undefined) {
-                                    loadedScores[qNumInt] = parseFloat(qData.score) || 0;
-                                }
-                                // For write mode: points array - sum them up
-                                if (qData.points && Array.isArray(qData.points)) {
-                                    const totalScore = qData.points.reduce((sum, point) => sum + (parseFloat(point) || 0), 0);
-                                    loadedScores[qNumInt] = totalScore;
-                                }
-                            }
-                        });
-                    }
-
-                    if (Object.keys(loadedScores).length > 0) {
-                        console.log("Loaded scores:", loadedScores);
-                        setScores(loadedScores);
-                    }
+                // Load teacher scores from all_result (parsed in fetchStudentTestData)
+                if (studentTestData?.scores && Object.keys(studentTestData.scores).length > 0) {
+                    setScores(studentTestData.scores);
+                    setIsChecked(studentTestData.checked || false);
                 }
 
                 // Fetch test data if not in state
                 if (!testData) {
-                    const testResponse = await axiosClient.get(`/tests/${testId}`);
-                    setTestData(testResponse.data.test);
+                    const test = await fetchTest(testId);
+                    if (test) {
+                        setTestData(test);
+                    }
                 }
             } catch (error) {
                 console.error("Ma'lumotlarni yuklashda xatolik:", error);
@@ -101,7 +78,7 @@ export const StudentTestChecking = () => {
         };
 
         fetchData();
-    }, [testId, studentId]);
+    }, [testId, studentId, fetchStudentTestData, fetchTeacherScores, fetchTest]);
 
     // Handle score change for questions 36-45
     const handleScoreChange = (questionNum, value) => {
@@ -157,15 +134,30 @@ export const StudentTestChecking = () => {
         }
 
         setSubmitting(true);
-        try {
-            const response = await axiosClient.post(
-                `/tests/${testId}/students/${studentId}/check`,
-                {
-                    scores,
-                }
-            );
+        setLoadingScores(true);
 
-            if (response.data.success) {
+        try {
+            // Save teacher scores to backend
+            const response = await checkStudentAnswers(testId, studentId, scores);
+
+            if (response) {
+                // After saving, fetch updated student test data from database to get all_result
+                // Keep loading until scores are fetched from all_result
+                setLoadingScores(true);
+
+                // Fetch updated data from database (with all_result containing teacher_scores)
+                const updatedStudentTestData = await fetchStudentTestData(testId, studentId);
+
+                if (updatedStudentTestData) {
+                    // Load teacher scores from all_result
+                    if (updatedStudentTestData.scores && Object.keys(updatedStudentTestData.scores).length > 0) {
+                        setScores(updatedStudentTestData.scores);
+                    }
+                    setIsChecked(updatedStudentTestData.checked || true);
+                } else {
+                    setIsChecked(true);
+                }
+
                 toast.success("Tekshirish yakunlandi!", {
                     position: "top-center",
                     autoClose: 5000,
@@ -178,7 +170,7 @@ export const StudentTestChecking = () => {
                     transition: Bounce,
                     className: "toast-width my-2",
                 });
-                setIsChecked(true);
+
                 // Navigate back after a short delay
                 setTimeout(() => {
                     navigate(-1);
@@ -203,6 +195,7 @@ export const StudentTestChecking = () => {
             });
         } finally {
             setSubmitting(false);
+            setLoadingScores(false);
         }
     };
 
@@ -457,7 +450,20 @@ export const StudentTestChecking = () => {
     const testCode = testData.code || "N/A";
 
     return (
-        <div className="min-h-screen bg-gray-50 pb-32">
+        <div className="min-h-screen bg-gray-50 pb-32 relative">
+            {/* Loading overlay during submission - show until scores are loaded */}
+            {(submitting || loadingScores) && (
+                <div className="absolute inset-0 bg-black bg-opacity-30 z-50 flex items-center justify-center">
+                    <div className="bg-white rounded-lg p-6 flex flex-col items-center">
+                        <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4"></div>
+                        <p className="text-gray-700 font-medium">
+                            {submitting && !loadingScores
+                                ? "Ballar saqlanmoqda..."
+                                : "Ballar yuklanmoqda..."}
+                        </p>
+                    </div>
+                </div>
+            )}
             <TopHeader />
 
             <div className="px-4 py-4">
@@ -591,9 +597,9 @@ export const StudentTestChecking = () => {
                                                     e.target.value
                                                 )
                                             }
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
                                             placeholder="0"
-                                            disabled={isChecked}
+                                            disabled={isChecked || submitting || loadingScores}
                                         />
                                     </div>
                                 </div>
