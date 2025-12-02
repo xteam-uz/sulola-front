@@ -66,9 +66,9 @@ export const Students = () => {
             </div>
 
             {/* Add Button */}
-            <button className="fixed bottom-20 right-5 bg-blue-500 hover:bg-blue-600 text-white p-4 rounded-full shadow-lg transition-all">
+            {/* <button className="fixed bottom-20 right-5 bg-blue-500 hover:bg-blue-600 text-white p-4 rounded-full shadow-lg transition-all">
                 <Plus size={22} />
-            </button>
+            </button> */}
 
             {/* Bottom Navigation */}
             <FooterNavbar />
