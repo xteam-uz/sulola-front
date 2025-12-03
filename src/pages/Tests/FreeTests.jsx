@@ -7,7 +7,6 @@ import {
     Minus,
     ArrowLeft,
     Clock,
-    DollarSign,
     Calendar,
     Check,
     Copy,
@@ -33,7 +32,6 @@ export const FreeTests = () => {
     // Step 1: Asosiy ma'lumotlar
     const [testName, setTestName] = useState("");
     const [scienceId, setScienceId] = useState("");
-    const [price, setPrice] = useState("");
     const [startTime, setStartTime] = useState("");
     const [endTime, setEndTime] = useState("");
 
@@ -79,15 +77,6 @@ export const FreeTests = () => {
         }
         if (!scienceId) {
             toast.error("Fanni tanlang!", {
-                position: "top-center",
-                autoClose: 3000,
-                transition: Bounce,
-                className: "toast-width my-2",
-            });
-            return;
-        }
-        if (!price || Number(price) <= 0) {
-            toast.error("To'g'ri narx kiriting!", {
                 position: "top-center",
                 autoClose: 3000,
                 transition: Bounce,
@@ -226,7 +215,7 @@ export const FreeTests = () => {
             name: testName,
             science_id: Number(scienceId),
             type: TestTypeEnum.RASH_TEST,
-            price: Number(price),
+            price: 0, // Tekin testlar uchun narx 0
             start_time: startTime,
             end_time: endTime,
             details: {
@@ -319,23 +308,6 @@ export const FreeTests = () => {
                                 </option>
                             ))}
                         </select>
-                    </div>
-
-                    <div>
-                        <label className="block text-sm text-gray-700 mb-2 flex items-center gap-2">
-                            <DollarSign size={16} />
-                            Test narxi (so'm) *
-                        </label>
-                        <input
-                            type="number"
-                            value={price}
-                            onChange={(e) => setPrice(e.target.value)}
-                            placeholder="Masalan: 10000"
-                            className="w-full p-3 border border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none"
-                        />
-                        <p className="text-xs text-gray-500 mt-1">
-                            O'quvchilar Click yoki Payme orqali to'laydi
-                        </p>
                     </div>
 
                     <div>

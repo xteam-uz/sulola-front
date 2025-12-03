@@ -84,15 +84,6 @@ export const PaidTests = () => {
             });
             return;
         }
-        if (!price || Number(price) <= 0) {
-            toast.error("To'g'ri narx kiriting!", {
-                position: "top-center",
-                autoClose: 3000,
-                transition: Bounce,
-                className: "toast-width my-2",
-            });
-            return;
-        }
         if (!startTime || !endTime) {
             toast.error("Boshlanish va tugash vaqtini kiriting!", {
                 position: "top-center",
@@ -224,7 +215,7 @@ export const PaidTests = () => {
             name: testName,
             science_id: Number(scienceId),
             type: TestTypeEnum.RASH_TEST,
-            price: Number(price),
+            price: 0,
             start_time: startTime,
             end_time: endTime,
             details: {
@@ -319,7 +310,7 @@ export const PaidTests = () => {
                         </select>
                     </div>
 
-                    <div>
+                    {/* <div>
                         <label className="block text-sm text-gray-700 mb-2 flex items-center gap-2">
                             <DollarSign size={16} />
                             Test narxi (so'm) *
@@ -334,10 +325,10 @@ export const PaidTests = () => {
                         <p className="text-xs text-gray-500 mt-1">
                             O'quvchilar Click yoki Payme orqali to'laydi
                         </p>
-                    </div>
+                    </div> */}
 
                     <div>
-                        <label className="block text-sm text-gray-700 mb-2 flex items-center gap-2">
+                        <label className="flex items-center gap-2 text-sm text-gray-700 mb-2">
                             <Calendar size={16} />
                             Boshlanish vaqti *
                         </label>
@@ -350,7 +341,7 @@ export const PaidTests = () => {
                     </div>
 
                     <div>
-                        <label className="block text-sm text-gray-700 mb-2 flex items-center gap-2">
+                        <label className="flex items-center gap-2 text-sm text-gray-700 mb-2">
                             <Clock size={16} />
                             Tugash vaqti *
                         </label>
@@ -388,8 +379,8 @@ export const PaidTests = () => {
                 <div className="space-y-3">
                     <label
                         className={`flex items-start space-x-3 border-2 rounded-xl p-4 cursor-pointer transition-all ${selectedMode === "write"
-                                ? "border-blue-500 bg-blue-50"
-                                : "border-gray-200 hover:border-blue-300"
+                            ? "border-blue-500 bg-blue-50"
+                            : "border-gray-200 hover:border-blue-300"
                             }`}
                     >
                         <input
@@ -416,8 +407,8 @@ export const PaidTests = () => {
 
                     <label
                         className={`flex items-start space-x-3 border-2 rounded-xl p-4 cursor-pointer transition-all ${selectedMode === "image"
-                                ? "border-blue-500 bg-blue-50"
-                                : "border-gray-200 hover:border-blue-300"
+                            ? "border-blue-500 bg-blue-50"
+                            : "border-gray-200 hover:border-blue-300"
                             }`}
                     >
                         <input
@@ -567,9 +558,9 @@ export const PaidTests = () => {
                                             )
                                         }
                                         className={`py-2 rounded-lg font-medium text-sm transition-all ${questions1_32[num]
-                                                ?.correct_answer === opt
-                                                ? "bg-blue-500 text-white shadow-md"
-                                                : "bg-white text-gray-700 border border-gray-300 hover:border-blue-400"
+                                            ?.correct_answer === opt
+                                            ? "bg-blue-500 text-white shadow-md"
+                                            : "bg-white text-gray-700 border border-gray-300 hover:border-blue-400"
                                             }`}
                                     >
                                         {opt}
@@ -631,9 +622,9 @@ export const PaidTests = () => {
                                             )
                                         }
                                         className={`py-2 rounded-lg font-medium text-sm transition-all ${questions33_35[num]
-                                                ?.correct_answer === opt
-                                                ? "bg-blue-500 text-white shadow-md"
-                                                : "bg-white text-gray-700 border border-gray-300 hover:border-blue-400"
+                                            ?.correct_answer === opt
+                                            ? "bg-blue-500 text-white shadow-md"
+                                            : "bg-white text-gray-700 border border-gray-300 hover:border-blue-400"
                                             }`}
                                     >
                                         {opt}
@@ -770,8 +761,8 @@ export const PaidTests = () => {
                             <div
                                 key={step}
                                 className={`flex-1 h-2 rounded-full mx-1 transition-all ${step <= currentStep
-                                        ? "bg-blue-500"
-                                        : "bg-gray-200"
+                                    ? "bg-blue-500"
+                                    : "bg-gray-200"
                                     }`}
                             ></div>
                         ))}
