@@ -162,6 +162,36 @@ export const TestTakingPage = () => {
                         setAnswers((prev) => ({ ...prev, ...loadedAnswers }));
                     }
 
+                    // Load answers for questions 1-50 (Atestatsiya test)
+                    if (results.questions_1_50) {
+                        const loadedAnswers = {};
+                        Object.entries(results.questions_1_50).forEach(
+                            ([qNum, qData]) => {
+                                // Handle multiple formats:
+                                // 1. { correct_answer: "A" }
+                                // 2. { answer: "A" }
+                                // 3. Direct value "A"
+                                let answer = null;
+                                if (typeof qData === "object" && qData !== null) {
+                                    answer = qData.correct_answer || qData.answer;
+                                } else {
+                                    answer = qData;
+                                }
+
+                                if (answer) {
+                                    // Store with both string and number keys to ensure compatibility
+                                    const qNumStr = String(qNum);
+                                    const qNumNum = Number(qNum);
+                                    const answerStr = String(answer).trim();
+                                    loadedAnswers[qNumStr] = answerStr;
+                                    loadedAnswers[qNumNum] = answerStr;
+                                }
+                            },
+                        );
+                        console.log("Loaded answers 1-50:", loadedAnswers);
+                        setAnswers((prev) => ({ ...prev, ...loadedAnswers }));
+                    }
+
                     // Load answers for questions 36-45
                     if (results.questions_36_45) {
                         console.log("Loading questions 36-45:", results.questions_36_45);
@@ -320,41 +350,52 @@ export const TestTakingPage = () => {
         );
     }
 
-    const { name, code, details, start_time, end_time } = testData;
-    const allQuestions = {
-        ...details.questions_1_32,
-        ...details.questions_33_35,
-    };
+    const { name, code, details, start_time, end_time, type } = testData;
+
+    // Test turini aniqlash
+    const isAtestatsiyaTest = type === TestTypeEnum.ATTESTATSIYA;
+
+    // Savollar ro'yxatini test turiga qarab olish
+    const allQuestions = isAtestatsiyaTest
+        ? (details.questions_1_50 || {})
+        : {
+            ...details.questions_1_32,
+            ...details.questions_33_35,
+        };
 
     // Test type ni backend formatiga o'tkazish funksiyasi
-    // Backend quyidagi formatlarni kutadi: 'rash', 'blok', 'ochiq-test', 'yopiq-test'
+    // Backend TestTypeEnum integer qiymatlarini kutadi: 100, 200, 300, 400, 500
     const getTestTypeForBackend = (type) => {
+        // Agar integer bo'lsa, to'g'ridan-to'g'ri qaytarish
+        if (typeof type === "number") {
+            // TestTypeEnum qiymatlarini tekshirish
+            if ([
+                TestTypeEnum.RASH_TEST,
+                TestTypeEnum.OCHIQ_TEST,
+                TestTypeEnum.YOPIQ_TEST,
+                TestTypeEnum.BLOK_TEST,
+                TestTypeEnum.ATTESTATSIYA
+            ].includes(type)) {
+                return type;
+            }
+            return TestTypeEnum.RASH_TEST; // Default
+        }
+        // Agar string bo'lsa, TestTypeEnum ga o'tkazish
         if (typeof type === "string") {
             const normalizedType = type.toLowerCase().trim();
-            // To'g'ridan-to'g'ri backend formatida bo'lsa
-            if (["rash", "blok", "ochiq-test", "yopiq-test"].includes(normalizedType)) {
-                return normalizedType;
-            }
-            // Frontend formatidan backend formatiga o'tkazish
             const typeMap = {
-                rash: "rash",
-                blok: "blok",
-                ochiq: "ochiq-test",
-                yopiq: "yopiq-test",
+                "rash": TestTypeEnum.RASH_TEST,
+                "blok": TestTypeEnum.BLOK_TEST,
+                "ochiq-test": TestTypeEnum.OCHIQ_TEST,
+                "ochiq": TestTypeEnum.OCHIQ_TEST,
+                "yopiq-test": TestTypeEnum.YOPIQ_TEST,
+                "yopiq": TestTypeEnum.YOPIQ_TEST,
+                "atestatsiya": TestTypeEnum.ATTESTATSIYA,
+                "atestat": TestTypeEnum.ATTESTATSIYA, // Alias for compatibility
             };
-            return typeMap[normalizedType] || "rash";
+            return typeMap[normalizedType] || TestTypeEnum.RASH_TEST;
         }
-        // Agar integer bo'lsa, TestTypeEnum'dan foydalanib string ga o'tkazish
-        if (typeof type === "number") {
-            const typeMap = {
-                [TestTypeEnum.RASH_TEST]: "rash",
-                [TestTypeEnum.BLOK_TEST]: "blok",
-                [TestTypeEnum.OCHIQ_TEST]: "ochiq-test",
-                [TestTypeEnum.YOPIQ_TEST]: "yopiq-test",
-            };
-            return typeMap[type] || "rash";
-        }
-        return "rash"; // Default
+        return TestTypeEnum.RASH_TEST; // Default
     };
 
     // Test holatlari uchun qisqa o'zgaruvchilar
@@ -433,6 +474,11 @@ export const TestTakingPage = () => {
     // Variantlar sonini aniqlash funksiyasi
     const getOptionsForQuestion = (questionNum) => {
         const num = Number(questionNum);
+        // Atestatsiya testida barcha savollar 4 ta variantli
+        if (isAtestatsiyaTest) {
+            return ["A", "B", "C", "D"];
+        }
+        // DTM testida 33-35 savollar 6 ta variantli
         if (num >= 33 && num <= 35) {
             return ["A", "B", "C", "D", "E", "F"];
         }
@@ -444,7 +490,11 @@ export const TestTakingPage = () => {
         Object.keys(uploadedImages).length +
         Object.keys(textAnswers).length;
 
-    const totalQuestions = Object.keys(allQuestions).length + 10;
+    // Total questions - test turiga qarab
+    const totalQuestions = isAtestatsiyaTest
+        ? 50 // Atestatsiya testida 50 ta savol
+        : Object.keys(allQuestions).length + 10; // DTM testida 1-32, 33-35, 36-45
+
     const progressPercentage = Math.round(
         (answeredCount / totalQuestions) * 100,
     );
@@ -520,39 +570,64 @@ export const TestTakingPage = () => {
             duration = Math.round(diffMs / 60000); // Convert to minutes
         }
 
-        const questions_1_32 = {};
-        const questions_33_35 = {};
+        // Test turiga qarab submission data tayyorlash
+        let submissionData;
 
-        Object.entries(answers).forEach(([id, answer]) => {
-            const qid = Number(id);
-            if (qid >= 1 && qid <= 32)
-                questions_1_32[qid] = { correct_answer: answer };
-            else if (qid >= 33 && qid <= 35)
-                questions_33_35[qid] = { correct_answer: answer };
-        });
-
-        const questions36_45 =
-            details.questions_36_45.mode === "image"
-                ? {
-                    mode: "image",
-                    images: uploadedImages,
+        if (isAtestatsiyaTest) {
+            // Atestatsiya test uchun
+            const questions_1_50 = {};
+            Object.entries(answers).forEach(([id, answer]) => {
+                const qid = Number(id);
+                if (qid >= 1 && qid <= 50) {
+                    questions_1_50[qid] = { correct_answer: answer };
                 }
-                : {
-                    mode: "write",
-                    answers: textAnswers,
-                };
+            });
 
-        const submissionData = {
-            test_code: code,
-            user_id: user[0]?.bot_user?.user_id, // Assuming user ID is available in the user state
-            duration: duration,
-            results: {
-                type: getTestTypeForBackend(details.type),
-                questions_1_32,
-                questions_33_35,
-                questions_36_45: questions36_45,
-            },
-        };
+            submissionData = {
+                test_code: code,
+                user_id: user[0]?.bot_user?.user_id,
+                duration: duration,
+                results: {
+                    type: getTestTypeForBackend(type),
+                    questions_1_50,
+                },
+            };
+        } else {
+            // DTM test uchun
+            const questions_1_32 = {};
+            const questions_33_35 = {};
+
+            Object.entries(answers).forEach(([id, answer]) => {
+                const qid = Number(id);
+                if (qid >= 1 && qid <= 32)
+                    questions_1_32[qid] = { correct_answer: answer };
+                else if (qid >= 33 && qid <= 35)
+                    questions_33_35[qid] = { correct_answer: answer };
+            });
+
+            const questions36_45 =
+                details.questions_36_45?.mode === "image"
+                    ? {
+                        mode: "image",
+                        images: uploadedImages,
+                    }
+                    : {
+                        mode: "write",
+                        answers: textAnswers,
+                    };
+
+            submissionData = {
+                test_code: code,
+                user_id: user[0]?.bot_user?.user_id,
+                duration: duration,
+                results: {
+                    type: getTestTypeForBackend(type),
+                    questions_1_32,
+                    questions_33_35,
+                    questions_36_45: questions36_45,
+                },
+            };
+        }
         console.log("Submission data:", submissionData);
 
         try {
@@ -596,7 +671,17 @@ export const TestTakingPage = () => {
     };
 
     const render36_45Questions = () => {
+        // Atestatsiya testida 36-45 savollar yo'q
+        if (isAtestatsiyaTest) {
+            return null;
+        }
+
         const q36_45 = details.questions_36_45;
+
+        // Agar questions_36_45 mavjud bo'lmasa, null qaytar
+        if (!q36_45) {
+            return null;
+        }
 
         if (q36_45.mode === "image") {
             return (
@@ -956,7 +1041,7 @@ export const TestTakingPage = () => {
                             >
                                 <h3 className="font-semibold text-gray-800 mb-3">
                                     {num}-savol
-                                    {Number(num) >= 33 && Number(num) <= 35 && (
+                                    {!isAtestatsiyaTest && Number(num) >= 33 && Number(num) <= 35 && (
                                         <span className="ml-2 text-xs text-blue-600 font-normal">
                                             (6 ta variant)
                                         </span>
@@ -989,8 +1074,8 @@ export const TestTakingPage = () => {
                     })}
                 </div>
 
-                {/* Rasmli yoki textli savollar */}
-                {render36_45Questions()}
+                {/* Rasmli yoki textli savollar - faqat DTM test uchun */}
+                {!isAtestatsiyaTest && render36_45Questions()}
 
                 {/* TEST UCHUN*/}
                 {/* {

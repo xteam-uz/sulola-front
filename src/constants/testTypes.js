@@ -4,6 +4,7 @@ export const TestTypeEnum = {
     OCHIQ_TEST: 200, // Ochiq test
     YOPIQ_TEST: 300, // Yopiq test
     BLOK_TEST: 400, // Blok test
+    ATTESTATSIYA: 500, // Atestatsiya
 };
 
 export const TestTypeLabels = {
@@ -11,4 +12,5 @@ export const TestTypeLabels = {
     200: "Ochiq test",
     300: "Yopiq test",
     400: "Blok test",
+    500: "Atestatsiya",
 };

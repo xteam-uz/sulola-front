@@ -116,8 +116,8 @@ export const Atestatsiya = () => {
         const testData = {
             name: testName,
             science_id: Number(scienceId),
-            type: TestTypeEnum.RASH_TEST,
-            price: 0, // Tekin testlar uchun narx 0
+            type: TestTypeEnum.ATTESTATSIYA,
+            // price: 0, // Tekin testlar uchun narx 0
             start_time: startTime,
             end_time: endTime,
             details: {

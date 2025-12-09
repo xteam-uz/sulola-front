@@ -52,6 +52,8 @@ export const TesterDashboard = () => {
             navigate("/add_paid_test", { state: { testType } });
         } else if (testType === "free") {
             navigate("/add_free_test", { state: { testType } });
+        } else if (testType === "atestat") {
+            navigate("/add_atestat", { state: { testType } });
         }
     };
 
@@ -419,6 +421,22 @@ export const TesterDashboard = () => {
                                         </p>
                                         <p className="text-xs text-gray-500">
                                             O'quvchilar uchun bepul test.
+                                        </p>
+                                    </div>
+                                </label>
+
+                                <label className="flex items-center space-x-3 border rounded-xl p-3 cursor-pointer hover:bg-gray-50">
+                                    <input
+                                        type="radio"
+                                        name="testType"
+                                        value="atestat"
+                                    />
+                                    <div>
+                                        <p className="font-medium">
+                                            🎓 Atestatsiya
+                                        </p>
+                                        <p className="text-xs text-gray-500">
+                                            O'qituvchilar uchun atestatsiya.
                                         </p>
                                     </div>
                                 </label>

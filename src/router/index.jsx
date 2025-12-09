@@ -7,6 +7,7 @@ import { StudentTestChecking } from "../pages/Tests/StudentTestChecking";
 import { PaidTests } from "../pages/Tests/PaidTests";
 import { FreeTests } from "../pages/Tests/FreeTests";
 import { Login } from "../pages/Auth/Login";
+import { Atestatsiya } from "../pages/Tests/Atestatsiya";
 
 const router = createBrowserRouter([
     {
@@ -48,6 +49,10 @@ const router = createBrowserRouter([
             {
                 path: "/add_free_test",
                 element: <FreeTests />
+            },
+            {
+                path: "/add_atestat",
+                element: <Atestatsiya />,
             }
         ],
     },
