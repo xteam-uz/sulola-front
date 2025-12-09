@@ -50,6 +50,9 @@ export const Login = () => {
 
         const payload = {
             telegram_user_id: telegramUser.id,
+            first_name: firstNameRef.current.value,
+            last_name: lastNameRef.current.value,
+            role: role,
         };
 
         setErrors(null);
@@ -140,6 +143,12 @@ export const Login = () => {
                     >
                         Ism
                     </label>
+                    {/* Xatolikni ko'rsatish */}
+                    {errors?.first_name && (
+                        <p className="text-red-500 text-xs mt-1">
+                            {translateError(errors.first_name[0])}
+                        </p>
+                    )}
                 </div>
 
                 {/* Familiya */}
@@ -165,6 +174,12 @@ export const Login = () => {
                     >
                         Familiya
                     </label>
+                    {/* Xatolikni ko'rsatish */}
+                    {errors?.last_name && (
+                        <p className="text-red-500 text-xs mt-1">
+                            {translateError(errors.last_name[0])}
+                        </p>
+                    )}
                 </div>
             </div>
 
