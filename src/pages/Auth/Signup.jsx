@@ -5,6 +5,7 @@ import { getUserData, initTelegramApp } from "../../telegram/init";
 import Lottie from "lottie-react";
 import TelegramAnimation from "../../assets/Telegram.json";
 import ErrorAnimation from "../../assets/error.json";
+import { Link } from "react-router-dom";
 
 // Xatoliklarni tarjima qilish uchun
 const errorTranslations = {
@@ -215,6 +216,11 @@ export const Signup = () => {
             >
                 Ro'yxatdan o'tish
             </button>
+            <p className="text-sm text-center mt-4">
+                Agar allaqachon ro'yxatdan o'tgan bo'lsangiz, <Link className="text-blue-500" to="/login">
+                    kiring
+                </Link>
+            </p>
         </form>
     );
 };

@@ -7,7 +7,6 @@ import {
     Minus,
     ArrowLeft,
     Clock,
-    DollarSign,
     Calendar,
     Check,
     Copy,
@@ -31,7 +30,6 @@ export const PaidTests = () => {
     // Step 1: Asosiy ma'lumotlar
     const [testName, setTestName] = useState("");
     const [scienceId, setScienceId] = useState("");
-    const [price, setPrice] = useState("");
     const [startTime, setStartTime] = useState("");
     const [endTime, setEndTime] = useState("");
 

@@ -5,7 +5,7 @@ export const DefaultLayout = () => {
     const { token } = useStateContext();
 
     if (!token) {
-        return <Navigate to="/register" />;
+        return <Navigate to="/login" />;
     }
     return (
         <main>

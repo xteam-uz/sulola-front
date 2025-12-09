@@ -6,6 +6,7 @@ import { TestChecking } from "../pages/Tests/TestChacking";
 import { StudentTestChecking } from "../pages/Tests/StudentTestChecking";
 import { PaidTests } from "../pages/Tests/PaidTests";
 import { FreeTests } from "../pages/Tests/FreeTests";
+import { Login } from "../pages/Auth/Login";
 
 const router = createBrowserRouter([
     {
@@ -54,6 +55,10 @@ const router = createBrowserRouter([
         path: "/",
         element: <GuestLayout />,
         children: [
+            {
+                path: "/login",
+                element: <Login />,
+            },
             {
                 path: "/register",
                 element: <Signup />,

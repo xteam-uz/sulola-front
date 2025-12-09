@@ -1,7 +1,28 @@
 import { useState, useRef, useEffect } from "react";
 import { useStateContext } from "../../contexts/ContextProvider";
-import axiosClient from "../axios-client";
-import { initTelegramApp, getUserData } from "../../telegram";
+import axiosClient from "../../api/axios-client";
+import { initTelegramApp, getUserData } from "../../telegram/init";
+import { Link } from "react-router-dom";
+import Lottie from "lottie-react";
+import TelegramAnimation from "../../assets/Telegram.json";
+import ErrorAnimation from "../../assets/error.json";
+
+// Xatoliklarni tarjima qilish uchun
+const errorTranslations = {
+    "The first name field must be at least 3 characters.":
+        "Ism kamida 3 ta harfdan iborat bo'lishi kerak.",
+    "The last name field must be at least 3 characters.":
+        "Familiya kamida 3 ta harfdan iborat bo'lishi kerak.",
+    "The first name field is required.": "Ism maydoni to'ldirilishi shart.",
+    "The last name field is required.": "Familiya maydoni to'ldirilishi shart.",
+    "The telegram user id field is required.":
+        "Telegram foydalanuvchi IDsi topilmadi.",
+};
+
+// Xatolikni tarjima qilish funksiyasi
+const translateError = (error) => {
+    return errorTranslations[error] || error;
+};
 
 export const Login = () => {
     const { setUser, setToken } = useStateContext();
@@ -20,19 +41,15 @@ export const Login = () => {
     const onSubmit = (e) => {
         e.preventDefault();
 
-        // if (!telegramUser?.id) {
-        //     setErrors({
-        //         telegram_id: ["Telegram foydalanuvchi ma'lumoti topilmadi"],
-        //     });
-        //     return;
-        // }
+        if (!telegramUser?.id) {
+            setErrors({
+                telegram_user_id: ["Telegram foydalanuvchi ma'lumoti topilmadi"],
+            });
+            return;
+        }
 
         const payload = {
-            telegram_id: 1367538109, // telegramUser?.id,
-            username: "mirrrjr", //telegramUser?.username,
-            first_name: firstNameRef.current.value,
-            last_name: lastNameRef.current.value,
-            role: role,
+            telegram_user_id: telegramUser.id,
         };
 
         setErrors(null);
@@ -42,28 +59,61 @@ export const Login = () => {
             .then(({ data }) => {
                 console.log(data);
                 setUser(data.user);
-                setToken(data.token);
+                setToken(data.token); // Token avtomatik ravishda localStorage'ga saqlanadi
             })
             .catch((error) => {
                 const response = error.response;
-                if (response && response.status === 422) {
-                    setErrors(response.data.errors);
+                if (response && response.data) {
+                    if (response.data.data) {
+                        setErrors(response.data.data);
+                    } else if (response.data.errors) {
+                        setErrors(response.data.errors);
+                    } else {
+                        setErrors({ general: ["Xatolik yuz berdi"] });
+                    }
+                } else {
+                    setErrors({ general: ["Tarmoq xatosi yuz berdi"] });
                 }
             });
     };
 
     return (
         <form onSubmit={onSubmit} className="max-w-md mx-auto p-4">
-            <h1 className="text-xl font-semibold mb-5 text-center">
-                Ro'yxatdan o'tish
-            </h1>
+            <div className="flex flex-col items-center gap-5">
+                {(errors && errors.general) || errors?.telegram_user_id ? (
+                    <Lottie
+                        width={300}
+                        height={300}
+                        className="size-32"
+                        animationData={ErrorAnimation}
+                    />
+                ) : (
+                    <Lottie
+                        width={300}
+                        height={300}
+                        className="size-42"
+                        animationData={TelegramAnimation}
+                    />
+                )}
 
-            {errors && (
-                <div className="text-red-500 text-sm mb-4">
-                    {Object.keys(errors).map((key) => (
-                        <p key={key}>{errors[key][0]}</p>
+                <h1 className="text-xl font-semibold mb-5 text-center">
+                    Kirish
+                </h1>
+            </div>
+
+            {/* Umumiy xatoliklarni ko'rsatish */}
+            {errors && errors.general ? (
+                <div className="bg-red-50 border border-red-300 text-red-800 px-4 py-3 rounded mb-4">
+                    {errors.general.map((error, index) => (
+                        <p key={index}>{error}</p>
                     ))}
                 </div>
+            ) : (
+                errors?.telegram_user_id && (
+                    <div className="bg-red-50 border border-red-300 text-red-800 px-4 py-3 rounded mb-4">
+                        <p>{translateError(errors.telegram_user_id[0])}</p>
+                    </div>
+                )
             )}
 
             <div className="grid md:grid-cols-2 md:gap-6">
@@ -125,11 +175,10 @@ export const Login = () => {
                     <button
                         type="button"
                         onClick={() => setRole("tester")}
-                        className={`flex-1 py-2 rounded border text-xs transition-all ${
-                            role === "tester"
-                                ? "bg-blue-500 text-white border-blue-600"
-                                : "bg-white text-gray-700 border-gray-300"
-                        }`}
+                        className={`flex-1 py-2 rounded border text-xs transition-all ${role === "tester"
+                            ? "bg-blue-500 text-white border-blue-600"
+                            : "bg-white text-gray-700 border-gray-300"
+                            }`}
                     >
                         Test oluvchi
                     </button>
@@ -137,11 +186,10 @@ export const Login = () => {
                     <button
                         type="button"
                         onClick={() => setRole("test_taker")}
-                        className={`flex-1 py-2 rounded border text-xs transition-all ${
-                            role === "test_taker"
-                                ? "bg-blue-500 text-white border-blue-600"
-                                : "bg-white text-gray-700 border-gray-300"
-                        }`}
+                        className={`flex-1 py-2 rounded border text-xs transition-all ${role === "test_taker"
+                            ? "bg-blue-500 text-white border-blue-600"
+                            : "bg-white text-gray-700 border-gray-300"
+                            }`}
                     >
                         Test topshiruvchi
                     </button>
@@ -161,6 +209,11 @@ export const Login = () => {
             >
                 Kirish
             </button>
+            <p className="text-sm text-center mt-4">
+                Agar ro'yxatdan o'tmagan bo'lsangiz, <Link className="text-blue-500" to="/register">
+                    ro'yxatdan o'tish
+                </Link>
+            </p>
         </form>
     );
 };
