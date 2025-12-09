@@ -131,7 +131,6 @@ export const Login = () => {
                                focus:outline-none focus:ring-0 focus:border-blue-600 peer"
                         placeholder=" "
                         defaultValue={telegramUser?.first_name || ""}
-                        required
                     />
                     <label
                         htmlFor="floating_first_name"
@@ -162,7 +161,6 @@ export const Login = () => {
                                focus:outline-none focus:ring-0 focus:border-blue-600 peer"
                         placeholder=" "
                         defaultValue={telegramUser?.last_name || ""}
-                        required
                     />
                     <label
                         htmlFor="floating_last_name"
@@ -209,10 +207,6 @@ export const Login = () => {
                         Test topshiruvchi
                     </button>
                 </div>
-                <p className="text-xs text-orange-500 mt-2">
-                    Agar test topshirayotgan bo‘lsangiz, “Test topshiruvchi”
-                    rolini tanlang.
-                </p>
             </div>
 
             {/* Submit tugmasi */}
