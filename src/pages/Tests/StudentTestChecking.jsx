@@ -5,6 +5,7 @@ import { TopHeader } from "../../components/ui";
 import { Image as ImageIcon, CheckCircle2, XCircle } from "lucide-react";
 import { BackButton, BottomBar } from "@twa-dev/sdk/react";
 import { useStateContext } from "../../contexts/ContextProvider";
+import { TestTypeEnum } from "../../constants/testTypes";
 
 export const StudentTestChecking = () => {
     const { testId, studentId } = useParams();
@@ -56,11 +57,18 @@ export const StudentTestChecking = () => {
                 }
 
                 // Fetch test data if not in state
-                if (!testData) {
+                let currentTestData = testData;
+                if (!currentTestData) {
                     const test = await fetchTest(testId);
                     if (test) {
                         setTestData(test);
+                        currentTestData = test;
                     }
+                }
+
+                // Agar Atestatsiya testi bo'lsa, avtomatik "Tekshirilgan" qilish
+                if (currentTestData && currentTestData.type === TestTypeEnum.ATTESTATSIYA) {
+                    setIsChecked(true);
                 }
             } catch (error) {
                 console.error("Ma'lumotlarni yuklashda xatolik:", error);
@@ -83,6 +91,13 @@ export const StudentTestChecking = () => {
 
         fetchData();
     }, [testId, studentId, fetchStudentTestData, fetchTeacherScores, fetchTest]);
+
+    // Atestatsiya testlarida avtomatik "Tekshirilgan" qilish
+    useEffect(() => {
+        if (testData && testData.type === TestTypeEnum.ATTESTATSIYA) {
+            setIsChecked(true);
+        }
+    }, [testData]);
 
     // Handle score change for questions 36-45
     const handleScoreChange = (questionNum, value) => {
@@ -390,7 +405,7 @@ export const StudentTestChecking = () => {
         return null;
     };
 
-    // Get automatic check result for questions 1-35
+    // Get automatic check result for questions 1-35 (or 1-50 for Atestatsiya)
     const getAutoCheckResult = (questionNum) => {
         if (!studentAnswers) {
             return null;
@@ -398,6 +413,41 @@ export const StudentTestChecking = () => {
 
         const questionNumStr = String(questionNum);
         const questionNumNum = Number(questionNum);
+
+        // Check questions_1_50 for Atestatsiya tests
+        if (isAtestatsiyaTest && questionNum >= 1 && questionNum <= 50 && studentAnswers.questions_1_50) {
+            // Try both string and number keys
+            const answer = studentAnswers.questions_1_50[questionNumStr]
+                || studentAnswers.questions_1_50[questionNumNum]
+                || studentAnswers.questions_1_50[questionNum];
+
+            if (answer) {
+                // If is_correct is explicitly set (true or false), use it
+                if (answer.is_correct === true || answer.is_correct === false) {
+                    return answer.is_correct;
+                }
+
+                // If is_correct is null or undefined, try to check manually using test data
+                if (testData && testData.details && testData.details.questions_1_50) {
+                    // Get correct answer from test data
+                    const qData = testData.details.questions_1_50[questionNumStr]
+                        || testData.details.questions_1_50[questionNumNum]
+                        || testData.details.questions_1_50[questionNum];
+                    const correctAnswer = qData?.correct_answer;
+
+                    // Get student answer
+                    const studentAnswer = answer.answer || answer.correct_answer;
+
+                    if (correctAnswer && studentAnswer) {
+                        // Compare answers (case-insensitive)
+                        return correctAnswer.toString().toUpperCase() === studentAnswer.toString().toUpperCase();
+                    }
+                }
+
+                // If we can't determine, return null
+                return null;
+            }
+        }
 
         // Check questions_1_32
         if (questionNum >= 1 && questionNum <= 32 && studentAnswers.questions_1_32) {
@@ -491,6 +541,9 @@ export const StudentTestChecking = () => {
     const studentName = `${studentData.first_name || ""} ${studentData.last_name || ""}`.trim();
     const testCode = testData.code || "N/A";
 
+    // Test turini aniqlash
+    const isAtestatsiyaTest = testData.type === TestTypeEnum.ATTESTATSIYA;
+
     return (
         <div className="min-h-screen bg-gray-50 pb-32 relative">
             {/* Loading overlay during submission - show until scores are loaded */}
@@ -532,131 +585,151 @@ export const StudentTestChecking = () => {
                 </div>
 
                 {/* Instructions Card */}
-                <div className="bg-blue-50 border border-blue-200 rounded-2xl p-4 mb-4">
-                    <p className="text-blue-900 text-sm font-semibold mb-2">
-                        Ko'rsatma:
-                    </p>
-                    <p className="text-blue-800 text-sm">
-                        O'quvchi yuklagan rasmga qarab, to'g'ri javoblarni yashil
-                        tugma bilan belgilang. Noto'g'ri javoblarni belgilamang
-                        (kulrang holatda qoldiring).
-                    </p>
-                </div>
+                {!isAtestatsiyaTest && (
+                    <div className="bg-blue-50 border border-blue-200 rounded-2xl p-4 mb-4">
+                        <p className="text-blue-900 text-sm font-semibold mb-2">
+                            Ko'rsatma:
+                        </p>
+                        <p className="text-blue-800 text-sm">
+                            O'quvchi yuklagan rasmga qarab, to'g'ri javoblarni yashil
+                            tugma bilan belgilang. Noto'g'ri javoblarni belgilamang
+                            (kulrang holatda qoldiring).
+                        </p>
+                    </div>
+                )}
+                {isAtestatsiyaTest && (
+                    <div className="bg-blue-50 border border-blue-200 rounded-2xl p-4 mb-4">
+                        <p className="text-blue-900 text-sm font-semibold mb-2">
+                            Ko'rsatma:
+                        </p>
+                        <p className="text-blue-800 text-sm">
+                            Barcha savollar variantli va avtomatik tekshiriladi.
+                            Yashil belgi - to'g'ri javob, qizil belgi - noto'g'ri javob.
+                        </p>
+                    </div>
+                )}
 
-                {/* Questions 36-45 Section - Har bir savol alohida (rasmli yoki yozma) */}
-                <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 mb-4">
-                    <h3 className="text-lg font-semibold text-gray-800 mb-4">
-                        Yozma javoblar (36-45 savollar)
-                    </h3>
-                    <div className="space-y-4">
-                        {Array.from({ length: 10 }, (_, i) => i + 36).map((questionNum) => {
-                            const answerType = getAnswerType(questionNum);
-                            const imageUrl = getAnswerImage(questionNum);
-                            const answerText = getAnswerText(questionNum);
+                {/* Questions 36-45 Section - Faqat DTM testlar uchun (Atestatsiya testlar uchun emas) */}
+                {!isAtestatsiyaTest && (
+                    <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 mb-4">
+                        <h3 className="text-lg font-semibold text-gray-800 mb-4">
+                            Yozma javoblar (36-45 savollar)
+                        </h3>
+                        <div className="space-y-4">
+                            {Array.from({ length: 10 }, (_, i) => i + 36).map((questionNum) => {
+                                const answerType = getAnswerType(questionNum);
+                                const imageUrl = getAnswerImage(questionNum);
+                                const answerText = getAnswerText(questionNum);
 
-                            return (
-                                <div
-                                    key={questionNum}
-                                    className="border border-gray-200 rounded-xl p-4"
-                                >
-                                    <div className="flex justify-between items-start mb-3">
-                                        <h4 className="font-medium text-gray-700">
-                                            {questionNum}-savol
-                                        </h4>
-                                        <p className="text-xs text-gray-500">
-                                            Maksimal: {getMaxScore(questionNum)} ball
-                                        </p>
-                                    </div>
-
-                                    {/* Rasmli javob */}
-                                    {answerType === "image" && (
-                                        <div className="mb-3">
-                                            {imageUrl ? (
-                                                <div className="mb-3">
-                                                    <img
-                                                        src={imageUrl}
-                                                        alt={`${questionNum}-savol javobi`}
-                                                        className="w-full rounded-lg border border-gray-200"
-                                                    />
-                                                </div>
-                                            ) : (
-                                                <div className="flex flex-col items-center justify-center py-8 bg-gray-50 rounded-lg border border-gray-200">
-                                                    <ImageIcon
-                                                        className="text-gray-400 mb-2"
-                                                        size={48}
-                                                    />
-                                                    <p className="text-gray-500 text-sm">
-                                                        O'quvchi hali rasm yuklamagan
-                                                    </p>
-                                                </div>
-                                            )}
+                                return (
+                                    <div
+                                        key={questionNum}
+                                        className="border border-gray-200 rounded-xl p-4"
+                                    >
+                                        <div className="flex justify-between items-start mb-3">
+                                            <h4 className="font-medium text-gray-700">
+                                                {questionNum}-savol
+                                            </h4>
+                                            <p className="text-xs text-gray-500">
+                                                Maksimal: {getMaxScore(questionNum)} ball
+                                            </p>
                                         </div>
-                                    )}
 
-                                    {/* Yozma javob */}
-                                    {answerType === "text" && (
-                                        <div className="mb-3">
-                                            {answerText ? (
-                                                <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
-                                                    <p className="text-sm text-gray-700">
-                                                        {answerText}
-                                                    </p>
-                                                </div>
-                                            ) : (
+                                        {/* Rasmli javob */}
+                                        {answerType === "image" && (
+                                            <div className="mb-3">
+                                                {imageUrl ? (
+                                                    <div className="mb-3">
+                                                        <img
+                                                            src={imageUrl}
+                                                            alt={`${questionNum}-savol javobi`}
+                                                            className="w-full rounded-lg border border-gray-200"
+                                                        />
+                                                    </div>
+                                                ) : (
+                                                    <div className="flex flex-col items-center justify-center py-8 bg-gray-50 rounded-lg border border-gray-200">
+                                                        <ImageIcon
+                                                            className="text-gray-400 mb-2"
+                                                            size={48}
+                                                        />
+                                                        <p className="text-gray-500 text-sm">
+                                                            O'quvchi hali rasm yuklamagan
+                                                        </p>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
+
+                                        {/* Yozma javob */}
+                                        {answerType === "text" && (
+                                            <div className="mb-3">
+                                                {answerText ? (
+                                                    <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                                                        <p className="text-sm text-gray-700">
+                                                            {answerText}
+                                                        </p>
+                                                    </div>
+                                                ) : (
+                                                    <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                                                        <p className="text-sm text-gray-500 italic">
+                                                            Javob berilmagan
+                                                        </p>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
+
+                                        {/* Agar javob bo'lmasa */}
+                                        {answerType === null && (
+                                            <div className="mb-3">
                                                 <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
                                                     <p className="text-sm text-gray-500 italic">
                                                         Javob berilmagan
                                                     </p>
                                                 </div>
-                                            )}
-                                        </div>
-                                    )}
-
-                                    {/* Agar javob bo'lmasa */}
-                                    {answerType === null && (
-                                        <div className="mb-3">
-                                            <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
-                                                <p className="text-sm text-gray-500 italic">
-                                                    Javob berilmagan
-                                                </p>
                                             </div>
+                                        )}
+
+                                        {/* Ball input - har bir savol uchun */}
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                Ball (0-{getMaxScore(questionNum)})
+                                            </label>
+                                            <input
+                                                type="number"
+                                                min="0"
+                                                max={getMaxScore(questionNum)}
+                                                value={scores[questionNum] || ""}
+                                                onChange={(e) =>
+                                                    handleScoreChange(
+                                                        questionNum,
+                                                        e.target.value
+                                                    )
+                                                }
+                                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                                                placeholder="0"
+                                                disabled={isChecked || submitting || loadingScores}
+                                            />
                                         </div>
-                                    )}
-
-                                    {/* Ball input - har bir savol uchun */}
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Ball (0-{getMaxScore(questionNum)})
-                                        </label>
-                                        <input
-                                            type="number"
-                                            min="0"
-                                            max={getMaxScore(questionNum)}
-                                            value={scores[questionNum] || ""}
-                                            onChange={(e) =>
-                                                handleScoreChange(
-                                                    questionNum,
-                                                    e.target.value
-                                                )
-                                            }
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
-                                            placeholder="0"
-                                            disabled={isChecked || submitting || loadingScores}
-                                        />
                                     </div>
-                                </div>
-                            );
-                        })}
+                                );
+                            })}
+                        </div>
                     </div>
-                </div>
+                )}
 
-                {/* Auto-checked Questions Summary (1-35) */}
+                {/* Auto-checked Questions Summary */}
                 <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 mb-4">
                     <h3 className="text-lg font-semibold text-gray-800 mb-4">
-                        Avtomatik tekshirilgan savollar (1-35)
+                        {isAtestatsiyaTest
+                            ? "Avtomatik tekshirilgan savollar (1-50)"
+                            : "Avtomatik tekshirilgan savollar (1-35)"}
                     </h3>
-                    <div className="grid grid-cols-6 gap-2">
-                        {Array.from({ length: 35 }, (_, i) => i + 1).map((qNum) => {
+                    <div className={`grid ${isAtestatsiyaTest ? "grid-cols-10" : "grid-cols-6"} gap-2`}>
+                        {Array.from(
+                            { length: isAtestatsiyaTest ? 50 : 35 },
+                            (_, i) => i + 1
+                        ).map((qNum) => {
                             const isCorrect = getAutoCheckResult(qNum);
                             return (
                                 <div
@@ -686,8 +759,8 @@ export const StudentTestChecking = () => {
                     </div>
                 </div>
 
-                {/* Finish Checking Button */}
-                {!isChecked && (
+                {/* Finish Checking Button - Faqat DTM testlar uchun (Atestatsiya testlar uchun emas) */}
+                {!isAtestatsiyaTest && !isChecked && (
                     <button
                         onClick={handleFinishChecking}
                         disabled={submitting}
