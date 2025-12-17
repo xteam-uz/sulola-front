@@ -594,7 +594,7 @@ export const ContextProvider = ({ children }) => {
     // URL orqali kelgan ACCESS_TOKEN va user_id ni olish (Telegram WebApp deep link)
     useEffect(() => {
         const params = new URLSearchParams(window.location.search);
-        const urlToken = params.get("ACCESS_TOKEN") || params.get("access_token");
+        const urlToken = params.get("access_token") || params.get("ACCESS_TOKEN");
         const urlUserId = params.get("user_id");
 
         if (urlToken) {
