@@ -40,17 +40,37 @@ export const TestTakingPage = () => {
         const fetchTest = async () => {
             try {
                 const { data } = await axiosClient.get(`/tests/${testId}`);
-                setTestData(data.test);
 
-                // Set the start time if provided
+                // start_time / end_time bo'sh yoki noto'g'ri bo'lsa, faol holatga tushiramiz
+                const rawStart = data.test.start_time;
+                const rawEnd = data.test.end_time;
+                const startValid = rawStart && !isNaN(new Date(rawStart).getTime());
+                const endValid = rawEnd && !isNaN(new Date(rawEnd).getTime());
+
+                const fallbackStart = new Date().toISOString();
+                const fallbackEnd = new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(); // 2 soat keyin
+
+                const safeStart = startValid ? rawStart : fallbackStart;
+                const safeEnd = endValid ? rawEnd : fallbackEnd;
+
+                // Test ma'lumotlarini xavfsiz vaqtlar bilan saqlaymiz
+                setTestData({
+                    ...data.test,
+                    start_time: safeStart,
+                    end_time: safeEnd,
+                });
+
+                // startTime state'iga ham xavfsiz qiymat beramiz
                 if (testStartTime) {
                     setStartTime(testStartTime);
+                } else {
+                    setStartTime(safeStart);
                 }
 
                 // Test holatini aniqlash
                 const now = Date.now();
-                const start = new Date(data.test.start_time).getTime();
-                const end = new Date(data.test.end_time).getTime();
+                const start = new Date(safeStart).getTime();
+                const end = new Date(safeEnd).getTime();
 
                 if (now < start) {
                     setTestStatus("waiting");
@@ -632,13 +652,14 @@ export const TestTakingPage = () => {
 
         try {
             await axiosClient.post("/tests/save", submissionData);
-            setIsSubmitted(true);
-            refreshTestResults();
+
+            // Avvalo foydalanuvchiga muvaffaqiyat toasti ko'rsatamiz,
+            // keyin boshqa holatlarni yangilaymiz (refreshda xatolik bo'lsa ham toast chiqsin)
             toast.success(
                 "Javoblar muvaffaqiyatli yuborildi, Tez orada natijalaringizni ko'rishingiz mumkin!",
                 {
                     position: "top-center",
-                    autoClose: 10000,
+                    autoClose: 3000,
                     hideProgressBar: false,
                     closeOnClick: false,
                     pauseOnHover: true,
@@ -650,9 +671,17 @@ export const TestTakingPage = () => {
                 },
             );
 
+            setIsSubmitted(true);
+            // Refresh xatoga uchrasa ham sahifa qolishi uchun try/catch ichiga olamiz
+            try {
+                await refreshTestResults();
+            } catch (e) {
+                console.error("Natijalarni yangilashda xatolik:", e);
+            }
+
             setTimeout(() => {
                 navigate("/");
-            }, 10000);
+            }, 3000);
         } catch (error) {
             console.error("Yuborishda xatolik:", error);
             toast.error("Yuborishda xatolik yuz berdi!", {
