@@ -36,9 +36,37 @@ const StateContext = createContext({
     sciences: null,
 });
 
+const getInitialAuthFromUrlOrStorage = () => {
+    if (typeof window === "undefined") {
+        return { token: null };
+    }
+
+    const params = new URLSearchParams(window.location.search);
+    const urlToken = params.get("ACCESS_TOKEN") || params.get("access_token");
+    const urlUserId = params.get("user_id");
+
+    const storedToken = localStorage.getItem("ACCESS_TOKEN");
+
+    // Prioritize URL token if present
+    if (urlToken) {
+        localStorage.setItem("ACCESS_TOKEN", urlToken);
+        if (urlUserId) {
+            localStorage.setItem("USER_ID", urlUserId);
+        }
+        return { token: urlToken };
+    }
+
+    // Still persist user_id if it comes alone
+    if (urlUserId) {
+        localStorage.setItem("USER_ID", urlUserId);
+    }
+
+    return { token: storedToken };
+};
+
 export const ContextProvider = ({ children }) => {
     const [user, setUser] = useState(null);
-    const [token, _setToken] = useState(localStorage.getItem("ACCESS_TOKEN"));
+    const [token, _setToken] = useState(() => getInitialAuthFromUrlOrStorage().token);
     const [tests, setTests] = useState(null);
     const [testResults, setTestResults] = useState(null);
     const [pagination, setPagination] = useState(null);
@@ -592,8 +620,8 @@ export const ContextProvider = ({ children }) => {
     // EFFECTS
     // ============================
     // URL orqali kelgan ACCESS_TOKEN va user_id ni olish (Telegram WebApp deep link)
+    // keep this effect to handle runtime navigation with new params
     useEffect(() => {
-        // window mavjudligini tekshirib olamiz (SSR/testlarda xatoga tushmaslik uchun)
         if (typeof window === "undefined") return;
 
         const params = new URLSearchParams(window.location.search);
