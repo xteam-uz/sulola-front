@@ -37,8 +37,7 @@ export const CountdownTimer = ({ startTime, endTime, onStart, onExpire }) => {
             setStatus(newStatus);
             setTimeLeft(formatTime(diff));
 
-            // Callback'larni status o'zgarganda chaqirish.
-            // Agar initial render paytida holat "active" bo'lsa, onStart darhol chaqiriladi.
+            // Callback'larni faqat status o'zgarganda chaqirish
             if (prevStatusRef.current !== newStatus) {
                 if (newStatus === "active" && onStart) {
                     onStart();
