@@ -638,7 +638,7 @@ export const TestTakingPage = () => {
                 "Javoblar muvaffaqiyatli yuborildi, Tez orada natijalaringizni ko'rishingiz mumkin!",
                 {
                     position: "top-center",
-                    autoClose: 10000,
+                    autoClose: 3000,
                     hideProgressBar: false,
                     closeOnClick: false,
                     pauseOnHover: true,
@@ -652,7 +652,7 @@ export const TestTakingPage = () => {
 
             setTimeout(() => {
                 navigate("/");
-            }, 10000);
+            }, 3000);
         } catch (error) {
             console.error("Yuborishda xatolik:", error);
             toast.error("Yuborishda xatolik yuz berdi!", {

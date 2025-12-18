@@ -99,12 +99,15 @@ export const StudentTestChecking = () => {
         }
     }, [testData]);
 
-    // Handle score change for questions 36-45
-    const handleScoreChange = (questionNum, value) => {
-        const numValue = value === "" ? "" : Math.max(0, Math.min(parseInt(value) || 0, getMaxScore(questionNum)));
+    // Handle score change for questions 36-45 (supports per-variant keys)
+    const handleScoreChange = (questionNum, value, variantKey = null) => {
+        const key = variantKey || questionNum;
+        const numValue = value === ""
+            ? ""
+            : Math.max(0, Math.min(parseInt(value) || 0, getMaxScore(questionNum)));
         setScores((prev) => ({
             ...prev,
-            [questionNum]: numValue,
+            [key]: numValue,
         }));
     };
 
@@ -132,9 +135,22 @@ export const StudentTestChecking = () => {
 
         // Validate that all scores are provided for questions 36-45
         const requiredQuestions = [36, 37, 38, 39, 40, 41, 42, 43, 44, 45];
-        const missingScores = requiredQuestions.filter(
-            (qNum) => scores[qNum] === undefined || scores[qNum] === ""
-        );
+        const missingScores = [];
+
+        requiredQuestions.forEach((qNum) => {
+            const variants = getAnswerVariants(qNum);
+
+            if (variants.length > 0) {
+                variants.forEach((_, idx) => {
+                    const key = `${qNum}_${idx}`;
+                    if (scores[key] === undefined || scores[key] === "") {
+                        missingScores.push(`${qNum}-variant ${idx + 1}`);
+                    }
+                });
+            } else if (scores[qNum] === undefined || scores[qNum] === "") {
+                missingScores.push(`${qNum}`);
+            }
+        });
 
         if (missingScores.length > 0) {
             toast.warning(`Quyidagi savollar uchun ball kiriting: ${missingScores.join(", ")}`, {
@@ -307,7 +323,81 @@ export const StudentTestChecking = () => {
         return answer?.image_url || answer?.image || null;
     };
 
-    // Get answer text
+    // Get answer variants as array (each item is string); falls back to single entry
+    const getAnswerVariants = (questionNum) => {
+        if (!studentAnswers?.questions_36_45) return [];
+
+        const q36_45 = studentAnswers.questions_36_45;
+        const questionNumStr = String(questionNum);
+
+        // Format: { mode: "write", answers: {...} }
+        if (q36_45.mode === "write" && q36_45.answers) {
+            const answer = q36_45.answers[questionNumStr] || q36_45.answers[questionNum];
+            if (answer) {
+                if (Array.isArray(answer)) {
+                    return answer.filter((text) => text && text.trim());
+                }
+                if (typeof answer === "object" && !Array.isArray(answer)) {
+                    return Object.keys(answer)
+                        .sort((a, b) => Number(a) - Number(b))
+                        .map((idx) => answer[idx])
+                        .filter((text) => text && text.trim());
+                }
+                if (typeof answer === "string" && answer.trim()) {
+                    return [answer];
+                }
+            }
+        }
+
+        // Direct format: { 36: { type: "text", text_answer: ... }, ... }
+        const answer = q36_45[questionNumStr] || q36_45[questionNum] || q36_45[Number(questionNum)];
+        if (!answer) return [];
+
+        if (answer.text_answer !== null && answer.text_answer !== undefined) {
+            if (typeof answer.text_answer === "string" && answer.text_answer.trim()) {
+                return [answer.text_answer];
+            }
+            if (Array.isArray(answer.text_answer)) {
+                return answer.text_answer.filter((text) => text && text.trim());
+            }
+            if (typeof answer.text_answer === "object" && !Array.isArray(answer.text_answer)) {
+                return Object.keys(answer.text_answer)
+                    .sort((a, b) => Number(a) - Number(b))
+                    .map((idx) => answer.text_answer[idx])
+                    .filter((text) => text && text.trim());
+            }
+        }
+
+        if (answer.answer) {
+            if (typeof answer.answer === "string" && answer.answer.trim()) {
+                return [answer.answer];
+            }
+            if (typeof answer.answer === "object" && !Array.isArray(answer.answer)) {
+                return Object.keys(answer.answer)
+                    .sort((a, b) => Number(a) - Number(b))
+                    .map((idx) => answer.answer[idx])
+                    .filter((text) => text && text.trim());
+            }
+        }
+
+        if (typeof answer === "object" && !Array.isArray(answer) && Object.keys(answer).length > 0) {
+            if (answer.type) {
+                return [];
+            }
+            return Object.keys(answer)
+                .sort((a, b) => Number(a) - Number(b))
+                .map((idx) => answer[idx])
+                .filter((text) => text && text.trim());
+        }
+
+        if (typeof answer === "string" && answer.trim()) {
+            return [answer];
+        }
+
+        return [];
+    };
+
+    // Get answer text (joined variants for legacy display)
     const getAnswerText = (questionNum) => {
         if (!studentAnswers?.questions_36_45) return null;
 
@@ -620,6 +710,8 @@ export const StudentTestChecking = () => {
                                 const answerType = getAnswerType(questionNum);
                                 const imageUrl = getAnswerImage(questionNum);
                                 const answerText = getAnswerText(questionNum);
+                                const variants = getAnswerVariants(questionNum);
+                                const hasVariants = answerType === "text" && variants.length > 0;
 
                                 return (
                                     <div
@@ -662,20 +754,58 @@ export const StudentTestChecking = () => {
 
                                         {/* Yozma javob */}
                                         {answerType === "text" && (
-                                            <div className="mb-3">
-                                                {answerText ? (
-                                                    <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
-                                                        <p className="text-sm text-gray-700">
-                                                            {answerText}
-                                                        </p>
-                                                    </div>
-                                                ) : (
-                                                    <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
-                                                        <p className="text-sm text-gray-500 italic">
-                                                            Javob berilmagan
-                                                        </p>
-                                                    </div>
-                                                )}
+                                            <div className="mb-3 space-y-3">
+                                                {hasVariants
+                                                    ? variants.map((variantText, idx) => {
+                                                        const variantKey = `${questionNum}_${idx}`;
+                                                        return (
+                                                            <div
+                                                                key={variantKey}
+                                                                className="bg-gray-50 rounded-lg p-3 border border-gray-200"
+                                                            >
+                                                                <p className="text-sm text-gray-700 font-medium mb-2">
+                                                                    Variant {idx + 1}:{" "}
+                                                                    <span className="font-normal text-gray-700">
+                                                                        {variantText}
+                                                                    </span>
+                                                                </p>
+                                                                <div>
+                                                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                                        Ball (0-{getMaxScore(questionNum)})
+                                                                    </label>
+                                                                    <input
+                                                                        type="number"
+                                                                        min="0"
+                                                                        max={getMaxScore(questionNum)}
+                                                                        value={scores[variantKey] ?? ""}
+                                                                        onChange={(e) =>
+                                                                            handleScoreChange(
+                                                                                questionNum,
+                                                                                e.target.value,
+                                                                                variantKey
+                                                                            )
+                                                                        }
+                                                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                                                                        placeholder="0"
+                                                                        disabled={isChecked || submitting || loadingScores}
+                                                                    />
+                                                                </div>
+                                                            </div>
+                                                        );
+                                                    })
+                                                    : (
+                                                        <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                                                            {answerText ? (
+                                                                <p className="text-sm text-gray-700">
+                                                                    {answerText}
+                                                                </p>
+                                                            ) : (
+                                                                <p className="text-sm text-gray-500 italic">
+                                                                    Javob berilmagan
+                                                                </p>
+                                                            )}
+                                                        </div>
+                                                    )}
                                             </div>
                                         )}
 
@@ -690,27 +820,29 @@ export const StudentTestChecking = () => {
                                             </div>
                                         )}
 
-                                        {/* Ball input - har bir savol uchun */}
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                                Ball (0-{getMaxScore(questionNum)})
-                                            </label>
-                                            <input
-                                                type="number"
-                                                min="0"
-                                                max={getMaxScore(questionNum)}
-                                                value={scores[questionNum] || ""}
-                                                onChange={(e) =>
-                                                    handleScoreChange(
-                                                        questionNum,
-                                                        e.target.value
-                                                    )
-                                                }
-                                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
-                                                placeholder="0"
-                                                disabled={isChecked || submitting || loadingScores}
-                                            />
-                                        </div>
+                                        {/* Ball input - har bir savol uchun (variantsiz yoki rasmli javoblarda) */}
+                                        {!hasVariants && (
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                    Ball (0-{getMaxScore(questionNum)})
+                                                </label>
+                                                <input
+                                                    type="number"
+                                                    min="0"
+                                                    max={getMaxScore(questionNum)}
+                                                    value={scores[questionNum] || ""}
+                                                    onChange={(e) =>
+                                                        handleScoreChange(
+                                                            questionNum,
+                                                            e.target.value
+                                                        )
+                                                    }
+                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                                                    placeholder="0"
+                                                    disabled={isChecked || submitting || loadingScores}
+                                                />
+                                            </div>
+                                        )}
                                     </div>
                                 );
                             })}

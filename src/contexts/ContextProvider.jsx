@@ -343,7 +343,8 @@ export const ContextProvider = ({ children }) => {
             const { data } = await axiosClient.post(`/tests/${testId}/finish`);
 
             if (data.success) {
-                return true;
+                // Return full payload so caller can access pdf/file url when backend adds it
+                return data;
             }
 
             return false;
@@ -441,10 +442,14 @@ export const ContextProvider = ({ children }) => {
                         if (allResult.teacher_scores && typeof allResult.teacher_scores === 'object') {
                             teacherScores = {};
                             Object.entries(allResult.teacher_scores).forEach(([qNum, score]) => {
-                                // Convert question number to Number key
+                                // Handle both numeric keys (36, 37...) and variant keys (36_0, 36_1...)
                                 const qNumNum = Number(qNum);
                                 if (!isNaN(qNumNum)) {
+                                    // Simple numeric key (e.g., "36" -> 36)
                                     teacherScores[qNumNum] = parseFloat(score) || 0;
+                                } else if (qNum.includes('_')) {
+                                    // Variant key (e.g., "36_0", "36_1") - keep as string key
+                                    teacherScores[qNum] = parseFloat(score) || 0;
                                 }
                             });
 
@@ -503,9 +508,14 @@ export const ContextProvider = ({ children }) => {
                 if (!teacherScores && data.scores && typeof data.scores === 'object') {
                     teacherScores = {};
                     Object.entries(data.scores).forEach(([qNum, score]) => {
+                        // Handle both numeric keys (36, 37...) and variant keys (36_0, 36_1...)
                         const qNumNum = Number(qNum);
                         if (!isNaN(qNumNum)) {
+                            // Simple numeric key (e.g., "36" -> 36)
                             teacherScores[qNumNum] = parseFloat(score) || 0;
+                        } else if (qNum.includes('_')) {
+                            // Variant key (e.g., "36_0", "36_1") - keep as string key
+                            teacherScores[qNum] = parseFloat(score) || 0;
                         }
                     });
                 }
@@ -566,9 +576,14 @@ export const ContextProvider = ({ children }) => {
                         // Extract teacher_scores from all_result.teacher_scores
                         if (allResult.teacher_scores && typeof allResult.teacher_scores === 'object') {
                             Object.entries(allResult.teacher_scores).forEach(([qNum, score]) => {
+                                // Handle both numeric keys (36, 37...) and variant keys (36_0, 36_1...)
                                 const qNumNum = Number(qNum);
                                 if (!isNaN(qNumNum)) {
+                                    // Simple numeric key (e.g., "36" -> 36)
                                     scores[qNumNum] = parseFloat(score) || 0;
+                                } else if (qNum.includes('_')) {
+                                    // Variant key (e.g., "36_0", "36_1") - keep as string key
+                                    scores[qNum] = parseFloat(score) || 0;
                                 }
                             });
 

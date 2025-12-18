@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import axiosClient from "../../api/axios-client";
 import { Bounce, toast, ToastContainer } from "react-toastify";
@@ -14,19 +14,22 @@ export const TestChecking = () => {
     const [testData, setTestData] = useState(null);
     const [testStatus, setTestStatus] = useState("waiting");
     const [searchQuery, setSearchQuery] = useState("");
+    const [finishing, setFinishing] = useState(false);
+    const [resultUrl, setResultUrl] = useState(null);
+    const [allWrittenChecked, setAllWrittenChecked] = useState(false);
+    const [checkingStatus, setCheckingStatus] = useState("loading"); // loading | checking | ready | processing | done
 
     // Context
     const {
         testStudents,
         studentsLoading,
-        allChecked,
         fetchTestStudents,
         finishTest,
     } = useStateContext();
 
     // props
-    const { state } = useLocation();
-    const testId = state?.testId;
+    const location = useLocation();
+    const testId = location.state?.testId;
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -70,12 +73,55 @@ export const TestChecking = () => {
         }
     }, [testId]);
 
-    // Fetch students who submitted the test
-    useEffect(() => {
-        if (testData && testId) {
-            fetchTestStudents(testId);
+    // Function to load students and check status
+    const loadStudentsAndCheckStatus = useCallback(async () => {
+        if (!testData || !testId) return;
+
+        setCheckingStatus("loading");
+        try {
+            const result = await fetchTestStudents(testId);
+            if (result) {
+                // Backend returns all_written_checked specifically for THIS test
+                const isAllChecked = result.allChecked || result.statistics?.all_written_checked || false;
+                setAllWrittenChecked(isAllChecked);
+                setCheckingStatus(isAllChecked ? "ready" : "checking");
+            } else {
+                setAllWrittenChecked(false);
+                setCheckingStatus("checking");
+            }
+        } catch (error) {
+            console.error("Error loading students:", error);
+            setAllWrittenChecked(false);
+            setCheckingStatus("checking");
         }
     }, [testId, testData, fetchTestStudents]);
+
+    // Fetch students who submitted the test and check if all written answers are checked
+    // location.key changes when user navigates, triggering a refresh
+    useEffect(() => {
+        loadStudentsAndCheckStatus();
+    }, [loadStudentsAndCheckStatus, location.key]);
+
+    // Refresh data when page becomes visible (user navigates back from student page)
+    useEffect(() => {
+        const handleVisibilityChange = () => {
+            if (document.visibilityState === "visible") {
+                loadStudentsAndCheckStatus();
+            }
+        };
+
+        const handleFocus = () => {
+            loadStudentsAndCheckStatus();
+        };
+
+        document.addEventListener("visibilitychange", handleVisibilityChange);
+        window.addEventListener("focus", handleFocus);
+
+        return () => {
+            document.removeEventListener("visibilitychange", handleVisibilityChange);
+            window.removeEventListener("focus", handleFocus);
+        };
+    }, [loadStudentsAndCheckStatus]);
 
     // Filter students based on search query
     const filteredStudents = (testStudents || []).filter((student) => {
@@ -88,6 +134,8 @@ export const TestChecking = () => {
     // Calculate statistics
     const submittedCount = (testStudents || []).filter((s) => s.submitted).length;
     const pendingCount = (testStudents || []).length - submittedCount;
+    const checkedCount = (testStudents || []).filter((s) => s.written_checked || !s.has_written_answers).length;
+    const uncheckedCount = (testStudents || []).filter((s) => s.has_written_answers && !s.written_checked).length;
 
     // Test holatlari uchun qisqa o'zgaruvchilar
     const isTestNotStarted = testStatus === "waiting";
@@ -111,23 +159,75 @@ export const TestChecking = () => {
     };
 
     const handleFinishTest = async () => {
+        if (!allWrittenChecked || finishing) return;
+        setFinishing(true);
+        setCheckingStatus("processing");
+        setResultUrl(null);
         try {
-            await finishTest(testId);
-            toast.success("Test yakunlandi va natijalar tayyor!", {
-                position: "top-center",
-                autoClose: 5000,
-                hideProgressBar: false,
-                closeOnClick: false,
-                pauseOnHover: true,
-                draggable: true,
-                progress: undefined,
-                theme: "light",
-                transition: Bounce,
-                className: "toast-width my-2",
-            });
-            // Refresh students list
+            const result = await finishTest(testId);
+            // Try to extract pdf url from common keys
+            // Backend should return: { success: true, file_url: "https://...", job_id: "..." }
+            const pdfUrl =
+                result?.file_url ||
+                result?.pdf_url ||
+                result?.data?.file_url ||
+                result?.data?.pdf_url ||
+                result?.data?.url;
+
+            if (pdfUrl) {
+                setResultUrl(pdfUrl);
+                setCheckingStatus("done");
+                toast.success("Natijalar tayyor, yuklab oling!", {
+                    position: "top-center",
+                    autoClose: 4000,
+                    hideProgressBar: false,
+                    closeOnClick: false,
+                    pauseOnHover: true,
+                    draggable: true,
+                    progress: undefined,
+                    theme: "light",
+                    transition: Bounce,
+                    className: "toast-width my-2",
+                });
+            } else if (result?.job_id) {
+                // Backend started a job to generate PDF, poll for status
+                setCheckingStatus("processing");
+                toast.info("Natijalar tayyorlanmoqda, iltimos kuting...", {
+                    position: "top-center",
+                    autoClose: 4000,
+                    hideProgressBar: false,
+                    closeOnClick: false,
+                    pauseOnHover: true,
+                    draggable: true,
+                    progress: undefined,
+                    theme: "light",
+                    transition: Bounce,
+                    className: "toast-width my-2",
+                });
+                // TODO: Implement polling for job status when backend is ready
+                // pollJobStatus(result.job_id);
+            } else if (result?.success) {
+                setCheckingStatus("done");
+                toast.success("Test yakunlandi!", {
+                    position: "top-center",
+                    autoClose: 4000,
+                    hideProgressBar: false,
+                    closeOnClick: false,
+                    pauseOnHover: true,
+                    draggable: true,
+                    progress: undefined,
+                    theme: "light",
+                    transition: Bounce,
+                    className: "toast-width my-2",
+                });
+            }
+
+            // Refresh students list after finishing
             if (testId) {
-                fetchTestStudents(testId);
+                const refreshResult = await fetchTestStudents(testId);
+                if (refreshResult) {
+                    setAllWrittenChecked(refreshResult.allChecked || refreshResult.statistics?.all_written_checked || false);
+                }
             }
         } catch (error) {
             console.error("Testni yakunlashda xatolik:", error);
@@ -146,6 +246,9 @@ export const TestChecking = () => {
                 transition: Bounce,
                 className: "toast-width my-2",
             });
+            setCheckingStatus("ready");
+        } finally {
+            setFinishing(false);
         }
     };
 
@@ -181,6 +284,39 @@ export const TestChecking = () => {
             <TopHeader testName={name} />
 
             <div className="px-4 py-4">
+                {/* Test completed btn */}
+                <button
+                    onClick={
+                        resultUrl
+                            ? () => window.open(resultUrl, "_blank", "noopener,noreferrer")
+                            : handleFinishTest
+                    }
+                    disabled={!allWrittenChecked || finishing || checkingStatus === "processing"}
+                    className={`w-full py-3 rounded-xl font-medium mb-4 shadow-md transition-colors flex items-center justify-center gap-2 ${resultUrl
+                        ? "bg-green-600 text-white hover:bg-green-700"
+                        : allWrittenChecked && checkingStatus !== "processing"
+                            ? "bg-blue-500 text-white hover:bg-blue-600"
+                            : "bg-gray-200 text-gray-600 cursor-not-allowed"
+                        }`}
+                >
+                    {checkingStatus === "loading" ? (
+                        <>
+                            <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></div>
+                            Tekshirilmoqda...
+                        </>
+                    ) : checkingStatus === "processing" || finishing ? (
+                        <>
+                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                            Ma'lumotlar tayyorlanmoqda...
+                        </>
+                    ) : resultUrl ? (
+                        "Yuklab olish"
+                    ) : !allWrittenChecked ? (
+                        "Avval barcha javoblarni tekshiring"
+                    ) : (
+                        "Testni yakunlash"
+                    )}
+                </button>
                 {/* Test Status Card */}
                 <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 mb-4">
                     <div className="flex justify-between items-center mb-4">
@@ -212,21 +348,18 @@ export const TestChecking = () => {
                     </div>
                 </div>
 
-                {/* Finish Test Button */}
-                {allChecked && (
-                    <button
-                        onClick={handleFinishTest}
-                        className="w-full bg-blue-500 text-white py-3 rounded-xl font-medium mb-4 shadow-md hover:bg-blue-600 transition-colors"
-                    >
-                        Yakunlash va natijalarni olish
-                    </button>
-                )}
-
                 {/* Info Message */}
-                {allChecked && (
+                {allWrittenChecked && checkingStatus === "ready" && (
                     <div className="bg-green-50 border border-green-200 rounded-2xl p-4 mb-4">
                         <p className="text-green-800 text-sm text-center">
                             Barcha o'quvchilarning yozma javoblari tekshirilgan. Testni yakunlab natijalarni olishingiz mumkin.
+                        </p>
+                    </div>
+                )}
+                {!allWrittenChecked && checkingStatus !== "loading" && (testStudents || []).length > 0 && (
+                    <div className="bg-yellow-50 border border-yellow-200 rounded-2xl p-4 mb-4">
+                        <p className="text-yellow-800 text-sm text-center">
+                            Hali tekshirilmagan javoblar mavjud. Har bir o'quvchining javoblarini tekshiring.
                         </p>
                     </div>
                 )}
@@ -245,6 +378,16 @@ export const TestChecking = () => {
                         <p className="text-orange-600 text-sm font-medium">
                             Javoblar kutilmoqda - {pendingCount} ta
                         </p>
+                        <div className="flex gap-4 mt-1">
+                            <p className="text-green-600 text-sm font-medium">
+                                ✓ Tekshirilgan - {checkedCount} ta
+                            </p>
+                            {uncheckedCount > 0 && (
+                                <p className="text-red-600 text-sm font-medium">
+                                    ✗ Tekshirilmagan - {uncheckedCount} ta
+                                </p>
+                            )}
+                        </div>
                     </div>
 
                     {/* Students List */}
@@ -262,9 +405,22 @@ export const TestChecking = () => {
                                 >
                                     <div className="flex items-center justify-between">
                                         <div className="flex-1">
-                                            <h4 className="font-semibold text-gray-800 mb-1">
-                                                {student.first_name} {student.last_name}
-                                            </h4>
+                                            <div className="flex items-center gap-2 mb-1">
+                                                <h4 className="font-semibold text-gray-800">
+                                                    {student.first_name} {student.last_name}
+                                                </h4>
+                                                {/* Written answer check status */}
+                                                {student.has_written_answers && (
+                                                    <span
+                                                        className={`px-2 py-0.5 rounded-full text-xs font-medium ${student.written_checked
+                                                            ? "bg-green-100 text-green-700"
+                                                            : "bg-red-100 text-red-700"
+                                                            }`}
+                                                    >
+                                                        {student.written_checked ? "✓ Tekshirilgan" : "✗ Tekshirilmagan"}
+                                                    </span>
+                                                )}
+                                            </div>
                                             {student.submitted_at && (
                                                 <p className="text-blue-600 text-sm">
                                                     Javoblar yuborilgan -{" "}
