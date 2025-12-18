@@ -47,6 +47,27 @@ export const TestTakingPage = () => {
                     setStartTime(testStartTime);
                 }
 
+                // Test turini tekshirish - faqat RASH_TEST (100) va ATTESTATSIYA (500) WebApp da ishlanadi
+                const testType = data.test.type;
+                if (testType !== TestTypeEnum.RASH_TEST && testType !== TestTypeEnum.ATTESTATSIYA) {
+                    toast.warning("Bu turdagi testlarni botning o'zida ishlaysiz!", {
+                        position: "top-center",
+                        autoClose: 3000,
+                        hideProgressBar: false,
+                        closeOnClick: false,
+                        pauseOnHover: true,
+                        draggable: true,
+                        progress: undefined,
+                        theme: "light",
+                        transition: Bounce,
+                        className: "toast-width my-2",
+                    });
+                    setTimeout(() => {
+                        navigate("/");
+                    }, 3000);
+                    return;
+                }
+
                 // Test holatini aniqlash
                 const now = Date.now();
                 const start = new Date(data.test.start_time).getTime();

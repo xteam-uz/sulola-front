@@ -5,6 +5,7 @@ import { useStateContext } from "../contexts/ContextProvider";
 import axiosClient from "../api/axios-client";
 import { Bounce, toast, ToastContainer } from "react-toastify";
 import { FadeContent } from "./ui";
+import { TestTypeEnum } from "../constants/testTypes";
 
 export const TestTakerDashboard = () => {
     const [showModal, setShowModal] = useState(false);
@@ -52,6 +53,26 @@ export const TestTakerDashboard = () => {
 
             if (res.data.exists) {
                 const testIdToSend = res.data.test_id;
+                const testType = res.data.type;
+
+                // Test turini tekshirish - faqat RASH_TEST (100) va ATTESTATSIYA (500) WebApp da ishlanadi
+                if (testType && testType !== TestTypeEnum.RASH_TEST && testType !== TestTypeEnum.ATTESTATSIYA) {
+                    toast.warning("Bu turdagi testlarni botning o'zida ishlaysiz!", {
+                        position: "top-center",
+                        autoClose: 5000,
+                        hideProgressBar: false,
+                        closeOnClick: false,
+                        pauseOnHover: true,
+                        draggable: true,
+                        progress: undefined,
+                        theme: "light",
+                        transition: Bounce,
+                        className: "toast-width my-2",
+                    });
+                    setShowModal(false);
+                    setTestCode("");
+                    return;
+                }
 
                 setShowModal(false);
                 setTestCode("");
@@ -95,6 +116,7 @@ export const TestTakerDashboard = () => {
             setChecking(false);
         }
     };
+
     const handleTestClick = async (testCode) => {
         try {
             const res = await axiosClient.post("/tests/check/test", {
