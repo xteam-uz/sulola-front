@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { ChevronRight, Clock, FileText, ChevronLeft } from "lucide-react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useStateContext } from "../contexts/ContextProvider";
 import axiosClient from "../api/axios-client";
 import { Bounce, toast, ToastContainer } from "react-toastify";
@@ -22,23 +22,19 @@ export const TestTakerDashboard = () => {
     } = useStateContext();
 
     const navigate = useNavigate();
-    const location = useLocation();
 
-    // URL dan code parametrini olish va modalni ochish
+    // localStorage dan pending test code ni olish va modalni ochish
     useEffect(() => {
-        const params = new URLSearchParams(window.location.search);
-        const codeFromUrl = params.get("code");
+        const pendingCode = localStorage.getItem("PENDING_TEST_CODE");
 
-        if (codeFromUrl) {
-            setTestCode(codeFromUrl);
+        if (pendingCode) {
+            setTestCode(pendingCode);
             setShowModal(true);
 
-            // URL dan code parametrini olib tashlash (URL ni tozalash)
-            const newUrl = new URL(window.location.href);
-            newUrl.searchParams.delete("code");
-            window.history.replaceState({}, "", newUrl.pathname + newUrl.search);
+            // localStorage dan olib tashlash (faqat bir marta ishlatilsin)
+            localStorage.removeItem("PENDING_TEST_CODE");
         }
-    }, [location.search]);
+    }, []);
 
     const handlePageChange = (page) => {
         fetchTestsResultsPage(page);

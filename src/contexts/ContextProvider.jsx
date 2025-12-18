@@ -44,8 +44,14 @@ const getInitialAuthFromUrlOrStorage = () => {
     const params = new URLSearchParams(window.location.search);
     const urlToken = params.get("ACCESS_TOKEN") || params.get("access_token");
     const urlUserId = params.get("user_id");
+    const urlCode = params.get("code");
 
     const storedToken = localStorage.getItem("ACCESS_TOKEN");
+
+    // Save test code to localStorage if present (for TestTakerDashboard)
+    if (urlCode) {
+        localStorage.setItem("PENDING_TEST_CODE", urlCode);
+    }
 
     // Prioritize URL token if present
     if (urlToken) {
