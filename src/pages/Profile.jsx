@@ -331,7 +331,7 @@ export const Profile = () => {
                         📤 Saqlash
                     </button>
                 </div>
-            )} */}
+            )}
             {/* END TEST UCHUN*/}
 
             {/* Telegram MainButton va BackButton */}

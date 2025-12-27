@@ -6,6 +6,7 @@ import { Image as ImageIcon, CheckCircle2, XCircle } from "lucide-react";
 import { BackButton, BottomBar } from "@twa-dev/sdk/react";
 import { useStateContext } from "../../contexts/ContextProvider";
 import { TestTypeEnum } from "../../constants/testTypes";
+import { LoadingAnimation } from "../../components/ui/Loader";
 
 export const StudentTestChecking = () => {
     const { testId, studentId } = useParams();
@@ -614,9 +615,9 @@ export const StudentTestChecking = () => {
 
     if (loading) {
         return (
-            <div className="flex items-center justify-center min-h-screen bg-gray-50">
-                <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-            </div>
+            <>
+                <LoadingAnimation />
+            </>
         );
     }
 

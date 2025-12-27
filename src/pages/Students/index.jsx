@@ -4,6 +4,7 @@ import { FooterNavbar } from "../../components/FooterNavbar";
 import { TopHeader } from "../../components/ui/TopHeader";
 import { useStateContext } from "../../contexts/ContextProvider";
 import { format } from "date-fns";
+import { LoadingAnimation } from "../../components/ui/Loader";
 
 export const Students = () => {
     const { user, allStudents, allStudentsLoading, fetchAllStudents } =
@@ -25,9 +26,7 @@ export const Students = () => {
             {/* Students List */}
             <div className="flex-1 px-4 py-5 space-y-3">
                 {allStudentsLoading ? (
-                    <div className="flex justify-center py-12">
-                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-                    </div>
+                    <LoadingAnimation />
                 ) : (allStudents || []).length > 0 ? (
                     (allStudents || []).map((student) => (
                         <div

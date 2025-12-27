@@ -8,6 +8,7 @@ import { BackButton, BottomBar, MainButton } from "@twa-dev/sdk/react";
 import { CountdownTimer } from "../../components/CountDownTimer";
 import { useStateContext } from "../../contexts/ContextProvider";
 import { TestTypeEnum } from "../../constants/testTypes";
+import { LoadingAnimation } from "../../components/ui/Loader";
 
 export const TestTakingPage = () => {
     const [loading, setLoading] = useState(true);
@@ -357,9 +358,9 @@ export const TestTakingPage = () => {
     // Spinner
     if (loading || loadingAnswers) {
         return (
-            <div className="flex items-center justify-center min-h-screen bg-gray-50">
-                <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-            </div>
+            <>
+                <LoadingAnimation />
+            </>
         );
     }
 
