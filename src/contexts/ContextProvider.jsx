@@ -102,6 +102,9 @@ export const ContextProvider = ({ children }) => {
         }
 
         setLoading(true);
+        const startTime = Date.now();
+        const minLoadingTime = 2000; // 2 soniya
+
         try {
             const { data } = await axiosClient.get("/user");
             setUser(data);
@@ -110,7 +113,12 @@ export const ContextProvider = ({ children }) => {
             setUser(null);
             if (error.response?.status === 401) setToken(null);
         } finally {
-            setLoading(false);
+            const elapsedTime = Date.now() - startTime;
+            const remainingTime = Math.max(0, minLoadingTime - elapsedTime);
+
+            setTimeout(() => {
+                setLoading(false);
+            }, remainingTime);
         }
     };
 

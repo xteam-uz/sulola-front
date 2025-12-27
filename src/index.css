@@ -2,7 +2,8 @@
 
 /* Umumiy font-family va font-size */
 body {
-    font-family: "Inter", sans-serif; /* yoki tanlagan fonting */
+    font-family: "Inter", sans-serif;
+    /* yoki tanlagan fonting */
 }
 
 @layer utilities {
@@ -19,6 +20,7 @@ body {
         opacity: 0;
         transform: translateY(20px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);

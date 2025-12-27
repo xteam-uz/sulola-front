@@ -10,6 +10,7 @@ import {
     SecondaryButton,
     BackButton,
 } from "@twa-dev/sdk/react";
+import logo from '/public/logo.png';
 
 export const Profile = () => {
     const { user, refreshUser } = useStateContext();
@@ -304,6 +305,20 @@ export const Profile = () => {
                         </div>
                     </div>
                 )}
+
+                {/* Logo Section */}
+                <div className=" p-6 mb-6">
+                    <div className="flex flex-col items-center justify-center">
+                        <div className="mb-4">
+                            <img
+                                src={logo}
+                                alt="Sulola EDU Logo"
+                                className="w-50 h-auto object-contain drop-shadow-lg"
+                            />
+                        </div>
+
+                    </div>
+                </div>
             </div>
 
             {/* TEST UCHUN*/}

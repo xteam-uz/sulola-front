@@ -1,18 +1,16 @@
 import { useStateContext } from "../contexts/ContextProvider";
 import { TesterDashboard, TestTakerDashboard } from "../components";
 import { TopHeader } from "../components/ui";
+import { LoadingAnimation } from "../components/ui/Loader";
 
 export const Dashboard = () => {
     const { user, loading } = useStateContext();
 
     if (loading) {
         return (
-            <div className="flex items-center justify-center min-h-screen bg-gray-50">
-                <div className="flex flex-col items-center gap-3">
-                    <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-                    <p className="text-sm text-gray-600">Yuklanmoqda...</p>
-                </div>
-            </div>
+            <>
+                <LoadingAnimation />
+            </>
         );
     }
 
