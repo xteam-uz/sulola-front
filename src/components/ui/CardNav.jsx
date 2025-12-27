@@ -120,6 +120,8 @@ export const CardNav = ({
                 style={{ backgroundColor: baseColor }}
             >
                 <div className="card-nav-top absolute inset-x-0 top-0 h-[60px] flex items-center justify-between p-2 pl-[1.1rem] z-[2]">
+
+                    {/* Hamburger menu */}
                     <div
                         className={`hamburger-menu ${isHamburgerOpen ? "open" : ""} group h-full flex flex-col items-center justify-center cursor-pointer gap-[6px] order-2 md:order-none`}
                         onClick={toggleMenu}
@@ -130,17 +132,19 @@ export const CardNav = ({
                     >
                         <div
                             className={`hamburger-line w-[30px] h-[2px] bg-current transition-[transform,opacity,margin] duration-300 ease-linear [transform-origin:50%_50%] ${isHamburgerOpen
-                                    ? "translate-y-[4px] rotate-45"
-                                    : ""
+                                ? "translate-y-[4px] rotate-45"
+                                : ""
                                 } group-hover:opacity-75`}
                         />
                         <div
                             className={`hamburger-line w-[30px] h-[2px] bg-current transition-[transform,opacity,margin] duration-300 ease-linear [transform-origin:50%_50%] ${isHamburgerOpen
-                                    ? "-translate-y-[4px] -rotate-45"
-                                    : ""
+                                ? "-translate-y-[4px] -rotate-45"
+                                : ""
                                 } group-hover:opacity-75`}
                         />
                     </div>
+
+                    {/* Logo */}
                     <div className="logo-container  md:absolute md:left-1/2 md:top-1/2 md:-translate-x-1/2 md:-translate-y-1/2 order-1 md:order-none">
                         <Link
                             to="/"
@@ -150,7 +154,7 @@ export const CardNav = ({
                                 <img
                                     src={logo}
                                     alt={logoAlt}
-                                    className="logo h-[28px]"
+                                    className="logo h-[70px]"
                                 />
                             ) : (
                                 <div className="logo h-auto w-[55px] flex items-center">
@@ -160,8 +164,9 @@ export const CardNav = ({
                         </Link>
                     </div>
 
-                    <button
-                        type="button"
+                    {/* Sulola EDU button */}
+                    <Link
+                        to="/"
                         className="card-nav-cta-button hidden md:inline-flex border-0 rounded-[calc(0.75rem-0.2rem)] px-4 items-center h-full font-medium cursor-pointer transition-colors duration-300"
                         style={{
                             backgroundColor: buttonBgColor,
@@ -169,13 +174,13 @@ export const CardNav = ({
                         }}
                     >
                         Sulola EDU
-                    </button>
+                    </Link>
                 </div>
 
                 <div
                     className={`card-nav-content absolute left-0 right-0 top-[60px] bottom-0 p-2 flex flex-col items-stretch gap-2 justify-start z-[1] ${isExpanded
-                            ? "visible pointer-events-auto"
-                            : "invisible pointer-events-none"
+                        ? "visible pointer-events-auto"
+                        : "invisible pointer-events-none"
                         } md:flex-row md:items-end md:gap-[12px]`}
                     aria-hidden={!isExpanded}
                 >

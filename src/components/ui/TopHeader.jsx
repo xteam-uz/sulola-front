@@ -1,7 +1,5 @@
 import { CardNav } from "./CardNav";
-import { useLottie } from "lottie-react";
-// import logo from "../../assets/react.svg";
-import tgLogo from "../../assets/tg_logo.json";
+import logo from '/public/logo.png'
 
 export const TopHeader = () => {
     const items = [
@@ -19,22 +17,15 @@ export const TopHeader = () => {
         },
     ];
 
-    const options = {
-        animationData: tgLogo,
-        loop: true,
-    };
-
-    const { View } = useLottie(options);
-
     return (
         <>
             <CardNav
-                logo={View}
+                logo={logo}
                 logoAlt="Company Logo"
                 items={items}
                 baseColor="#fff"
                 menuColor="#000"
-                buttonBgColor="#111"
+                buttonBgColor="#2b7fff"
                 buttonTextColor="#fff"
                 ease="power3.out"
             />
