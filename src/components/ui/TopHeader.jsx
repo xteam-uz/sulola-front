@@ -1,5 +1,5 @@
 import { CardNav } from "./CardNav";
-import logo from '/public/logo.png'
+import logo from '/logo.png';
 
 export const TopHeader = () => {
     const items = [

@@ -10,7 +10,7 @@ import {
     SecondaryButton,
     BackButton,
 } from "@twa-dev/sdk/react";
-import logo from '/public/logo.png';
+import logo from '/logo.png';
 
 export const Profile = () => {
     const { user, refreshUser } = useStateContext();
@@ -322,7 +322,7 @@ export const Profile = () => {
             </div>
 
             {/* TEST UCHUN*/}
-            {/* {hasChanges() && !saving && (
+            {hasChanges() && !saving && (
                 <div className="px-4 py-4">
                     <button
                         onClick={handleSave}

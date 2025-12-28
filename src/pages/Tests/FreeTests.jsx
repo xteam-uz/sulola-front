@@ -732,7 +732,7 @@ export const FreeTests = () => {
                         <ArrowLeft size={24} />
                     </button>
                     <h1 className="text-lg font-semibold text-gray-800">
-                        {testType === "paid" ? "💰 Pullik test qo'shish" : "🎓 Tekin test qo'shish"}
+                        {testType === "paid" ? "💰 Pullik test" : "🎓 RUSH test"}
                     </h1>
                     <div className="w-6"></div>
                 </div>

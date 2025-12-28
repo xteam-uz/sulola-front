@@ -417,7 +417,7 @@ export const TesterDashboard = () => {
                                     />
                                     <div>
                                         <p className="font-medium">
-                                            🎓 Tekin test
+                                            🎓 RUSH test
                                         </p>
                                         <p className="text-xs text-gray-500">
                                             O'quvchilar uchun bepul test.
