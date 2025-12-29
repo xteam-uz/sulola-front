@@ -34,20 +34,57 @@ export const Signup = () => {
 
     useEffect(() => {
         initTelegramApp();
-        const user = getUserData();
-        if (user) setTelegramUser(user);
+
+        // WebApp SDK to'liq yuklanishini kutish
+        const checkUserData = () => {
+            const user = getUserData();
+            console.log("Telegram User Data:", user); // Debug uchun
+            if (user) {
+                setTelegramUser(user);
+                console.log("Telegram User ID:", user.id); // Debug uchun
+            } else {
+                console.warn("Telegram user data topilmadi!"); // Debug uchun
+                // Qisqa vaqtdan keyin qayta urinib ko'rish
+                setTimeout(() => {
+                    const retryUser = getUserData();
+                    if (retryUser) {
+                        setTelegramUser(retryUser);
+                        console.log("Retry: Telegram User ID:", retryUser.id);
+                    }
+                }, 500);
+            }
+        };
+
+        // Darhol tekshirish
+        checkUserData();
+
+        // WebApp ready event'ini kutish
+        if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
+            window.Telegram.WebApp.ready();
+            window.Telegram.WebApp.expand();
+        }
     }, []);
 
     const onSubmit = (e) => {
         e.preventDefault();
 
+        // Telegram user ID ni tekshirish
+        if (!telegramUser?.id) {
+            setErrors({
+                telegram_user_id: ["Telegram foydalanuvchi IDsi topilmadi"],
+            });
+            console.error("Telegram user ID yo'q:", telegramUser);
+            return;
+        }
+
         const payload = {
             first_name: firstNameRef.current.value,
             last_name: lastNameRef.current.value,
-            telegram_user_id: telegramUser?.id,
+            telegram_user_id: telegramUser.id,
             user_type: role,
         };
 
+        console.log("Register payload:", payload); // Debug uchun
         setErrors(null);
 
         axiosClient
