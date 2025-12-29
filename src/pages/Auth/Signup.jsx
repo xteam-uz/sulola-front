@@ -5,7 +5,7 @@ import { getUserData, initTelegramApp } from "../../telegram/init";
 import Lottie from "lottie-react";
 import TelegramAnimation from "../../assets/Telegram.json";
 import ErrorAnimation from "../../assets/error.json";
-import { Link } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
 
 // Xatoliklarni tarjima qilish uchun
 const errorTranslations = {
@@ -25,7 +25,7 @@ const translateError = (error) => {
 };
 
 export const Signup = () => {
-    const { setUser, setToken } = useStateContext();
+    const { setUser, setToken, token, user } = useStateContext();
     const firstNameRef = useRef();
     const lastNameRef = useRef();
     const [role, setRole] = useState("tester");
@@ -34,57 +34,26 @@ export const Signup = () => {
 
     useEffect(() => {
         initTelegramApp();
-
-        // WebApp SDK to'liq yuklanishini kutish
-        const checkUserData = () => {
-            const user = getUserData();
-            console.log("Telegram User Data:", user); // Debug uchun
-            if (user) {
-                setTelegramUser(user);
-                console.log("Telegram User ID:", user.id); // Debug uchun
-            } else {
-                console.warn("Telegram user data topilmadi!"); // Debug uchun
-                // Qisqa vaqtdan keyin qayta urinib ko'rish
-                setTimeout(() => {
-                    const retryUser = getUserData();
-                    if (retryUser) {
-                        setTelegramUser(retryUser);
-                        console.log("Retry: Telegram User ID:", retryUser.id);
-                    }
-                }, 500);
-            }
-        };
-
-        // Darhol tekshirish
-        checkUserData();
-
-        // WebApp ready event'ini kutish
-        if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
-            window.Telegram.WebApp.ready();
-            window.Telegram.WebApp.expand();
-        }
+        const user = getUserData();
+        if (user) setTelegramUser(user);
     }, []);
+
+    // URL'dan token kelganda avtomatik tekshirish
+    if (token && user) {
+        // Token va user mavjud bo'lsa, dashboard'ga yo'naltirish
+        return <Navigate to="/dashboard" replace />;
+    }
 
     const onSubmit = (e) => {
         e.preventDefault();
 
-        // Telegram user ID ni tekshirish
-        if (!telegramUser?.id) {
-            setErrors({
-                telegram_user_id: ["Telegram foydalanuvchi IDsi topilmadi"],
-            });
-            console.error("Telegram user ID yo'q:", telegramUser);
-            return;
-        }
-
         const payload = {
             first_name: firstNameRef.current.value,
             last_name: lastNameRef.current.value,
-            telegram_user_id: telegramUser.id,
+            telegram_user_id: telegramUser?.id,
             user_type: role,
         };
 
-        console.log("Register payload:", payload); // Debug uchun
         setErrors(null);
 
         axiosClient

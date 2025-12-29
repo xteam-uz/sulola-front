@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { useStateContext } from "../../contexts/ContextProvider";
 import axiosClient from "../../api/axios-client";
 import { initTelegramApp, getUserData } from "../../telegram/init";
-import { Link } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
 import Lottie from "lottie-react";
 import TelegramAnimation from "../../assets/Telegram.json";
 import ErrorAnimation from "../../assets/error.json";
@@ -25,7 +25,7 @@ const translateError = (error) => {
 };
 
 export const Login = () => {
-    const { setUser, setToken } = useStateContext();
+    const { setUser, setToken, token, user } = useStateContext();
     const firstNameRef = useRef();
     const lastNameRef = useRef();
     const [role, setRole] = useState("test_taker");
@@ -37,6 +37,12 @@ export const Login = () => {
         const user = getUserData();
         if (user) setTelegramUser(user);
     }, []);
+
+    // URL'dan token kelganda avtomatik tekshirish
+    if (token && user) {
+        // Token va user mavjud bo'lsa, dashboard'ga yo'naltirish
+        return <Navigate to="/dashboard" replace />;
+    }
 
     const onSubmit = (e) => {
         e.preventDefault();

@@ -42,8 +42,9 @@ const getInitialAuthFromUrlOrStorage = () => {
     }
 
     const params = new URLSearchParams(window.location.search);
+    // Barcha variantlarni tekshirish (ACCESS_TOKEN, access_token)
     const urlToken = params.get("ACCESS_TOKEN") || params.get("access_token");
-    const urlUserId = params.get("user_id");
+    const urlUserId = params.get("user_id") || params.get("USER_ID");
     const urlCode = params.get("code");
 
     const storedToken = localStorage.getItem("ACCESS_TOKEN");
@@ -55,6 +56,7 @@ const getInitialAuthFromUrlOrStorage = () => {
 
     // Prioritize URL token if present
     if (urlToken) {
+        console.log("URL'dan token topildi:", urlToken);
         localStorage.setItem("ACCESS_TOKEN", urlToken);
         if (urlUserId) {
             localStorage.setItem("USER_ID", urlUserId);
@@ -657,14 +659,22 @@ export const ContextProvider = ({ children }) => {
         const urlToken = params.get("ACCESS_TOKEN") || params.get("access_token");
         const urlUserId = params.get("user_id");
 
-        if (urlToken) {
+        if (urlToken && urlToken !== token) {
+            console.log("URL'dan token topildi, avtomatik login qilinmoqda...");
             setToken(urlToken);
+            // Token o'zgarganda fetchUser avtomatik chaqiriladi (669-qatordagi useEffect orqali)
         }
 
         if (urlUserId) {
             localStorage.setItem("USER_ID", urlUserId);
         }
-    }, []);
+
+        // URL parametrlarini tozalash (browser history'da qolmasligi uchun)
+        if (urlToken || urlUserId) {
+            const newUrl = window.location.pathname;
+            window.history.replaceState({}, '', newUrl);
+        }
+    }, [token]);
 
     useEffect(() => {
         fetchUser();

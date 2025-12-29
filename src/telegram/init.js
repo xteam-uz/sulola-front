@@ -10,24 +10,7 @@ export const initTelegramApp = () => {
 };
 
 export const getUserData = () => {
-    // Debug uchun
-    console.log("WebApp.initDataUnsafe:", WebApp.initDataUnsafe);
-    console.log("WebApp.initDataUnsafe?.user:", WebApp.initDataUnsafe?.user);
-    
-    const user = WebApp.initDataUnsafe?.user;
-    
-    if (user) {
-        console.log("User ID:", user.id);
-        console.log("User object:", JSON.stringify(user, null, 2));
-    } else {
-        console.warn("Telegram user data topilmadi!");
-        // Alternativ usul - initData orqali
-        if (WebApp.initData) {
-            console.log("Trying to parse initData:", WebApp.initData);
-        }
-    }
-    
-    return user || null;
+    return WebApp.initDataUnsafe?.user || null;
 };
 
 export const sendDataToBot = (data) => {
