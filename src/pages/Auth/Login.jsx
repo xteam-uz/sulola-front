@@ -34,8 +34,35 @@ export const Login = () => {
 
     useEffect(() => {
         initTelegramApp();
-        const user = getUserData();
-        if (user) setTelegramUser(user);
+
+        // WebApp SDK to'liq yuklanishini kutish
+        const checkUserData = () => {
+            const user = getUserData();
+            console.log("Login: Telegram User Data:", user);
+            if (user) {
+                setTelegramUser(user);
+                console.log("Login: Telegram User ID:", user.id);
+            } else {
+                console.warn("Login: Telegram user data topilmadi!");
+                // Qisqa vaqtdan keyin qayta urinib ko'rish
+                setTimeout(() => {
+                    const retryUser = getUserData();
+                    if (retryUser) {
+                        setTelegramUser(retryUser);
+                        console.log("Login Retry: Telegram User ID:", retryUser.id);
+                    }
+                }, 1000);
+            }
+        };
+
+        // Darhol tekshirish
+        checkUserData();
+
+        // WebApp ready event'ini kutish
+        if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
+            window.Telegram.WebApp.ready();
+            window.Telegram.WebApp.expand();
+        }
     }, []);
 
     // URL'dan token kelganda avtomatik tekshirish
@@ -47,19 +74,31 @@ export const Login = () => {
     const onSubmit = (e) => {
         e.preventDefault();
 
-        if (!telegramUser?.id) {
+        // Telegram user ID ni olish - WebApp'dan yoki URL'dan
+        let telegramUserId = telegramUser?.id;
+
+        // Agar WebApp'dan user topilmasa, URL'dan user_id ni olish
+        if (!telegramUserId) {
+            const params = new URLSearchParams(window.location.search);
+            telegramUserId = params.get("user_id") || localStorage.getItem("USER_ID");
+        }
+
+        if (!telegramUserId) {
             setErrors({
                 telegram_user_id: ["Telegram foydalanuvchi ma'lumoti topilmadi"],
             });
+            console.error("Login: Telegram user ID topilmadi. WebApp user:", telegramUser, "URL user_id:", telegramUserId);
             return;
         }
 
         const payload = {
-            telegram_user_id: telegramUser.id,
+            telegram_user_id: telegramUserId,
             first_name: firstNameRef.current.value,
             last_name: lastNameRef.current.value,
             role: role,
         };
+
+        console.log("Login payload:", payload);
 
         setErrors(null);
 
