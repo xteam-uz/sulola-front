@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import axiosClient from "../../api/axios-client";
 import { Bounce, toast, ToastContainer } from "react-toastify";
@@ -19,6 +19,8 @@ export const TestChecking = () => {
     const [resultUrl, setResultUrl] = useState(null);
     const [allWrittenChecked, setAllWrittenChecked] = useState(false);
     const [checkingStatus, setCheckingStatus] = useState("loading"); // loading | checking | ready | processing | done
+    const [testFinished, setTestFinished] = useState(false); // Test yakunlangan yoki yo'q
+    const isLoadingRef = useRef(false); // Infinite loop oldini olish uchun
 
     // Context
     const {
@@ -26,6 +28,8 @@ export const TestChecking = () => {
         studentsLoading,
         fetchTestStudents,
         finishTest,
+        testEnd,
+        checkTestStatus,
     } = useStateContext();
 
     // props
@@ -50,6 +54,28 @@ export const TestChecking = () => {
                     setTestStatus("active");
                 } else {
                     setTestStatus("expired");
+                }
+
+                // Test yakunlangan yoki yo'qligini tekshirish
+                if (data.test.status === 200) {
+                    setTestFinished(true);
+                    setCheckingStatus("done");
+                    // PDF URL ni tekshirish (xatolarni e'tiborsiz qoldirish, timeout muammosini oldini olish uchun)
+                    // Faqat bir marta, timeout bilan
+                    try {
+                        const timeoutPromise = new Promise((_, reject) =>
+                            setTimeout(() => reject(new Error('Timeout')), 5000)
+                        );
+                        const statusPromise = checkTestStatus(testId);
+                        const statusResult = await Promise.race([statusPromise, timeoutPromise]);
+                        if (statusResult?.download_url) {
+                            setResultUrl(statusResult.download_url);
+                        }
+                    } catch (error) {
+                        // Xatolarni e'tiborsiz qoldirish, chunki test yakunlangan
+                        // PDF tayyor bo'lmasa ham, test yakunlangan deb ko'rsatamiz
+                        console.log("Test status tekshirishda xatolik (e'tiborsiz):", error);
+                    }
                 }
             } catch (error) {
                 console.error("Test yuklashda xatolik:", error);
@@ -76,17 +102,66 @@ export const TestChecking = () => {
 
     // Function to load students and check status
     const loadStudentsAndCheckStatus = useCallback(async () => {
-        if (!testData || !testId) return;
+        if (!testId) return;
 
+        // Infinite loop oldini olish
+        if (isLoadingRef.current) {
+            console.log("Already loading, skipping...");
+            return;
+        }
+
+        isLoadingRef.current = true;
         setCheckingStatus("loading");
         try {
-            const result = await fetchTestStudents(testId);
-            if (result) {
-                // Backend returns all_written_checked specifically for THIS test
-                const isAllChecked = result.allChecked || result.statistics?.all_written_checked || false;
-                setAllWrittenChecked(isAllChecked);
-                setCheckingStatus(isAllChecked ? "ready" : "checking");
-            } else {
+            // Get current testData from state using functional update
+            let currentTestData = null;
+            setTestData((prev) => {
+                currentTestData = prev;
+                return prev;
+            });
+
+            // Fetch test data if not available
+            if (!currentTestData) {
+                try {
+                    const { data } = await axiosClient.get(`/tests/${testId}`);
+                    currentTestData = data.test;
+                    setTestData(currentTestData);
+
+                    // Test holatini aniqlash
+                    if (currentTestData.status === 200) {
+                        setTestFinished(true);
+                    }
+                } catch (error) {
+                    console.error("Error fetching test data:", error);
+                    setCheckingStatus("checking");
+                    isLoadingRef.current = false;
+                    return;
+                }
+            }
+
+            // Check test status first (only if test is finished) - skip to avoid timeout
+            // We'll check this only when needed, not on every load
+            if (currentTestData && currentTestData.status === 200) {
+                setTestFinished(true);
+                setCheckingStatus("done");
+                // Skip checkTestStatus here to avoid timeout issues
+                // It will be checked when user clicks finish button or when explicitly needed
+            }
+
+            // Fetch students
+            try {
+                const result = await fetchTestStudents(testId);
+                if (result) {
+                    // Backend returns all_written_checked specifically for THIS test
+                    const isAllChecked = result.allChecked || result.statistics?.all_written_checked || false;
+                    setAllWrittenChecked(isAllChecked);
+                    setCheckingStatus(isAllChecked ? "ready" : "checking");
+                } else {
+                    setAllWrittenChecked(false);
+                    setCheckingStatus("checking");
+                }
+            } catch (error) {
+                console.error("Error fetching students:", error);
                 setAllWrittenChecked(false);
                 setCheckingStatus("checking");
             }
@@ -94,25 +169,59 @@ export const TestChecking = () => {
             console.error("Error loading students:", error);
             setAllWrittenChecked(false);
             setCheckingStatus("checking");
+        } finally {
+            isLoadingRef.current = false;
         }
-    }, [testId, testData, fetchTestStudents]);
+    }, [testId, fetchTestStudents]); // testData va checkTestStatus ni dependency dan olib tashladik
 
     // Fetch students who submitted the test and check if all written answers are checked
     // location.key changes when user navigates, triggering a refresh
     useEffect(() => {
-        loadStudentsAndCheckStatus();
-    }, [loadStudentsAndCheckStatus, location.key]);
+        // Only load students after test data is loaded, and only once per testData change
+        if (testId && testData && !isLoadingRef.current) {
+            // Small delay to avoid race conditions
+            const timer = setTimeout(() => {
+                if (!isLoadingRef.current) {
+                    loadStudentsAndCheckStatus();
+                }
+            }, 100);
+            return () => clearTimeout(timer);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [testData?.id, location.key, testId]); // Only depend on testData.id to avoid infinite loops
 
     // Refresh data when page becomes visible (user navigates back from student page)
     useEffect(() => {
+        if (!testId || !testData) return;
+
         const handleVisibilityChange = () => {
-            if (document.visibilityState === "visible") {
-                loadStudentsAndCheckStatus();
+            if (document.visibilityState === "visible" && testData) {
+                // Agar test yakunlangan bo'lsa, faqat students ni yuklab olish
+                if (testData.status === 200) {
+                    // Test yakunlangan, faqat students ni yangilash
+                    if (!isLoadingRef.current) {
+                        fetchTestStudents(testId).catch(err => console.error("Error refreshing students:", err));
+                    }
+                } else {
+                    // Test hali yakunlanmagan, to'liq yuklash
+                    loadStudentsAndCheckStatus();
+                }
             }
         };
 
         const handleFocus = () => {
-            loadStudentsAndCheckStatus();
+            if (testData) {
+                // Agar test yakunlangan bo'lsa, faqat students ni yuklab olish
+                if (testData.status === 200) {
+                    // Test yakunlangan, faqat students ni yangilash
+                    if (!isLoadingRef.current) {
+                        fetchTestStudents(testId).catch(err => console.error("Error refreshing students:", err));
+                    }
+                } else {
+                    // Test hali yakunlanmagan, to'liq yuklash
+                    loadStudentsAndCheckStatus();
+                }
+            }
         };
 
         document.addEventListener("visibilitychange", handleVisibilityChange);
@@ -122,7 +231,7 @@ export const TestChecking = () => {
             document.removeEventListener("visibilitychange", handleVisibilityChange);
             window.removeEventListener("focus", handleFocus);
         };
-    }, [loadStudentsAndCheckStatus]);
+    }, [testId, testData, fetchTestStudents]); // loadStudentsAndCheckStatus ni dependency dan olib tashladik
 
     // Filter students based on search query
     const filteredStudents = (testStudents || []).filter((student) => {
@@ -159,68 +268,124 @@ export const TestChecking = () => {
         return "bg-gray-200 text-gray-600";
     };
 
+    // Poll for test status to check if PDF is ready
+    const pollTestStatus = async (maxAttempts = 30, interval = 2000) => {
+        for (let i = 0; i < maxAttempts; i++) {
+            await new Promise((resolve) => setTimeout(resolve, interval));
+
+            try {
+                const statusResult = await checkTestStatus(testId);
+                if (statusResult?.download_url) {
+                    setResultUrl(statusResult.download_url);
+                    setCheckingStatus("done");
+                    toast.success("Natijalar tayyor, yuklab oling!", {
+                        position: "top-center",
+                        autoClose: 4000,
+                        hideProgressBar: false,
+                        closeOnClick: false,
+                        pauseOnHover: true,
+                        draggable: true,
+                        progress: undefined,
+                        theme: "light",
+                        transition: Bounce,
+                        className: "toast-width my-2",
+                    });
+                    return;
+                }
+
+                // If test is finished but no download URL yet, keep polling
+                if (statusResult?.is_finished && !statusResult?.download_url) {
+                    continue;
+                }
+            } catch (error) {
+                console.error("Error checking test status:", error);
+            }
+        }
+
+        // If polling times out, show message
+        toast.warning("Natijalar hali tayyorlanmoqda. Iltimos, keyinroq qayta urinib ko'ring.", {
+            position: "top-center",
+            autoClose: 5000,
+            hideProgressBar: false,
+            closeOnClick: false,
+            pauseOnHover: true,
+            draggable: true,
+            progress: undefined,
+            theme: "light",
+            transition: Bounce,
+            className: "toast-width my-2",
+        });
+    };
+
     const handleFinishTest = async () => {
         if (!allWrittenChecked || finishing) return;
         setFinishing(true);
         setCheckingStatus("processing");
         setResultUrl(null);
         try {
-            const result = await finishTest(testId);
-            // Try to extract pdf url from common keys
-            // Backend should return: { success: true, file_url: "https://...", job_id: "..." }
-            const pdfUrl =
-                result?.file_url ||
-                result?.pdf_url ||
-                result?.data?.file_url ||
-                result?.data?.pdf_url ||
-                result?.data?.url;
+            // Use testEnd instead of finishTest for RASH_TEST
+            const result = await testEnd(testId);
 
-            if (pdfUrl) {
-                setResultUrl(pdfUrl);
-                setCheckingStatus("done");
-                toast.success("Natijalar tayyor, yuklab oling!", {
-                    position: "top-center",
-                    autoClose: 4000,
-                    hideProgressBar: false,
-                    closeOnClick: false,
-                    pauseOnHover: true,
-                    draggable: true,
-                    progress: undefined,
-                    theme: "light",
-                    transition: Bounce,
-                    className: "toast-width my-2",
-                });
-            } else if (result?.job_id) {
-                // Backend started a job to generate PDF, poll for status
-                setCheckingStatus("processing");
-                toast.info("Natijalar tayyorlanmoqda, iltimos kuting...", {
-                    position: "top-center",
-                    autoClose: 4000,
-                    hideProgressBar: false,
-                    closeOnClick: false,
-                    pauseOnHover: true,
-                    draggable: true,
-                    progress: undefined,
-                    theme: "light",
-                    transition: Bounce,
-                    className: "toast-width my-2",
-                });
-                // TODO: Implement polling for job status when backend is ready
-                // pollJobStatus(result.job_id);
-            } else if (result?.success) {
-                setCheckingStatus("done");
-                toast.success("Test yakunlandi!", {
-                    position: "top-center",
-                    autoClose: 4000,
-                    hideProgressBar: false,
-                    closeOnClick: false,
-                    pauseOnHover: true,
-                    draggable: true,
-                    progress: undefined,
-                    theme: "light",
-                    transition: Bounce,
-                    className: "toast-width my-2",
-                });
+            if (result?.success) {
+                if (result?.processing) {
+                    // Backend started a job to generate PDF, poll for status
+                    setCheckingStatus("processing");
+                    toast.info("Natijalar tayyorlanmoqda, iltimos kuting...", {
+                        position: "top-center",
+                        autoClose: 4000,
+                        hideProgressBar: false,
+                        closeOnClick: false,
+                        pauseOnHover: true,
+                        draggable: true,
+                        progress: undefined,
+                        theme: "light",
+                        transition: Bounce,
+                        className: "toast-width my-2",
+                    });
+
+                    // Start polling for PDF URL
+                    pollTestStatus();
+                } else {
+                    // Try to extract pdf url from common keys
+                    const pdfUrl =
+                        result?.download_url ||
+                        result?.file_url ||
+                        result?.pdf_url ||
+                        result?.data?.file_url ||
+                        result?.data?.pdf_url ||
+                        result?.data?.url;
+
+                    if (pdfUrl) {
+                        setResultUrl(pdfUrl);
+                        setCheckingStatus("done");
+                        toast.success("Natijalar tayyor, yuklab oling!", {
+                            position: "top-center",
+                            autoClose: 4000,
+                            hideProgressBar: false,
+                            closeOnClick: false,
+                            pauseOnHover: true,
+                            draggable: true,
+                            progress: undefined,
+                            theme: "light",
+                            transition: Bounce,
+                            className: "toast-width my-2",
+                        });
+                    } else {
+                        setCheckingStatus("done");
+                        toast.success("Test yakunlandi!", {
+                            position: "top-center",
+                            autoClose: 4000,
+                            hideProgressBar: false,
+                            closeOnClick: false,
+                            pauseOnHover: true,
+                            draggable: true,
+                            progress: undefined,
+                            theme: "light",
+                            transition: Bounce,
+                            className: "toast-width my-2",
+                        });
+                    }
+                }
             }
 
             // Refresh students list after finishing
@@ -288,12 +453,50 @@ export const TestChecking = () => {
                 {/* Test completed btn */}
                 <button
                     onClick={
-                        resultUrl
-                            ? () => window.open(resultUrl, "_blank", "noopener,noreferrer")
+                        resultUrl || testFinished
+                            ? async () => {
+                                // Download PDF with authentication via axiosClient
+                                try {
+                                    setFinishing(true);
+
+                                    // Always use axiosClient to download with authentication
+                                    const response = await axiosClient.get(`/tests/${testId}/download-results`, {
+                                        responseType: 'blob',
+                                    });
+
+                                    // Create blob URL and download
+                                    const blob = new Blob([response.data], { type: 'application/pdf' });
+                                    const url = window.URL.createObjectURL(blob);
+                                    const link = document.createElement('a');
+                                    link.href = url;
+                                    link.download = `test_${code}_natijalar_${new Date().toISOString().split('T')[0]}.pdf`;
+                                    document.body.appendChild(link);
+                                    link.click();
+                                    document.body.removeChild(link);
+                                    window.URL.revokeObjectURL(url);
+
+                                    setFinishing(false);
+                                } catch (error) {
+                                    console.error("PDF yuklab olishda xatolik:", error);
+                                    setFinishing(false);
+                                    toast.error("PDF yuklab olishda xatolik!", {
+                                        position: "top-center",
+                                        autoClose: 5000,
+                                        hideProgressBar: false,
+                                        closeOnClick: false,
+                                        pauseOnHover: true,
+                                        draggable: true,
+                                        progress: undefined,
+                                        theme: "light",
+                                        transition: Bounce,
+                                        className: "toast-width my-2",
+                                    });
+                                }
+                            }
                             : handleFinishTest
                     }
-                    disabled={!allWrittenChecked || finishing || checkingStatus === "processing"}
-                    className={`w-full py-3 rounded-xl font-medium mb-4 shadow-md transition-colors flex items-center justify-center gap-2 ${resultUrl
+                    disabled={(!allWrittenChecked && !testFinished) || finishing || checkingStatus === "processing"}
+                    className={`w-full py-3 rounded-xl font-medium mb-4 shadow-md transition-colors flex items-center justify-center gap-2 ${resultUrl || testFinished
                         ? "bg-green-600 text-white hover:bg-green-700"
                         : allWrittenChecked && checkingStatus !== "processing"
                             ? "bg-blue-500 text-white hover:bg-blue-600"
@@ -310,7 +513,7 @@ export const TestChecking = () => {
                             <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                             Ma'lumotlar tayyorlanmoqda...
                         </>
-                    ) : resultUrl ? (
+                    ) : resultUrl || testFinished ? (
                         "Yuklab olish"
                     ) : !allWrittenChecked ? (
                         "Avval barcha javoblarni tekshiring"
@@ -350,20 +553,31 @@ export const TestChecking = () => {
                 </div>
 
                 {/* Info Message */}
-                {allWrittenChecked && checkingStatus === "ready" && (
+                {testFinished ? (
+                    <div className="bg-green-50 border border-green-200 rounded-2xl p-4 mb-4">
+                        <p className="text-green-800 text-sm text-center">
+                            Test yakunlangan. Natijalarni yuklab olishingiz mumkin.
+                        </p>
+                    </div>
+                ) : checkingStatus === "processing" || finishing ? (
+                    <div className="bg-blue-50 border border-blue-200 rounded-2xl p-4 mb-4">
+                        <p className="text-blue-800 text-sm text-center">
+                            Test tekshirilmoqda...
+                        </p>
+                    </div>
+                ) : allWrittenChecked && checkingStatus === "ready" ? (
                     <div className="bg-green-50 border border-green-200 rounded-2xl p-4 mb-4">
                         <p className="text-green-800 text-sm text-center">
                             Barcha o'quvchilarning yozma javoblari tekshirilgan. Testni yakunlab natijalarni olishingiz mumkin.
                         </p>
                     </div>
-                )}
-                {!allWrittenChecked && checkingStatus !== "loading" && (testStudents || []).length > 0 && (
+                ) : !allWrittenChecked && checkingStatus !== "loading" && (testStudents || []).length > 0 ? (
                     <div className="bg-yellow-50 border border-yellow-200 rounded-2xl p-4 mb-4">
                         <p className="text-yellow-800 text-sm text-center">
                             Hali tekshirilmagan javoblar mavjud. Har bir o'quvchining javoblarini tekshiring.
                         </p>
                     </div>
-                )}
+                ) : null}
 
                 {/* Students Section */}
                 <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 mb-4">
@@ -383,7 +597,7 @@ export const TestChecking = () => {
                             <p className="text-green-600 text-sm font-medium">
                                 ✓ Tekshirilgan - {checkedCount} ta
                             </p>
-                            {uncheckedCount > 0 && (
+                            {uncheckedCount > 0 && !testFinished && (
                                 <p className="text-red-600 text-sm font-medium">
                                     ✗ Tekshirilmagan - {uncheckedCount} ta
                                 </p>

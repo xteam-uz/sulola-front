@@ -100,16 +100,39 @@ export const StudentTestChecking = () => {
         }
     }, [testData]);
 
+    // Check if test has image mode for questions 36-45
+    const isImageMode = testData?.details?.questions_36_45?.mode === "image";
+
     // Handle score change for questions 36-45 (supports per-variant keys)
+    // For image mode, accepts boolean (true/false/undefined), for write mode accepts numeric score
     const handleScoreChange = (questionNum, value, variantKey = null) => {
         const key = variantKey || questionNum;
-        const numValue = value === ""
-            ? ""
-            : Math.max(0, Math.min(parseInt(value) || 0, getMaxScore(questionNum)));
-        setScores((prev) => ({
-            ...prev,
-            [key]: numValue,
-        }));
+
+        // For image mode questions (36-45), handle boolean values
+        if (isImageMode && questionNum >= 36 && questionNum <= 45) {
+            // value is boolean (true/false/undefined) for checkbox
+            setScores((prev) => {
+                const newScores = { ...prev };
+                if (value === true) {
+                    newScores[key] = 1; // To'g'ri
+                } else if (value === false) {
+                    newScores[key] = 0; // Xato
+                } else {
+                    // undefined - checkbox unchecked, remove from scores
+                    delete newScores[key];
+                }
+                return newScores;
+            });
+        } else {
+            // For write mode, handle numeric score
+            const numValue = value === ""
+                ? ""
+                : Math.max(0, Math.min(parseInt(value) || 0, getMaxScore(questionNum)));
+            setScores((prev) => ({
+                ...prev,
+                [key]: numValue,
+            }));
+        }
     };
 
     // Get max score for a question (36-45)
@@ -140,8 +163,15 @@ export const StudentTestChecking = () => {
 
         requiredQuestions.forEach((qNum) => {
             const variants = getAnswerVariants(qNum);
+            const answerType = getAnswerType(qNum);
 
-            if (variants.length > 0) {
+            // For image mode, check if checkbox is set (0 or 1 is valid) - rasm bo'lsa yoki bo'lmasa ham
+            if (isImageMode && (answerType === "image" || answerType === null)) {
+                if (scores[qNum] === undefined || scores[qNum] === "") {
+                    missingScores.push(`${qNum}`);
+                }
+            } else if (variants.length > 0) {
+                // For write mode with variants
                 variants.forEach((_, idx) => {
                     const key = `${qNum}_${idx}`;
                     if (scores[key] === undefined || scores[key] === "") {
@@ -149,12 +179,16 @@ export const StudentTestChecking = () => {
                     }
                 });
             } else if (scores[qNum] === undefined || scores[qNum] === "") {
+                // For write mode without variants
                 missingScores.push(`${qNum}`);
             }
         });
 
         if (missingScores.length > 0) {
-            toast.warning(`Quyidagi savollar uchun ball kiriting: ${missingScores.join(", ")}`, {
+            const message = isImageMode
+                ? `Quyidagi savollar uchun to'g'ri/noto'g'ri belgilang: ${missingScores.join(", ")}`
+                : `Quyidagi savollar uchun ball kiriting: ${missingScores.join(", ")}`;
+            toast.warning(message, {
                 position: "top-center",
                 autoClose: 5000,
                 hideProgressBar: false,
@@ -682,9 +716,9 @@ export const StudentTestChecking = () => {
                             Ko'rsatma:
                         </p>
                         <p className="text-blue-800 text-sm">
-                            O'quvchi yuklagan rasmga qarab, to'g'ri javoblarni yashil
-                            tugma bilan belgilang. Noto'g'ri javoblarni belgilamang
-                            (kulrang holatda qoldiring).
+                            {isImageMode
+                                ? "O'quvchi yuklagan rasmga qarab, to'g'ri javoblarni checkbox bilan belgilang. Noto'g'ri javoblar uchun checkboxni belgilamang."
+                                : "O'quvchi yuklagan rasmga qarab, to'g'ri javoblarni yashil tugma bilan belgilang. Noto'g'ri javoblarni belgilamang (kulrang holatda qoldiring)."}
                         </p>
                     </div>
                 )}
@@ -723,13 +757,15 @@ export const StudentTestChecking = () => {
                                             <h4 className="font-medium text-gray-700">
                                                 {questionNum}-savol
                                             </h4>
-                                            <p className="text-xs text-gray-500">
-                                                Maksimal: {getMaxScore(questionNum)} ball
-                                            </p>
+                                            {!isImageMode && (
+                                                <p className="text-xs text-gray-500">
+                                                    Maksimal: {getMaxScore(questionNum)} ball
+                                                </p>
+                                            )}
                                         </div>
 
-                                        {/* Rasmli javob */}
-                                        {answerType === "image" && (
+                                        {/* Rasmli javob - rasm bo'lsa yoki rasmli rejimda rasm bo'lmasa ham ko'rsatilsin */}
+                                        {(answerType === "image" || (isImageMode && answerType === null)) && (
                                             <div className="mb-3">
                                                 {imageUrl ? (
                                                     <div className="mb-3">
@@ -737,7 +773,24 @@ export const StudentTestChecking = () => {
                                                             src={imageUrl}
                                                             alt={`${questionNum}-savol javobi`}
                                                             className="w-full rounded-lg border border-gray-200"
+                                                            onError={(e) => {
+                                                                console.error(`Image load error for question ${questionNum}:`, imageUrl);
+                                                                e.target.style.display = 'none';
+                                                                const placeholder = e.target.nextElementSibling;
+                                                                if (placeholder) {
+                                                                    placeholder.style.display = 'flex';
+                                                                }
+                                                            }}
                                                         />
+                                                        <div className="hidden flex-col items-center justify-center py-8 bg-gray-50 rounded-lg border border-gray-200">
+                                                            <ImageIcon
+                                                                className="text-gray-400 mb-2"
+                                                                size={48}
+                                                            />
+                                                            <p className="text-gray-500 text-sm">
+                                                                Rasm yuklanmadi
+                                                            </p>
+                                                        </div>
                                                     </div>
                                                 ) : (
                                                     <div className="flex flex-col items-center justify-center py-8 bg-gray-50 rounded-lg border border-gray-200">
@@ -810,8 +863,8 @@ export const StudentTestChecking = () => {
                                             </div>
                                         )}
 
-                                        {/* Agar javob bo'lmasa */}
-                                        {answerType === null && (
+                                        {/* Agar javob bo'lmasa - faqat yozma rejimda ko'rsatilsin */}
+                                        {answerType === null && !isImageMode && (
                                             <div className="mb-3">
                                                 <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
                                                     <p className="text-sm text-gray-500 italic">
@@ -821,27 +874,74 @@ export const StudentTestChecking = () => {
                                             </div>
                                         )}
 
-                                        {/* Ball input - har bir savol uchun (variantsiz yoki rasmli javoblarda) */}
+                                        {/* Ball input yoki checkbox - har bir savol uchun (variantsiz yoki rasmli javoblarda) */}
                                         {!hasVariants && (
                                             <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                                    Ball (0-{getMaxScore(questionNum)})
-                                                </label>
-                                                <input
-                                                    type="number"
-                                                    min="0"
-                                                    max={getMaxScore(questionNum)}
-                                                    value={scores[questionNum] || ""}
-                                                    onChange={(e) =>
-                                                        handleScoreChange(
-                                                            questionNum,
-                                                            e.target.value
-                                                        )
-                                                    }
-                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
-                                                    placeholder="0"
-                                                    disabled={isChecked || submitting || loadingScores}
-                                                />
+                                                {isImageMode && (answerType === "image" || answerType === null) ? (
+                                                    // Checkbox for image mode (to'g'ri/xato)
+                                                    <div className="flex items-center justify-between">
+                                                        <label className="flex items-center space-x-2 cursor-pointer">
+                                                            <input
+                                                                type="checkbox"
+                                                                checked={scores[questionNum] === 1 || scores[questionNum] === true}
+                                                                onChange={(e) => {
+                                                                    // Agar "To'g'ri" tanlansa, 1 qo'y, aks holda undefined
+                                                                    // "Xato" ni avtomatik unchecked qilish
+                                                                    handleScoreChange(
+                                                                        questionNum,
+                                                                        e.target.checked ? true : undefined
+                                                                    );
+                                                                }}
+                                                                className="w-5 h-5 text-green-600 border-gray-300 rounded focus:ring-green-500 focus:ring-2 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                                                                disabled={isChecked || submitting || loadingScores}
+                                                            />
+                                                            <span className="text-sm font-medium text-green-600">
+                                                                To'g'ri
+                                                            </span>
+                                                        </label>
+                                                        <label className="flex items-center space-x-2 cursor-pointer">
+                                                            <input
+                                                                type="checkbox"
+                                                                checked={scores[questionNum] === 0 && scores[questionNum] !== "" && scores[questionNum] !== undefined}
+                                                                onChange={(e) => {
+                                                                    // Agar "Xato" tanlansa, 0 qo'y, aks holda undefined
+                                                                    // "To'g'ri" ni avtomatik unchecked qilish
+                                                                    handleScoreChange(
+                                                                        questionNum,
+                                                                        e.target.checked ? false : undefined
+                                                                    );
+                                                                }}
+                                                                className="w-5 h-5 text-red-600 border-gray-300 rounded focus:ring-red-500 focus:ring-2 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                                                                disabled={isChecked || submitting || loadingScores}
+                                                            />
+                                                            <span className="text-sm font-medium text-red-600">
+                                                                Xato
+                                                            </span>
+                                                        </label>
+                                                    </div>
+                                                ) : (
+                                                    // Score input for write mode
+                                                    <div>
+                                                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                            Ball (0-{getMaxScore(questionNum)})
+                                                        </label>
+                                                        <input
+                                                            type="number"
+                                                            min="0"
+                                                            max={getMaxScore(questionNum)}
+                                                            value={scores[questionNum] || ""}
+                                                            onChange={(e) =>
+                                                                handleScoreChange(
+                                                                    questionNum,
+                                                                    e.target.value
+                                                                )
+                                                            }
+                                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                                                            placeholder="0"
+                                                            disabled={isChecked || submitting || loadingScores}
+                                                        />
+                                                    </div>
+                                                )}
                                             </div>
                                         )}
                                     </div>

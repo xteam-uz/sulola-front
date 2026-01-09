@@ -23,6 +23,8 @@ const StateContext = createContext({
     hasUserSubmittedTest: () => { },
     fetchTestStudents: () => { },
     finishTest: () => { },
+    testEnd: () => { },
+    checkTestStatus: () => { },
     fetchAllStudents: () => { },
     fetchTest: () => { },
     fetchStudentTestData: () => { },
@@ -371,6 +373,47 @@ export const ContextProvider = ({ children }) => {
     };
 
     // ============================
+    // TEST END (for RASH_TEST - dispatches job)
+    // ============================
+    const testEnd = async (testId) => {
+        if (!testId) return false;
+
+        try {
+            const { data } = await axiosClient.post(`/tests/${testId}/end`);
+
+            if (data.success) {
+                // Return full payload
+                return data;
+            }
+
+            return false;
+        } catch (error) {
+            console.error("Test end error:", error);
+            throw error;
+        }
+    };
+
+    // ============================
+    // CHECK TEST STATUS (for checking if PDF is ready)
+    // ============================
+    const checkTestStatus = async (testId) => {
+        if (!testId) return null;
+
+        try {
+            const { data } = await axiosClient.get(`/tests/${testId}/check-status`);
+
+            if (data.success) {
+                return data;
+            }
+
+            return null;
+        } catch (error) {
+            console.error("Check test status error:", error);
+            return null;
+        }
+    };
+
+    // ============================
     // ALL STUDENTS (general students list)
     // ============================
     const fetchAllStudents = useCallback(async (userId) => {
@@ -714,6 +757,8 @@ export const ContextProvider = ({ children }) => {
                 hasUserSubmittedTest,
                 fetchTestStudents,
                 finishTest,
+                testEnd,
+                checkTestStatus,
                 fetchAllStudents,
                 fetchTest,
                 fetchStudentTestData,
