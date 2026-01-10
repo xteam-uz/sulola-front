@@ -459,21 +459,26 @@ export const TestChecking = () => {
                                 try {
                                     setFinishing(true);
 
-                                    // Always use axiosClient to download with authentication
+                                    // Always use axiosClient to send via Telegram bot
                                     const response = await axiosClient.get(`/tests/${testId}/download-results`, {
-                                        responseType: 'blob',
+                                        params: { sendTelegram: true },
                                     });
 
-                                    // Create blob URL and download
-                                    const blob = new Blob([response.data], { type: 'application/pdf' });
-                                    const url = window.URL.createObjectURL(blob);
-                                    const link = document.createElement('a');
-                                    link.href = url;
-                                    link.download = `test_${code}_natijalar_${new Date().toISOString().split('T')[0]}.pdf`;
-                                    document.body.appendChild(link);
-                                    link.click();
-                                    document.body.removeChild(link);
-                                    window.URL.revokeObjectURL(url);
+                                    // Success message
+                                    if (response.data?.success) {
+                                        toast.success("PDF Telegram bot orqali yuborildi!", {
+                                            position: "top-center",
+                                            autoClose: 5000,
+                                            hideProgressBar: false,
+                                            closeOnClick: false,
+                                            pauseOnHover: true,
+                                            draggable: true,
+                                            progress: undefined,
+                                            theme: "light",
+                                            transition: Bounce,
+                                            className: "toast-width my-2",
+                                        });
+                                    }
 
                                     setFinishing(false);
                                 } catch (error) {
@@ -514,7 +519,7 @@ export const TestChecking = () => {
                             Ma'lumotlar tayyorlanmoqda...
                         </>
                     ) : resultUrl || testFinished ? (
-                        "Yuklab olish"
+                        "Bot orqali yuklash"
                     ) : !allWrittenChecked ? (
                         "Avval barcha javoblarni tekshiring"
                     ) : (
