@@ -19,6 +19,7 @@ export const StudentTestChecking = () => {
         fetchStudentTestData,
         fetchTeacherScores,
         checkStudentAnswers,
+        fetchTestStudents,
     } = useStateContext();
 
     // States
@@ -226,6 +227,16 @@ export const StudentTestChecking = () => {
                     setIsChecked(updatedStudentTestData.checked || true);
                 } else {
                     setIsChecked(true);
+                }
+
+                // Refresh test students list to update checked status in TestChacking page
+                if (fetchTestStudents && testId) {
+                    try {
+                        await fetchTestStudents(testId);
+                    } catch (error) {
+                        console.error("Error refreshing test students:", error);
+                        // Don't block navigation if refresh fails
+                    }
                 }
 
                 toast.success("Tekshirish yakunlandi!", {

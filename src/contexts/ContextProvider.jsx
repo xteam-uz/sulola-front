@@ -683,12 +683,22 @@ export const ContextProvider = ({ children }) => {
                 }
             );
 
+            // After saving, refresh test students list to update written_checked status
+            if (data.success && testId) {
+                try {
+                    await fetchTestStudents(testId);
+                } catch (error) {
+                    console.error("Error refreshing test students after check:", error);
+                    // Don't throw, as the main operation was successful
+                }
+            }
+
             return data.success ? data : null;
         } catch (error) {
             console.error("Check student answers error:", error);
             throw error;
         }
-    }, []);
+    }, [fetchTestStudents]);
 
     // ============================
     // EFFECTS
