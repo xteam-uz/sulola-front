@@ -322,7 +322,7 @@ export const Profile = () => {
             </div>
 
             {/* TEST UCHUN*/}
-            {hasChanges() && !saving && (
+            {/* {hasChanges() && !saving && (
                 <div className="px-4 py-4">
                     <button
                         onClick={handleSave}
@@ -331,7 +331,7 @@ export const Profile = () => {
                         📤 Saqlash
                     </button>
                 </div>
-            )}
+            )} */}
             {/* END TEST UCHUN*/}
 
             {/* Telegram MainButton va BackButton */}
