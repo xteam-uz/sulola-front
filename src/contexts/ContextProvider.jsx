@@ -219,10 +219,22 @@ export const ContextProvider = ({ children }) => {
                     // Check both results and user_answer fields
                     const answerData = existingResult.results || existingResult.user_answer;
                     if (answerData) {
+                        // Parse all_result if it exists
+                        let allResult = existingResult.all_result;
+                        if (allResult && typeof allResult === 'string') {
+                            try {
+                                allResult = JSON.parse(allResult);
+                            } catch (e) {
+                                console.error("Error parsing all_result from cache:", e);
+                                allResult = null;
+                            }
+                        }
+
                         console.log("Found in cache:", existingResult);
                         return {
                             ...existingResult,
-                            results: typeof answerData === 'string' ? JSON.parse(answerData) : answerData
+                            results: typeof answerData === 'string' ? JSON.parse(answerData) : answerData,
+                            all_result: allResult
                         };
                     }
                 }
@@ -249,9 +261,21 @@ export const ContextProvider = ({ children }) => {
                     // Check both results and user_answer fields
                     const answerData = testResult.results || testResult.user_answer;
                     if (answerData) {
+                        // Parse all_result if it exists
+                        let allResult = testResult.all_result;
+                        if (allResult && typeof allResult === 'string') {
+                            try {
+                                allResult = JSON.parse(allResult);
+                            } catch (e) {
+                                console.error("Error parsing all_result:", e);
+                                allResult = null;
+                            }
+                        }
+
                         return {
                             ...testResult,
-                            results: typeof answerData === 'string' ? JSON.parse(answerData) : answerData
+                            results: typeof answerData === 'string' ? JSON.parse(answerData) : answerData,
+                            all_result: allResult
                         };
                     }
                 }

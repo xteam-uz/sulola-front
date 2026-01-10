@@ -53,9 +53,30 @@ export const StudentTestChecking = () => {
                 }
 
                 // Load teacher scores from all_result (parsed in fetchStudentTestData)
+                const loadedScores = {};
                 if (studentTestData?.scores && Object.keys(studentTestData.scores).length > 0) {
-                    setScores(studentTestData.scores);
+                    Object.assign(loadedScores, studentTestData.scores);
                     setIsChecked(studentTestData.checked || false);
+                }
+
+                // Load student's essay scores if they exist and teacher hasn't scored yet
+                if (studentTestData?.answers?.questions_36_45?.mode === "write" &&
+                    studentTestData.answers.questions_36_45.essay_scores) {
+                    const studentEssayScores = studentTestData.answers.questions_36_45.essay_scores;
+                    Object.entries(studentEssayScores).forEach(([qNum, score]) => {
+                        const qNumStr = String(qNum);
+                        // Only use student's score if teacher hasn't scored this question yet
+                        if (loadedScores[qNumStr] === undefined && score !== null && score !== undefined) {
+                            const numScore = typeof score === "number" ? score : parseFloat(score);
+                            if (!isNaN(numScore) && numScore >= 0 && numScore <= 75) {
+                                loadedScores[qNumStr] = numScore;
+                            }
+                        }
+                    });
+                }
+
+                if (Object.keys(loadedScores).length > 0) {
+                    setScores(loadedScores);
                 }
 
                 // Fetch test data if not in state
@@ -119,6 +140,18 @@ export const StudentTestChecking = () => {
         const questionData = q36_45.questions[String(questionNum)] || q36_45.questions[questionNum];
         // Question exists if it's in the questions object (variant_count > 0 or is_essay = true)
         return !!questionData;
+    };
+
+    // Get student's essay score if they entered one
+    const getStudentEssayScore = (questionNum) => {
+        if (!studentAnswers?.questions_36_45) return null;
+        const q36_45 = studentAnswers.questions_36_45;
+        if (q36_45.mode === "write" && q36_45.essay_scores) {
+            const questionNumStr = String(questionNum);
+            const score = q36_45.essay_scores[questionNumStr] || q36_45.essay_scores[questionNum];
+            return score !== null && score !== undefined ? (typeof score === "number" ? score : parseFloat(score)) : null;
+        }
+        return null;
     };
 
     // Handle score change for questions 36-45 (supports per-variant keys)
@@ -201,7 +234,8 @@ export const StudentTestChecking = () => {
 
             // Check if question is essay
             if (isQuestionEssay(qNum)) {
-                // Essay questions need a single score (0-75)
+                // Essay questions need a single score (0-75) from checker
+                // Even if student entered a score, checker must also confirm/enter a score
                 if (scores[qNum] === undefined || scores[qNum] === "") {
                     missingScores.push(`${qNum} (Essey)`);
                 }
@@ -210,20 +244,23 @@ export const StudentTestChecking = () => {
 
             const variants = getAnswerVariants(qNum);
             const answerType = getAnswerType(qNum);
+            const hasVariants = variants.length > 0;
 
-            // For image mode and write mode (non-essay), check if checkbox is set (0 or 1 is valid)
-            if ((isImageMode && (answerType === "image" || answerType === null)) || (!isImageMode && (answerType === "text" || answerType === null))) {
-                if (scores[qNum] === undefined || scores[qNum] === "") {
-                    missingScores.push(`${qNum}`);
-                }
-            } else if (variants.length > 0) {
-                // For write mode with variants (non-essay)
+            // For write mode with variants (non-essay), check each variant
+            if (hasVariants) {
                 variants.forEach((_, idx) => {
                     const key = `${qNum}_${idx}`;
                     if (scores[key] === undefined || scores[key] === "") {
                         missingScores.push(`${qNum}-variant ${idx + 1}`);
                     }
                 });
+            } else {
+                // For image mode and write mode (non-essay) without variants, check single score (0 or 1 is valid)
+                if ((isImageMode && (answerType === "image" || answerType === null)) || (!isImageMode && (answerType === "text" || answerType === null))) {
+                    if (scores[qNum] === undefined || scores[qNum] === "") {
+                        missingScores.push(`${qNum}`);
+                    }
+                }
             }
         });
 
@@ -843,47 +880,53 @@ export const StudentTestChecking = () => {
                                         </div>
 
                                         {/* Essay question - show 0-75 score input */}
-                                        {isEssay && (
-                                            <div className="mb-3">
-                                                <div className="bg-purple-50 rounded-lg p-3 border border-purple-200 mb-3">
-                                                    <p className="text-sm text-purple-700 font-medium mb-1">
-                                                        Essey savoli
-                                                    </p>
-                                                    {/* {answerText ? (
-                                                        <p className="text-sm text-gray-700 mt-2">
-                                                            {answerText}
+                                        {isEssay && (() => {
+                                            const studentScore = getStudentEssayScore(questionNum);
+                                            const teacherScore = scores[questionNum] !== undefined ? scores[questionNum] : null;
+                                            const displayScore = teacherScore !== null ? teacherScore : (studentScore !== null ? studentScore : "");
+                                            const hasStudentScore = studentScore !== null && studentScore !== undefined;
+                                            const hasTeacherScore = teacherScore !== null && teacherScore !== undefined;
+
+                                            return (
+                                                <div className="mb-3">
+                                                    <div className="bg-purple-50 rounded-lg p-3 border border-purple-200 mb-3">
+                                                        <p className="text-sm text-purple-700 font-medium mb-1">
+                                                            Essey savoli
                                                         </p>
-                                                    ) : (
-                                                        <p className="text-sm text-gray-500 italic mt-2">
-                                                            Javob berilmagan
+                                                        {hasStudentScore && (
+                                                            <p className="text-xs text-gray-600 mt-2">
+                                                                O'quvchi tomonidan qo'yilgan ball: <span className="font-semibold">{studentScore}</span>
+                                                            </p>
+                                                        )}
+                                                    </div>
+                                                    <div>
+                                                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                            {hasTeacherScore ? "Tekshiruvchi tomonidan qo'yilgan ball" : "Tekshiruvchi tomonidan qo'yiladigan ball"} (0-75)
+                                                        </label>
+                                                        <input
+                                                            type="number"
+                                                            min="0"
+                                                            max="75"
+                                                            value={displayScore}
+                                                            onChange={(e) =>
+                                                                handleScoreChange(
+                                                                    questionNum,
+                                                                    e.target.value
+                                                                )
+                                                            }
+                                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                                                            placeholder={hasStudentScore ? `${studentScore} (o'quvchi balli)` : "0"}
+                                                            disabled={isChecked || submitting || loadingScores}
+                                                        />
+                                                        <p className="text-xs text-gray-500 mt-1">
+                                                            {hasStudentScore
+                                                                ? `O'quvchi ${studentScore} ball qo'ygan. Tekshiruvchi tomonidan 0 dan 75 gacha ball kiriting (o'zgartirish mumkin).`
+                                                                : "Essey savoli uchun 0 dan 75 gacha ball kiriting"}
                                                         </p>
-                                                    )} */}
+                                                    </div>
                                                 </div>
-                                                <div>
-                                                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                                                        Essey balli (0-75)
-                                                    </label>
-                                                    <input
-                                                        type="number"
-                                                        min="0"
-                                                        max="75"
-                                                        value={scores[questionNum] ?? ""}
-                                                        onChange={(e) =>
-                                                            handleScoreChange(
-                                                                questionNum,
-                                                                e.target.value
-                                                            )
-                                                        }
-                                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
-                                                        placeholder="0"
-                                                        disabled={isChecked || submitting || loadingScores}
-                                                    />
-                                                    <p className="text-xs text-gray-500 mt-1">
-                                                        Essey savoli uchun 0 dan 75 gacha ball kiriting
-                                                    </p>
-                                                </div>
-                                            </div>
-                                        )}
+                                            );
+                                        })()}
 
                                         {/* Non-essay questions rendering */}
                                         {!isEssay && (

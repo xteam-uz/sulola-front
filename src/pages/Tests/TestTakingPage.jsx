@@ -125,6 +125,37 @@ export const TestTakingPage = () => {
                     const results = previousResult.results;
                     console.log("Loading previous answers for test:", testCode, results);
 
+                    // Load teacher scores (tekshiruvchi tomonidan qo'yilgan balllar) from all_result
+                    let teacherScores = {};
+                    if (previousResult.all_result) {
+                        let allResult = previousResult.all_result;
+                        // Parse if it's a string
+                        if (typeof allResult === 'string') {
+                            try {
+                                allResult = JSON.parse(allResult);
+                            } catch (e) {
+                                console.error("Error parsing all_result:", e);
+                                allResult = {};
+                            }
+                        }
+                        // Extract teacher_scores from all_result
+                        if (allResult.teacher_scores && typeof allResult.teacher_scores === 'object') {
+                            Object.entries(allResult.teacher_scores).forEach(([qNum, score]) => {
+                                const qNumStr = String(qNum);
+                                const qNumNum = Number(qNum);
+                                // Check if it's an essay question (36-45 range)
+                                if (qNumNum >= 36 && qNumNum <= 45) {
+                                    const numScore = typeof score === "number" ? score : parseFloat(score);
+                                    if (!isNaN(numScore) && numScore >= 0 && numScore <= 75) {
+                                        teacherScores[qNumStr] = numScore;
+                                        teacherScores[qNumNum] = numScore;
+                                    }
+                                }
+                            });
+                            console.log("Loaded teacher scores from all_result:", teacherScores);
+                        }
+                    }
+
                     // Load answers for questions 1-32
                     if (results.questions_1_32) {
                         const loadedAnswers = {};
@@ -332,7 +363,7 @@ export const TestTakingPage = () => {
                                 setTextAnswers(loadedTextAnswers);
                             }
 
-                            // Load essay scores if they exist
+                            // Load essay scores if they exist (o'quvchining o'zi qo'ygan ballar)
                             if (results.questions_36_45.essay_scores) {
                                 const loadedEssayScores = {};
                                 Object.entries(results.questions_36_45.essay_scores).forEach(
@@ -343,11 +374,20 @@ export const TestTakingPage = () => {
                                     },
                                 );
                                 if (Object.keys(loadedEssayScores).length > 0) {
-                                    console.log("Loaded essay scores:", loadedEssayScores);
+                                    console.log("Loaded essay scores (student):", loadedEssayScores);
                                     setEssayScores(loadedEssayScores);
                                 }
                             }
                         }
+                    }
+
+                    // Load teacher scores (tekshiruvchi tomonidan qo'yilgan essay balllar) into scores state
+                    if (Object.keys(teacherScores).length > 0) {
+                        console.log("Loading teacher scores into scores state:", teacherScores);
+                        setScores((prevScores) => ({
+                            ...prevScores,
+                            ...teacherScores,
+                        }));
                     }
 
                     // If we loaded previous answers, mark that user has submitted
@@ -510,7 +550,7 @@ export const TestTakingPage = () => {
         }));
     };
 
-    // Essay balllarni saqlash (1-75 oralig'ida)
+    // Essay balllarni saqlash (0-75 oralig'ida)
     const handleEssayScoreChange = (questionNum, value) => {
         if (isReadOnly) {
             return; // Don't allow changes in read-only mode
@@ -537,7 +577,7 @@ export const TestTakingPage = () => {
             return;
         }
 
-        // 1-75 oralig'ida tekshirish
+        // 0-75 oralig'ida tekshirish
         const numValue = parseInt(value);
         if (value === "" || value === null || value === undefined) {
             setEssayScores((prev) => {
@@ -548,8 +588,8 @@ export const TestTakingPage = () => {
             return;
         }
 
-        if (isNaN(numValue) || numValue < 1 || numValue > 75) {
-            toast.error("Ball 1 dan 75 gacha bo'lishi kerak!", {
+        if (isNaN(numValue) || numValue < 0 || numValue > 75) {
+            toast.error("Ball 0 dan 75 gacha bo'lishi kerak!", {
                 position: "top-center",
                 autoClose: 3000,
                 hideProgressBar: false,
@@ -852,7 +892,15 @@ export const TestTakingPage = () => {
 
                         // Agar is_essay true bo'lsa, ball input ko'rsatish
                         if (isEssay) {
-                            const currentScore = essayScores[qNum] !== undefined ? essayScores[qNum] : (isReadOnly && scores[qNum] !== undefined ? scores[qNum] : "");
+                            // Tekshiruvchi tomonidan qo'yilgan ball birinchi tekshiriladi (yakuniy ball)
+                            const teacherScore = scores[qNum] !== undefined ? scores[qNum] : null;
+                            // O'quvchining o'zi qo'ygan ball
+                            const studentScore = essayScores[qNum] !== undefined ? essayScores[qNum] : null;
+                            // Ko'rsatish uchun ball: tekshiruvchi ball bo'lsa u, aks holda o'quvchi ball, yoki bo'sh
+                            const currentScore = teacherScore !== null ? teacherScore : (studentScore !== null ? studentScore : "");
+                            // Agar tekshiruvchi ball qo'ygan bo'lsa, yakuniy ball va o'zgartirish mumkin emas
+                            const hasTeacherScore = teacherScore !== null && teacherScore !== undefined;
+
                             return (
                                 <div
                                     key={qNum}
@@ -862,20 +910,37 @@ export const TestTakingPage = () => {
                                         <h3 className="font-semibold text-gray-800">
                                             {qNum}-savol (Essey)
                                         </h3>
-                                        {isReadOnly && scores[qNum] !== undefined && (
+                                        {hasTeacherScore && (
                                             <span className="px-3 py-1 bg-green-100 text-green-700 rounded-lg text-sm font-medium">
-                                                Ball: {scores[qNum]}
+                                                Tekshiruvchi balli: {teacherScore}
+                                            </span>
+                                        )}
+                                        {!hasTeacherScore && studentScore !== null && (
+                                            <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-lg text-sm font-medium">
+                                                Siz qo'ygan ball: {studentScore}
                                             </span>
                                         )}
                                     </div>
                                     <div className="space-y-3">
+                                        {hasTeacherScore && (
+                                            <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-3">
+                                                <p className="text-sm text-green-700 font-medium">
+                                                    ✓ Tekshiruvchi tomonidan qo'yilgan yakuniy ball: {teacherScore}
+                                                </p>
+                                                {studentScore !== null && studentScore !== teacherScore && (
+                                                    <p className="text-xs text-green-600 mt-1">
+                                                        Siz qo'ygan ball: {studentScore}
+                                                    </p>
+                                                )}
+                                            </div>
+                                        )}
                                         <div>
                                             <label className="block text-sm text-gray-700 mb-2">
-                                                Essey balli (1-75):
+                                                {hasTeacherScore ? "Tekshiruvchi tomonidan qo'yilgan ball (yakuniy)" : "Essey balli (0-75)"}:
                                             </label>
                                             <input
                                                 type="number"
-                                                min="1"
+                                                min="0"
                                                 max="75"
                                                 value={currentScore}
                                                 onChange={(e) =>
@@ -884,12 +949,14 @@ export const TestTakingPage = () => {
                                                         e.target.value,
                                                     )
                                                 }
-                                                placeholder="1 dan 75 gacha ball kiriting..."
-                                                disabled={isReadOnly}
+                                                placeholder="0 dan 75 gacha ball kiriting..."
+                                                disabled={isReadOnly || hasTeacherScore}
                                                 className="w-full p-3 border border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none disabled:bg-gray-100 disabled:cursor-not-allowed"
                                             />
                                             <p className="text-xs text-gray-500 mt-1">
-                                                Essey savoli uchun 1 dan 75 gacha ball kiriting
+                                                {hasTeacherScore
+                                                    ? "Tekshiruvchi tomonidan qo'yilgan ball. O'zgartirish mumkin emas."
+                                                    : "Essey savoli uchun 0 dan 75 gacha ball kiriting"}
                                             </p>
                                         </div>
                                     </div>
