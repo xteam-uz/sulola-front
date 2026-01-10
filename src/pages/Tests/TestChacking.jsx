@@ -189,19 +189,35 @@ export const TestChecking = () => {
             return () => clearTimeout(timer);
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [testData?.id, location.key, testId]); // Only depend on testData.id to avoid infinite loops
+    }, [testData?.id, testData?.status, location.key, testId]); // Also depend on testData.status to refresh when test is finished
 
     // Refresh data when page becomes visible (user navigates back from student page)
     useEffect(() => {
         if (!testId || !testData) return;
 
-        const handleVisibilityChange = () => {
-            if (document.visibilityState === "visible" && testData) {
+        const handleVisibilityChange = async () => {
+            if (document.visibilityState === "visible" && testData && !isLoadingRef.current) {
                 // Agar test yakunlangan bo'lsa, faqat students ni yuklab olish
-                if (testData.status === 200) {
-                    // Test yakunlangan, faqat students ni yangilash
-                    if (!isLoadingRef.current) {
-                        fetchTestStudents(testId).catch(err => console.error("Error refreshing students:", err));
+                if (testData.status === 200 || testFinished) {
+                    // Test yakunlangan, students ni yangilash va testData ni yangilash
+                    isLoadingRef.current = true;
+                    try {
+                        await fetchTestStudents(testId);
+                        // Also refresh test data to get latest status
+                        if (fetchTest) {
+                            try {
+                                const updatedTest = await fetchTest(testId);
+                                if (updatedTest) {
+                                    setTestData(updatedTest);
+                                }
+                            } catch (error) {
+                                console.error("Error refreshing test data:", error);
+                            }
+                        }
+                    } catch (err) {
+                        console.error("Error refreshing students:", err);
+                    } finally {
+                        isLoadingRef.current = false;
                     }
                 } else {
                     // Test hali yakunlanmagan, to'liq yuklash
@@ -210,13 +226,29 @@ export const TestChecking = () => {
             }
         };
 
-        const handleFocus = () => {
-            if (testData) {
+        const handleFocus = async () => {
+            if (testData && !isLoadingRef.current) {
                 // Agar test yakunlangan bo'lsa, faqat students ni yuklab olish
-                if (testData.status === 200) {
-                    // Test yakunlangan, faqat students ni yangilash
-                    if (!isLoadingRef.current) {
-                        fetchTestStudents(testId).catch(err => console.error("Error refreshing students:", err));
+                if (testData.status === 200 || testFinished) {
+                    // Test yakunlangan, students ni yangilash va testData ni yangilash
+                    isLoadingRef.current = true;
+                    try {
+                        await fetchTestStudents(testId);
+                        // Also refresh test data to get latest status
+                        if (fetchTest) {
+                            try {
+                                const updatedTest = await fetchTest(testId);
+                                if (updatedTest) {
+                                    setTestData(updatedTest);
+                                }
+                            } catch (error) {
+                                console.error("Error refreshing test data:", error);
+                            }
+                        }
+                    } catch (err) {
+                        console.error("Error refreshing students:", err);
+                    } finally {
+                        isLoadingRef.current = false;
                     }
                 } else {
                     // Test hali yakunlanmagan, to'liq yuklash
@@ -232,7 +264,7 @@ export const TestChecking = () => {
             document.removeEventListener("visibilitychange", handleVisibilityChange);
             window.removeEventListener("focus", handleFocus);
         };
-    }, [testId, testData, fetchTestStudents]); // loadStudentsAndCheckStatus ni dependency dan olib tashladik
+    }, [testId, testData, testFinished, fetchTestStudents, fetchTest]); // testFinished ni dependency ga qo'shdik
 
     // Filter students based on search query
     const filteredStudents = (testStudents || []).filter((student) => {
@@ -329,11 +361,36 @@ export const TestChecking = () => {
             }
         }
 
-        // If polling times out, still mark as finished
+        // If polling times out, still mark as finished and show download button
+        // PDF may be ready but check-status might not have returned it yet
         setTestFinished(true);
         setCheckingStatus("done");
 
-        toast.warning("Natijalar hali tayyorlanmoqda. Iltimos, keyinroq qayta urinib ko'ring.", {
+        // Try one more time to get the status
+        try {
+            const finalStatus = await checkTestStatus(testId);
+            if (finalStatus?.download_url) {
+                setResultUrl(finalStatus.download_url);
+                toast.success("Natijalar tayyor, bot orqali yuklab oling!", {
+                    position: "top-center",
+                    autoClose: 4000,
+                    hideProgressBar: false,
+                    closeOnClick: false,
+                    pauseOnHover: true,
+                    draggable: true,
+                    progress: undefined,
+                    theme: "light",
+                    transition: Bounce,
+                    className: "toast-width my-2",
+                });
+                return;
+            }
+        } catch (error) {
+            console.error("Final status check error:", error);
+        }
+
+        // Even if PDF is not ready, show download button (it will be generated on click)
+        toast.info("Test yakunlandi! Natijalarni yuklab olishingiz mumkin.", {
             position: "top-center",
             autoClose: 5000,
             hideProgressBar: false,
@@ -425,9 +482,17 @@ export const TestChecking = () => {
                             className: "toast-width my-2",
                         });
 
-                        // Start polling for PDF URL
-                        pollTestStatus();
+                        // Start polling for PDF URL (this will update state when PDF is ready)
+                        // Don't await, let it run in background
+                        pollTestStatus().catch(err => {
+                            console.error("Polling error:", err);
+                        });
                     } else {
+                        // For non-RASH tests, status is already 200, so we can show download button
+                        // Even without PDF URL, we should show the button (PDF will be generated on download)
+                        setTestFinished(true);
+                        setCheckingStatus("done");
+
                         // Try to extract pdf url from common keys (legacy support)
                         const pdfUrl =
                             result?.download_url ||
@@ -439,8 +504,6 @@ export const TestChecking = () => {
 
                         if (pdfUrl) {
                             setResultUrl(pdfUrl);
-                            setTestFinished(true);
-                            setCheckingStatus("done");
                             toast.success("Natijalar tayyor, bot orqali yuklab oling!", {
                                 position: "top-center",
                                 autoClose: 4000,
@@ -454,9 +517,8 @@ export const TestChecking = () => {
                                 className: "toast-width my-2",
                             });
                         } else {
-                            setTestFinished(true);
-                            setCheckingStatus("done");
-                            toast.success("Test yakunlandi!", {
+                            // Even without URL, show download button (PDF will be generated on click)
+                            toast.success("Test yakunlandi! Natijalarni yuklab olishingiz mumkin.", {
                                 position: "top-center",
                                 autoClose: 4000,
                                 hideProgressBar: false,
@@ -474,40 +536,56 @@ export const TestChecking = () => {
             }
 
             // Refresh students list after finishing to maintain checked status
-            // Wait a bit for backend to process and save data
+            // This is critical to preserve the checked status after test is finished
             if (testId) {
                 try {
-                    // Wait 500ms for backend to save data
-                    await new Promise(resolve => setTimeout(resolve, 500));
-
-                    const refreshResult = await fetchTestStudents(testId);
-                    if (refreshResult) {
-                        setAllWrittenChecked(refreshResult.allChecked || refreshResult.statistics?.all_written_checked || false);
-
-                        // Also update testData with latest status
-                        if (fetchTest) {
-                            try {
-                                const updatedTest = await fetchTest(testId);
-                                if (updatedTest) {
-                                    setTestData(updatedTest);
-                                }
-                            } catch (error) {
-                                console.error("Error updating test data after finish:", error);
+                    // Multiple refreshes to ensure data is properly saved and loaded
+                    // First refresh after a short delay
+                    setTimeout(async () => {
+                        try {
+                            const refreshResult = await fetchTestStudents(testId);
+                            if (refreshResult) {
+                                setAllWrittenChecked(refreshResult.allChecked || refreshResult.statistics?.all_written_checked || false);
                             }
+                        } catch (error) {
+                            console.error("Error in first refresh:", error);
                         }
-                    }
+                    }, 300);
 
-                    // Refresh again after a short delay to ensure all data is saved
+                    // Second refresh after longer delay to catch any delayed backend updates
+                    setTimeout(async () => {
+                        try {
+                            const refreshResult = await fetchTestStudents(testId);
+                            if (refreshResult) {
+                                setAllWrittenChecked(refreshResult.allChecked || refreshResult.statistics?.all_written_checked || false);
+
+                                // Also update testData with latest status
+                                if (fetchTest) {
+                                    try {
+                                        const updatedTest = await fetchTest(testId);
+                                        if (updatedTest) {
+                                            setTestData(updatedTest);
+                                        }
+                                    } catch (error) {
+                                        console.error("Error updating test data after finish:", error);
+                                    }
+                                }
+                            }
+                        } catch (error) {
+                            console.error("Error in second refresh:", error);
+                        }
+                    }, 1500);
+
+                    // Third refresh after even longer delay for RASH_TEST jobs
                     setTimeout(async () => {
                         try {
                             await fetchTestStudents(testId);
                         } catch (error) {
-                            console.error("Error in delayed refresh:", error);
+                            console.error("Error in third refresh:", error);
                         }
-                    }, 1000);
+                    }, 3000);
                 } catch (error) {
-                    console.error("Error refreshing test students:", error);
-                    // Don't block if refresh fails
+                    console.error("Error setting up refresh:", error);
                 }
             }
         } catch (error) {
@@ -568,7 +646,7 @@ export const TestChecking = () => {
                 {/* Test completed btn */}
                 <button
                     onClick={
-                        resultUrl || testFinished
+                        (resultUrl || testFinished || checkingStatus === "done")
                             ? async () => {
                                 // Download PDF with authentication via axiosClient
                                 try {
@@ -615,8 +693,8 @@ export const TestChecking = () => {
                             }
                             : handleFinishTest
                     }
-                    disabled={(!allWrittenChecked && !testFinished) || finishing || checkingStatus === "processing"}
-                    className={`w-full py-3 rounded-xl font-medium mb-4 shadow-md transition-colors flex items-center justify-center gap-2 ${resultUrl || testFinished
+                    disabled={(!allWrittenChecked && !testFinished && checkingStatus !== "done") || finishing || checkingStatus === "processing"}
+                    className={`w-full py-3 rounded-xl font-medium mb-4 shadow-md transition-colors flex items-center justify-center gap-2 ${(resultUrl || testFinished || checkingStatus === "done")
                         ? "bg-green-600 text-white hover:bg-green-700"
                         : allWrittenChecked && checkingStatus !== "processing"
                             ? "bg-blue-500 text-white hover:bg-blue-600"
@@ -633,7 +711,7 @@ export const TestChecking = () => {
                             <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                             Ma'lumotlar tayyorlanmoqda...
                         </>
-                    ) : resultUrl || testFinished ? (
+                    ) : (resultUrl || testFinished || checkingStatus === "done") ? (
                         "Bot orqali yuklash"
                     ) : !allWrittenChecked ? (
                         "Avval barcha javoblarni tekshiring"
