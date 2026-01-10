@@ -122,29 +122,17 @@ export const StudentTestChecking = () => {
     };
 
     // Handle score change for questions 36-45 (supports per-variant keys)
-    // For image mode, accepts boolean (true/false/undefined), for write mode accepts numeric score
+    // For image mode and write mode (non-essay), accepts boolean (true/false/undefined) for checkbox
+    // For write mode (essay), accepts numeric score
     const handleScoreChange = (questionNum, value, variantKey = null) => {
         const key = variantKey || questionNum;
 
-        // For image mode questions (36-45), handle boolean values
-        if (isImageMode && questionNum >= 36 && questionNum <= 45) {
-            // value is boolean (true/false/undefined) for checkbox
-            setScores((prev) => {
-                const newScores = { ...prev };
-                if (value === true) {
-                    newScores[key] = 1; // To'g'ri
-                } else if (value === false) {
-                    newScores[key] = 0; // Xato
-                } else {
-                    // undefined - checkbox unchecked, remove from scores
-                    delete newScores[key];
-                }
-                return newScores;
-            });
-        } else {
-            // For write mode, handle numeric score
-            // Essay questions have max score of 75, others use getMaxScore
-            const maxScore = getMaxScore(questionNum);
+        // Check if question is essay
+        const isEssay = isQuestionEssay(questionNum);
+
+        // For essay questions in write mode, handle numeric score (0-75)
+        if (!isImageMode && isEssay && questionNum >= 36 && questionNum <= 45) {
+            const maxScore = 75;
             const numValue = value === ""
                 ? ""
                 : Math.max(0, Math.min(parseInt(value) || 0, maxScore));
@@ -152,6 +140,24 @@ export const StudentTestChecking = () => {
                 ...prev,
                 [key]: numValue,
             }));
+            return;
+        }
+
+        // For image mode and write mode (non-essay), handle boolean values (checkbox)
+        if ((isImageMode || (!isImageMode && !isEssay)) && questionNum >= 36 && questionNum <= 45) {
+            // value is boolean (true/false/undefined) for checkbox
+            setScores((prev) => {
+                const newScores = { ...prev };
+                if (value === true) {
+                    newScores[key] = 1; // To'g'ri - set to 1, which will uncheck "Xato" automatically
+                } else if (value === false) {
+                    newScores[key] = 0; // Xato - set to 0, which will uncheck "To'g'ri" automatically
+                } else {
+                    // undefined - checkbox unchecked, remove from scores
+                    delete newScores[key];
+                }
+                return newScores;
+            });
         }
     };
 
@@ -205,29 +211,45 @@ export const StudentTestChecking = () => {
             const variants = getAnswerVariants(qNum);
             const answerType = getAnswerType(qNum);
 
-            // For image mode, check if checkbox is set (0 or 1 is valid) - rasm bo'lsa yoki bo'lmasa ham
-            if (isImageMode && (answerType === "image" || answerType === null)) {
+            // For image mode and write mode (non-essay), check if checkbox is set (0 or 1 is valid)
+            if ((isImageMode && (answerType === "image" || answerType === null)) || (!isImageMode && (answerType === "text" || answerType === null))) {
                 if (scores[qNum] === undefined || scores[qNum] === "") {
                     missingScores.push(`${qNum}`);
                 }
             } else if (variants.length > 0) {
-                // For write mode with variants
+                // For write mode with variants (non-essay)
                 variants.forEach((_, idx) => {
                     const key = `${qNum}_${idx}`;
                     if (scores[key] === undefined || scores[key] === "") {
                         missingScores.push(`${qNum}-variant ${idx + 1}`);
                     }
                 });
-            } else if (scores[qNum] === undefined || scores[qNum] === "") {
-                // For write mode without variants
-                missingScores.push(`${qNum}`);
             }
         });
 
         if (missingScores.length > 0) {
-            const message = isImageMode
-                ? `Quyidagi savollar uchun to'g'ri/noto'g'ri belgilang: ${missingScores.join(", ")}`
-                : `Quyidagi savollar uchun ball kiriting: ${missingScores.join(", ")}`;
+            // Check if any missing score is for essay question
+            const hasEssay = missingScores.some(score => score.includes("Essey"));
+
+            let message;
+            if (hasEssay) {
+                // If there are essay questions, mention ball kiriting
+                const essayScores = missingScores.filter(s => s.includes("Essey"));
+                const nonEssayScores = missingScores.filter(s => !s.includes("Essey"));
+
+                const parts = [];
+                if (nonEssayScores.length > 0) {
+                    parts.push(`Quyidagi savollar uchun to'g'ri/noto'g'ri belgilang: ${nonEssayScores.join(", ")}`);
+                }
+                if (essayScores.length > 0) {
+                    parts.push(`Quyidagi essey savollari uchun ball kiriting: ${essayScores.join(", ")}`);
+                }
+                message = parts.join("\n");
+            } else {
+                // All non-essay questions use checkboxes
+                message = `Quyidagi savollar uchun to'g'ri/noto'g'ri belgilang: ${missingScores.join(", ")}`;
+            }
+
             toast.warning(message, {
                 position: "top-center",
                 autoClose: 5000,
@@ -768,7 +790,7 @@ export const StudentTestChecking = () => {
                         <p className="text-blue-800 text-sm">
                             {isImageMode
                                 ? "O'quvchi yuklagan rasmga qarab, to'g'ri javoblarni checkbox bilan belgilang. Noto'g'ri javoblar uchun checkboxni belgilamang."
-                                : "O'quvchi yuklagan rasmga qarab, to'g'ri javoblarni yashil tugma bilan belgilang. Noto'g'ri javoblarni belgilamang (kulrang holatda qoldiring)."}
+                                : "O'quvchi yuklagan javoblarga qarab, to'g'ri javoblarni 'To'g'ri' checkbox bilan belgilang, noto'g'ri javoblarni 'Xato' checkbox bilan belgilang. Essey savollari uchun 0 dan 75 gacha ball kiriting."}
                         </p>
                     </div>
                 )}
@@ -813,9 +835,9 @@ export const StudentTestChecking = () => {
                                             <h4 className="font-medium text-gray-700">
                                                 {questionNum}-savol {isEssay && <span className="text-xs text-purple-600 font-normal">(Essey)</span>}
                                             </h4>
-                                            {!isImageMode && (
+                                            {isEssay && (
                                                 <p className="text-xs text-gray-500">
-                                                    Maksimal: {getMaxScore(questionNum)} ball
+                                                    Maksimal: 75 ball
                                                 </p>
                                             )}
                                         </div>
@@ -925,26 +947,44 @@ export const StudentTestChecking = () => {
                                                                                 {variantText}
                                                                             </span>
                                                                         </p>
-                                                                        <div>
-                                                                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                                                                Ball (0-{getMaxScore(questionNum)})
+                                                                        {/* Checkbox for write mode (non-essay) */}
+                                                                        <div className="flex items-center justify-between">
+                                                                            <label className="flex items-center space-x-2 cursor-pointer">
+                                                                                <input
+                                                                                    type="checkbox"
+                                                                                    checked={scores[variantKey] === 1 || scores[variantKey] === true}
+                                                                                    onChange={(e) => {
+                                                                                        handleScoreChange(
+                                                                                            questionNum,
+                                                                                            e.target.checked ? true : undefined,
+                                                                                            variantKey
+                                                                                        );
+                                                                                    }}
+                                                                                    className="w-5 h-5 text-green-600 border-gray-300 rounded focus:ring-green-500 focus:ring-2 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                                                                                    disabled={isChecked || submitting || loadingScores}
+                                                                                />
+                                                                                <span className="text-sm font-medium text-green-600">
+                                                                                    To'g'ri
+                                                                                </span>
                                                                             </label>
-                                                                            <input
-                                                                                type="number"
-                                                                                min="0"
-                                                                                max={getMaxScore(questionNum)}
-                                                                                value={scores[variantKey] ?? ""}
-                                                                                onChange={(e) =>
-                                                                                    handleScoreChange(
-                                                                                        questionNum,
-                                                                                        e.target.value,
-                                                                                        variantKey
-                                                                                    )
-                                                                                }
-                                                                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
-                                                                                placeholder="0"
-                                                                                disabled={isChecked || submitting || loadingScores}
-                                                                            />
+                                                                            <label className="flex items-center space-x-2 cursor-pointer">
+                                                                                <input
+                                                                                    type="checkbox"
+                                                                                    checked={scores[variantKey] === 0 && scores[variantKey] !== "" && scores[variantKey] !== undefined}
+                                                                                    onChange={(e) => {
+                                                                                        handleScoreChange(
+                                                                                            questionNum,
+                                                                                            e.target.checked ? false : undefined,
+                                                                                            variantKey
+                                                                                        );
+                                                                                    }}
+                                                                                    className="w-5 h-5 text-red-600 border-gray-300 rounded focus:ring-red-500 focus:ring-2 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                                                                                    disabled={isChecked || submitting || loadingScores}
+                                                                                />
+                                                                                <span className="text-sm font-medium text-red-600">
+                                                                                    Xato
+                                                                                </span>
+                                                                            </label>
                                                                         </div>
                                                                     </div>
                                                                 );
@@ -979,8 +1019,8 @@ export const StudentTestChecking = () => {
                                                 {/* Ball input yoki checkbox - har bir savol uchun (variantsiz yoki rasmli javoblarda) */}
                                                 {!hasVariants && (
                                                     <div>
-                                                        {isImageMode && (answerType === "image" || answerType === null) ? (
-                                                            // Checkbox for image mode (to'g'ri/xato)
+                                                        {(isImageMode && (answerType === "image" || answerType === null)) || (!isImageMode && (answerType === "text" || answerType === null)) ? (
+                                                            // Checkbox for image mode and write mode (non-essay) (to'g'ri/xato)
                                                             <div className="flex items-center justify-between">
                                                                 <label className="flex items-center space-x-2 cursor-pointer">
                                                                     <input
@@ -1021,29 +1061,7 @@ export const StudentTestChecking = () => {
                                                                     </span>
                                                                 </label>
                                                             </div>
-                                                        ) : (
-                                                            // Score input for write mode
-                                                            <div>
-                                                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                                                    Ball (0-{getMaxScore(questionNum)})
-                                                                </label>
-                                                                <input
-                                                                    type="number"
-                                                                    min="0"
-                                                                    max={getMaxScore(questionNum)}
-                                                                    value={scores[questionNum] || ""}
-                                                                    onChange={(e) =>
-                                                                        handleScoreChange(
-                                                                            questionNum,
-                                                                            e.target.value
-                                                                        )
-                                                                    }
-                                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
-                                                                    placeholder="0"
-                                                                    disabled={isChecked || submitting || loadingScores}
-                                                                />
-                                                            </div>
-                                                        )}
+                                                        ) : null}
                                                     </div>
                                                 )}
                                             </>
