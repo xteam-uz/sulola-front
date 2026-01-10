@@ -795,7 +795,7 @@ export const TestChecking = () => {
                             <p className="text-green-600 text-sm font-medium">
                                 ✓ Tekshirilgan - {checkedCount} ta
                             </p>
-                            {uncheckedCount > 0 && !testFinished && (
+                            {!testFinished && (
                                 <p className="text-red-600 text-sm font-medium">
                                     ✗ Tekshirilmagan - {uncheckedCount} ta
                                 </p>

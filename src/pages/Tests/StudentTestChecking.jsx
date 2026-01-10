@@ -104,6 +104,23 @@ export const StudentTestChecking = () => {
     // Check if test has image mode for questions 36-45
     const isImageMode = testData?.details?.questions_36_45?.mode === "image";
 
+    // Check if a question 36-45 is essay type
+    const isQuestionEssay = (questionNum) => {
+        const q36_45 = testData?.details?.questions_36_45;
+        if (!q36_45 || !q36_45.questions) return false;
+        const questionData = q36_45.questions[String(questionNum)] || q36_45.questions[questionNum];
+        return questionData?.is_essay === true || questionData?.is_essay === "true" || questionData?.is_essay === 1;
+    };
+
+    // Check if a question 36-45 exists in test (not excluded)
+    const questionExistsInTest = (questionNum) => {
+        const q36_45 = testData?.details?.questions_36_45;
+        if (!q36_45 || !q36_45.questions) return false;
+        const questionData = q36_45.questions[String(questionNum)] || q36_45.questions[questionNum];
+        // Question exists if it's in the questions object (variant_count > 0 or is_essay = true)
+        return !!questionData;
+    };
+
     // Handle score change for questions 36-45 (supports per-variant keys)
     // For image mode, accepts boolean (true/false/undefined), for write mode accepts numeric score
     const handleScoreChange = (questionNum, value, variantKey = null) => {
@@ -126,9 +143,11 @@ export const StudentTestChecking = () => {
             });
         } else {
             // For write mode, handle numeric score
+            // Essay questions have max score of 75, others use getMaxScore
+            const maxScore = getMaxScore(questionNum);
             const numValue = value === ""
                 ? ""
-                : Math.max(0, Math.min(parseInt(value) || 0, getMaxScore(questionNum)));
+                : Math.max(0, Math.min(parseInt(value) || 0, maxScore));
             setScores((prev) => ({
                 ...prev,
                 [key]: numValue,
@@ -138,7 +157,12 @@ export const StudentTestChecking = () => {
 
     // Get max score for a question (36-45)
     const getMaxScore = (questionNum) => {
-        // Default max scores - adjust based on your API response
+        // If question is essay, max score is 75
+        if (isQuestionEssay(questionNum)) {
+            return 75;
+        }
+
+        // Default max scores for non-essay questions - adjust based on your API response
         const maxScores = {
             36: 30,
             37: 30,
@@ -159,10 +183,25 @@ export const StudentTestChecking = () => {
         if (!testId || !studentId) return;
 
         // Validate that all scores are provided for questions 36-45
+        // Only validate questions that exist in the test (variant_count > 0 or is_essay = true)
         const requiredQuestions = [36, 37, 38, 39, 40, 41, 42, 43, 44, 45];
         const missingScores = [];
 
         requiredQuestions.forEach((qNum) => {
+            // Skip if question doesn't exist in test (was excluded when created)
+            if (!questionExistsInTest(qNum)) {
+                return;
+            }
+
+            // Check if question is essay
+            if (isQuestionEssay(qNum)) {
+                // Essay questions need a single score (0-75)
+                if (scores[qNum] === undefined || scores[qNum] === "") {
+                    missingScores.push(`${qNum} (Essey)`);
+                }
+                return;
+            }
+
             const variants = getAnswerVariants(qNum);
             const answerType = getAnswerType(qNum);
 
@@ -753,11 +792,17 @@ export const StudentTestChecking = () => {
                         </h3>
                         <div className="space-y-4">
                             {Array.from({ length: 10 }, (_, i) => i + 36).map((questionNum) => {
+                                // Skip if question doesn't exist in test (was excluded when created)
+                                if (!questionExistsInTest(questionNum)) {
+                                    return null;
+                                }
+
+                                const isEssay = isQuestionEssay(questionNum);
                                 const answerType = getAnswerType(questionNum);
                                 const imageUrl = getAnswerImage(questionNum);
                                 const answerText = getAnswerText(questionNum);
                                 const variants = getAnswerVariants(questionNum);
-                                const hasVariants = answerType === "text" && variants.length > 0;
+                                const hasVariants = answerType === "text" && variants.length > 0 && !isEssay;
 
                                 return (
                                     <div
@@ -766,7 +811,7 @@ export const StudentTestChecking = () => {
                                     >
                                         <div className="flex justify-between items-start mb-3">
                                             <h4 className="font-medium text-gray-700">
-                                                {questionNum}-savol
+                                                {questionNum}-savol {isEssay && <span className="text-xs text-purple-600 font-normal">(Essey)</span>}
                                             </h4>
                                             {!isImageMode && (
                                                 <p className="text-xs text-gray-500">
@@ -775,185 +820,233 @@ export const StudentTestChecking = () => {
                                             )}
                                         </div>
 
-                                        {/* Rasmli javob - rasm bo'lsa yoki rasmli rejimda rasm bo'lmasa ham ko'rsatilsin */}
-                                        {(answerType === "image" || (isImageMode && answerType === null)) && (
+                                        {/* Essay question - show 0-75 score input */}
+                                        {isEssay && (
                                             <div className="mb-3">
-                                                {imageUrl ? (
-                                                    <div className="mb-3">
-                                                        <img
-                                                            src={imageUrl}
-                                                            alt={`${questionNum}-savol javobi`}
-                                                            className="w-full rounded-lg border border-gray-200"
-                                                            onError={(e) => {
-                                                                console.error(`Image load error for question ${questionNum}:`, imageUrl);
-                                                                e.target.style.display = 'none';
-                                                                const placeholder = e.target.nextElementSibling;
-                                                                if (placeholder) {
-                                                                    placeholder.style.display = 'flex';
-                                                                }
-                                                            }}
-                                                        />
-                                                        <div className="hidden flex-col items-center justify-center py-8 bg-gray-50 rounded-lg border border-gray-200">
-                                                            <ImageIcon
-                                                                className="text-gray-400 mb-2"
-                                                                size={48}
-                                                            />
-                                                            <p className="text-gray-500 text-sm">
-                                                                Rasm yuklanmadi
-                                                            </p>
-                                                        </div>
-                                                    </div>
-                                                ) : (
-                                                    <div className="flex flex-col items-center justify-center py-8 bg-gray-50 rounded-lg border border-gray-200">
-                                                        <ImageIcon
-                                                            className="text-gray-400 mb-2"
-                                                            size={48}
-                                                        />
-                                                        <p className="text-gray-500 text-sm">
-                                                            O'quvchi hali rasm yuklamagan
+                                                <div className="bg-purple-50 rounded-lg p-3 border border-purple-200 mb-3">
+                                                    <p className="text-sm text-purple-700 font-medium mb-1">
+                                                        Essey savoli
+                                                    </p>
+                                                    {/* {answerText ? (
+                                                        <p className="text-sm text-gray-700 mt-2">
+                                                            {answerText}
                                                         </p>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        )}
-
-                                        {/* Yozma javob */}
-                                        {answerType === "text" && (
-                                            <div className="mb-3 space-y-3">
-                                                {hasVariants
-                                                    ? variants.map((variantText, idx) => {
-                                                        const variantKey = `${questionNum}_${idx}`;
-                                                        return (
-                                                            <div
-                                                                key={variantKey}
-                                                                className="bg-gray-50 rounded-lg p-3 border border-gray-200"
-                                                            >
-                                                                <p className="text-sm text-gray-700 font-medium mb-2">
-                                                                    Variant {idx + 1}:{" "}
-                                                                    <span className="font-normal text-gray-700">
-                                                                        {variantText}
-                                                                    </span>
-                                                                </p>
-                                                                <div>
-                                                                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                                                                        Ball (0-{getMaxScore(questionNum)})
-                                                                    </label>
-                                                                    <input
-                                                                        type="number"
-                                                                        min="0"
-                                                                        max={getMaxScore(questionNum)}
-                                                                        value={scores[variantKey] ?? ""}
-                                                                        onChange={(e) =>
-                                                                            handleScoreChange(
-                                                                                questionNum,
-                                                                                e.target.value,
-                                                                                variantKey
-                                                                            )
-                                                                        }
-                                                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
-                                                                        placeholder="0"
-                                                                        disabled={isChecked || submitting || loadingScores}
-                                                                    />
-                                                                </div>
-                                                            </div>
-                                                        );
-                                                    })
-                                                    : (
-                                                        <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
-                                                            {answerText ? (
-                                                                <p className="text-sm text-gray-700">
-                                                                    {answerText}
-                                                                </p>
-                                                            ) : (
-                                                                <p className="text-sm text-gray-500 italic">
-                                                                    Javob berilmagan
-                                                                </p>
-                                                            )}
-                                                        </div>
-                                                    )}
-                                            </div>
-                                        )}
-
-                                        {/* Agar javob bo'lmasa - faqat yozma rejimda ko'rsatilsin */}
-                                        {answerType === null && !isImageMode && (
-                                            <div className="mb-3">
-                                                <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
-                                                    <p className="text-sm text-gray-500 italic">
-                                                        Javob berilmagan
+                                                    ) : (
+                                                        <p className="text-sm text-gray-500 italic mt-2">
+                                                            Javob berilmagan
+                                                        </p>
+                                                    )} */}
+                                                </div>
+                                                <div>
+                                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                        Essey balli (0-75)
+                                                    </label>
+                                                    <input
+                                                        type="number"
+                                                        min="0"
+                                                        max="75"
+                                                        value={scores[questionNum] ?? ""}
+                                                        onChange={(e) =>
+                                                            handleScoreChange(
+                                                                questionNum,
+                                                                e.target.value
+                                                            )
+                                                        }
+                                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                                                        placeholder="0"
+                                                        disabled={isChecked || submitting || loadingScores}
+                                                    />
+                                                    <p className="text-xs text-gray-500 mt-1">
+                                                        Essey savoli uchun 0 dan 75 gacha ball kiriting
                                                     </p>
                                                 </div>
                                             </div>
                                         )}
 
-                                        {/* Ball input yoki checkbox - har bir savol uchun (variantsiz yoki rasmli javoblarda) */}
-                                        {!hasVariants && (
-                                            <div>
-                                                {isImageMode && (answerType === "image" || answerType === null) ? (
-                                                    // Checkbox for image mode (to'g'ri/xato)
-                                                    <div className="flex items-center justify-between">
-                                                        <label className="flex items-center space-x-2 cursor-pointer">
-                                                            <input
-                                                                type="checkbox"
-                                                                checked={scores[questionNum] === 1 || scores[questionNum] === true}
-                                                                onChange={(e) => {
-                                                                    // Agar "To'g'ri" tanlansa, 1 qo'y, aks holda undefined
-                                                                    // "Xato" ni avtomatik unchecked qilish
-                                                                    handleScoreChange(
-                                                                        questionNum,
-                                                                        e.target.checked ? true : undefined
-                                                                    );
-                                                                }}
-                                                                className="w-5 h-5 text-green-600 border-gray-300 rounded focus:ring-green-500 focus:ring-2 disabled:bg-gray-100 disabled:cursor-not-allowed"
-                                                                disabled={isChecked || submitting || loadingScores}
-                                                            />
-                                                            <span className="text-sm font-medium text-green-600">
-                                                                To'g'ri
-                                                            </span>
-                                                        </label>
-                                                        <label className="flex items-center space-x-2 cursor-pointer">
-                                                            <input
-                                                                type="checkbox"
-                                                                checked={scores[questionNum] === 0 && scores[questionNum] !== "" && scores[questionNum] !== undefined}
-                                                                onChange={(e) => {
-                                                                    // Agar "Xato" tanlansa, 0 qo'y, aks holda undefined
-                                                                    // "To'g'ri" ni avtomatik unchecked qilish
-                                                                    handleScoreChange(
-                                                                        questionNum,
-                                                                        e.target.checked ? false : undefined
-                                                                    );
-                                                                }}
-                                                                className="w-5 h-5 text-red-600 border-gray-300 rounded focus:ring-red-500 focus:ring-2 disabled:bg-gray-100 disabled:cursor-not-allowed"
-                                                                disabled={isChecked || submitting || loadingScores}
-                                                            />
-                                                            <span className="text-sm font-medium text-red-600">
-                                                                Xato
-                                                            </span>
-                                                        </label>
-                                                    </div>
-                                                ) : (
-                                                    // Score input for write mode
-                                                    <div>
-                                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                                            Ball (0-{getMaxScore(questionNum)})
-                                                        </label>
-                                                        <input
-                                                            type="number"
-                                                            min="0"
-                                                            max={getMaxScore(questionNum)}
-                                                            value={scores[questionNum] || ""}
-                                                            onChange={(e) =>
-                                                                handleScoreChange(
-                                                                    questionNum,
-                                                                    e.target.value
-                                                                )
-                                                            }
-                                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
-                                                            placeholder="0"
-                                                            disabled={isChecked || submitting || loadingScores}
-                                                        />
+                                        {/* Non-essay questions rendering */}
+                                        {!isEssay && (
+                                            <>
+                                                {/* Rasmli javob - rasm bo'lsa yoki rasmli rejimda rasm bo'lmasa ham ko'rsatilsin */}
+                                                {(answerType === "image" || (isImageMode && answerType === null)) && (
+                                                    <div className="mb-3">
+                                                        {imageUrl ? (
+                                                            <div className="mb-3">
+                                                                <img
+                                                                    src={imageUrl}
+                                                                    alt={`${questionNum}-savol javobi`}
+                                                                    className="w-full rounded-lg border border-gray-200"
+                                                                    onError={(e) => {
+                                                                        console.error(`Image load error for question ${questionNum}:`, imageUrl);
+                                                                        e.target.style.display = 'none';
+                                                                        const placeholder = e.target.nextElementSibling;
+                                                                        if (placeholder) {
+                                                                            placeholder.style.display = 'flex';
+                                                                        }
+                                                                    }}
+                                                                />
+                                                                <div className="hidden flex-col items-center justify-center py-8 bg-gray-50 rounded-lg border border-gray-200">
+                                                                    <ImageIcon
+                                                                        className="text-gray-400 mb-2"
+                                                                        size={48}
+                                                                    />
+                                                                    <p className="text-gray-500 text-sm">
+                                                                        Rasm yuklanmadi
+                                                                    </p>
+                                                                </div>
+                                                            </div>
+                                                        ) : (
+                                                            <div className="flex flex-col items-center justify-center py-8 bg-gray-50 rounded-lg border border-gray-200">
+                                                                <ImageIcon
+                                                                    className="text-gray-400 mb-2"
+                                                                    size={48}
+                                                                />
+                                                                <p className="text-gray-500 text-sm">
+                                                                    O'quvchi hali rasm yuklamagan
+                                                                </p>
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 )}
-                                            </div>
+
+                                                {/* Yozma javob */}
+                                                {answerType === "text" && (
+                                                    <div className="mb-3 space-y-3">
+                                                        {hasVariants
+                                                            ? variants.map((variantText, idx) => {
+                                                                const variantKey = `${questionNum}_${idx}`;
+                                                                return (
+                                                                    <div
+                                                                        key={variantKey}
+                                                                        className="bg-gray-50 rounded-lg p-3 border border-gray-200"
+                                                                    >
+                                                                        <p className="text-sm text-gray-700 font-medium mb-2">
+                                                                            Variant {idx + 1}:{" "}
+                                                                            <span className="font-normal text-gray-700">
+                                                                                {variantText}
+                                                                            </span>
+                                                                        </p>
+                                                                        <div>
+                                                                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                                                Ball (0-{getMaxScore(questionNum)})
+                                                                            </label>
+                                                                            <input
+                                                                                type="number"
+                                                                                min="0"
+                                                                                max={getMaxScore(questionNum)}
+                                                                                value={scores[variantKey] ?? ""}
+                                                                                onChange={(e) =>
+                                                                                    handleScoreChange(
+                                                                                        questionNum,
+                                                                                        e.target.value,
+                                                                                        variantKey
+                                                                                    )
+                                                                                }
+                                                                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                                                                                placeholder="0"
+                                                                                disabled={isChecked || submitting || loadingScores}
+                                                                            />
+                                                                        </div>
+                                                                    </div>
+                                                                );
+                                                            })
+                                                            : (
+                                                                <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                                                                    {answerText ? (
+                                                                        <p className="text-sm text-gray-700">
+                                                                            {answerText}
+                                                                        </p>
+                                                                    ) : (
+                                                                        <p className="text-sm text-gray-500 italic">
+                                                                            Javob berilmagan
+                                                                        </p>
+                                                                    )}
+                                                                </div>
+                                                            )}
+                                                    </div>
+                                                )}
+
+                                                {/* Agar javob bo'lmasa - faqat yozma rejimda ko'rsatilsin */}
+                                                {answerType === null && !isImageMode && (
+                                                    <div className="mb-3">
+                                                        <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                                                            <p className="text-sm text-gray-500 italic">
+                                                                Javob berilmagan
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                {/* Ball input yoki checkbox - har bir savol uchun (variantsiz yoki rasmli javoblarda) */}
+                                                {!hasVariants && (
+                                                    <div>
+                                                        {isImageMode && (answerType === "image" || answerType === null) ? (
+                                                            // Checkbox for image mode (to'g'ri/xato)
+                                                            <div className="flex items-center justify-between">
+                                                                <label className="flex items-center space-x-2 cursor-pointer">
+                                                                    <input
+                                                                        type="checkbox"
+                                                                        checked={scores[questionNum] === 1 || scores[questionNum] === true}
+                                                                        onChange={(e) => {
+                                                                            // Agar "To'g'ri" tanlansa, 1 qo'y, aks holda undefined
+                                                                            // "Xato" ni avtomatik unchecked qilish
+                                                                            handleScoreChange(
+                                                                                questionNum,
+                                                                                e.target.checked ? true : undefined
+                                                                            );
+                                                                        }}
+                                                                        className="w-5 h-5 text-green-600 border-gray-300 rounded focus:ring-green-500 focus:ring-2 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                                                                        disabled={isChecked || submitting || loadingScores}
+                                                                    />
+                                                                    <span className="text-sm font-medium text-green-600">
+                                                                        To'g'ri
+                                                                    </span>
+                                                                </label>
+                                                                <label className="flex items-center space-x-2 cursor-pointer">
+                                                                    <input
+                                                                        type="checkbox"
+                                                                        checked={scores[questionNum] === 0 && scores[questionNum] !== "" && scores[questionNum] !== undefined}
+                                                                        onChange={(e) => {
+                                                                            // Agar "Xato" tanlansa, 0 qo'y, aks holda undefined
+                                                                            // "To'g'ri" ni avtomatik unchecked qilish
+                                                                            handleScoreChange(
+                                                                                questionNum,
+                                                                                e.target.checked ? false : undefined
+                                                                            );
+                                                                        }}
+                                                                        className="w-5 h-5 text-red-600 border-gray-300 rounded focus:ring-red-500 focus:ring-2 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                                                                        disabled={isChecked || submitting || loadingScores}
+                                                                    />
+                                                                    <span className="text-sm font-medium text-red-600">
+                                                                        Xato
+                                                                    </span>
+                                                                </label>
+                                                            </div>
+                                                        ) : (
+                                                            // Score input for write mode
+                                                            <div>
+                                                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                                    Ball (0-{getMaxScore(questionNum)})
+                                                                </label>
+                                                                <input
+                                                                    type="number"
+                                                                    min="0"
+                                                                    max={getMaxScore(questionNum)}
+                                                                    value={scores[questionNum] || ""}
+                                                                    onChange={(e) =>
+                                                                        handleScoreChange(
+                                                                            questionNum,
+                                                                            e.target.value
+                                                                        )
+                                                                    }
+                                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                                                                    placeholder="0"
+                                                                    disabled={isChecked || submitting || loadingScores}
+                                                                />
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                )}
+                                            </>
                                         )}
                                     </div>
                                 );

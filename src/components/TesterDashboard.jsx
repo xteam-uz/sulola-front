@@ -396,13 +396,13 @@ export const TesterDashboard = () => {
                                         type="radio"
                                         name="testType"
                                         value="paid"
-                                        defaultChecked
+                                        disabled
                                     />
                                     <div>
-                                        <p className="font-medium">
+                                        <p className="font-medium line-through">
                                             💰 Pullik test
                                         </p>
-                                        <p className="text-xs text-gray-500">
+                                        <p className="text-xs text-gray-500 line-through">
                                             O'quvchilar Click yoki Payme orqali
                                             to'laydi.
                                         </p>
@@ -414,6 +414,7 @@ export const TesterDashboard = () => {
                                         type="radio"
                                         name="testType"
                                         value="free"
+                                        defaultChecked
                                     />
                                     <div>
                                         <p className="font-medium">

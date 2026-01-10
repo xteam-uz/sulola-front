@@ -49,6 +49,18 @@ export const FreeTests = () => {
         44: 2,
         45: 2,
     });
+    const [isEssay, setIsEssay] = useState({
+        36: false,
+        37: false,
+        38: false,
+        39: false,
+        40: false,
+        41: false,
+        42: false,
+        43: false,
+        44: false,
+        45: false,
+    });
     const [autoCheck, setAutoCheck] = useState(false);
 
     // Step 3 & 4: Savollar
@@ -59,10 +71,32 @@ export const FreeTests = () => {
     const navigate = useNavigate();
 
     const handleVariantChange = (questionNum, delta) => {
+        const newCount = Math.max(0, Math.min(10, variantCounts[questionNum] + delta));
         setVariantCounts((prev) => ({
             ...prev,
-            [questionNum]: Math.max(1, Math.min(10, prev[questionNum] + delta)),
+            [questionNum]: newCount,
         }));
+        // Agar variant soni 0 dan katta bo'lsa, essey belgisini o'chirish
+        if (newCount > 0 && isEssay[questionNum]) {
+            setIsEssay((prev) => ({
+                ...prev,
+                [questionNum]: false,
+            }));
+        }
+    };
+
+    const handleEssayChange = (questionNum, checked) => {
+        setIsEssay((prev) => ({
+            ...prev,
+            [questionNum]: checked,
+        }));
+        // Agar essay belgilansa, variant sonini 0 ga o'rnatish
+        if (checked) {
+            setVariantCounts((prev) => ({
+                ...prev,
+                [questionNum]: 0,
+            }));
+        }
     };
 
     const handleStep1Submit = () => {
@@ -111,12 +145,12 @@ export const FreeTests = () => {
 
     const handleStep2Submit = () => {
         if (selectedMode === "write") {
-            const hasVariants = Object.values(variantCounts).some(
-                (count) => count > 0,
+            const hasVariants = Object.entries(variantCounts).some(
+                ([qNum, count]) => count > 0 || isEssay[qNum] === true,
             );
             if (!hasVariants) {
                 toast.error(
-                    "Kamida bitta savol uchun variant soni belgilang!",
+                    "Kamida bitta savol uchun variant soni yoki essey sifatida belgilang!",
                     {
                         position: "top-center",
                         autoClose: 3000,
@@ -203,7 +237,13 @@ export const FreeTests = () => {
                 auto_check: autoCheck,
                 questions: Object.entries(variantCounts).reduce(
                     (acc, [qNum, count]) => {
-                        acc[qNum] = { variant_count: count };
+                        // Faqat variant_count > 0 yoki is_essay = true bo'lgan savollarni qo'shish
+                        if (count > 0 || isEssay[qNum]) {
+                            acc[qNum] = {
+                                variant_count: count,
+                                is_essay: isEssay[qNum] || false,
+                            };
+                        }
                         return acc;
                     },
                     {},
@@ -454,37 +494,66 @@ export const FreeTests = () => {
                         {Object.entries(variantCounts).map(([qNum, count]) => (
                             <div
                                 key={qNum}
-                                className="flex items-center justify-between p-3 border border-gray-200 rounded-lg"
+                                className="border border-gray-200 rounded-lg p-4 space-y-3"
                             >
-                                <span className="font-medium text-gray-700">
-                                    {qNum}-savol
-                                </span>
-                                <div className="flex items-center space-x-3">
-                                    <span className="text-sm text-gray-600">
-                                        Javoblar soni:
+                                <div className="flex items-center justify-between">
+                                    <span className="font-medium text-gray-700">
+                                        {qNum}-savol
                                     </span>
-                                    <div className="flex items-center space-x-2">
-                                        <button
-                                            onClick={() =>
-                                                handleVariantChange(qNum, -1)
+                                    <label className="flex items-center gap-2 cursor-pointer">
+                                        <input
+                                            type="checkbox"
+                                            checked={isEssay[qNum] || false}
+                                            onChange={(e) =>
+                                                handleEssayChange(
+                                                    qNum,
+                                                    e.target.checked,
+                                                )
                                             }
-                                            className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-100"
-                                        >
-                                            <Minus size={16} />
-                                        </button>
-                                        <span className="w-8 text-center font-semibold">
-                                            {count}
+                                            className="w-5 h-5"
+                                        />
+                                        <span className="text-sm font-medium text-gray-700">
+                                            Essey
                                         </span>
-                                        <button
-                                            onClick={() =>
-                                                handleVariantChange(qNum, 1)
-                                            }
-                                            className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-100"
-                                        >
-                                            <Plus size={16} />
-                                        </button>
-                                    </div>
+                                    </label>
                                 </div>
+                                {!isEssay[qNum] && (
+                                    <div className="flex items-center justify-between pt-2 border-t border-gray-100">
+                                        <span className="text-sm text-gray-600">
+                                            Variantlar soni:
+                                        </span>
+                                        <div className="flex items-center space-x-2">
+                                            <button
+                                                onClick={() =>
+                                                    handleVariantChange(qNum, -1)
+                                                }
+                                                disabled={count === 0}
+                                                className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                                            >
+                                                <Minus size={16} />
+                                            </button>
+                                            <span className="w-8 text-center font-semibold">
+                                                {count}
+                                            </span>
+                                            <button
+                                                onClick={() =>
+                                                    handleVariantChange(qNum, 1)
+                                                }
+                                                disabled={count === 10}
+                                                className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                                            >
+                                                <Plus size={16} />
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+                                {isEssay[qNum] && (
+                                    <div className="pt-2 border-t border-gray-100">
+                                        <p className="text-xs text-blue-600 italic">
+                                            Bu savol essey sifatida belgilandi va variantlar soni 0 ga o'rnatildi.
+                                        </p>
+                                    </div>
+                                )}
                             </div>
                         ))}
                     </div>

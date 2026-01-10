@@ -17,7 +17,8 @@ export const TestTakingPage = () => {
     const [answers, setAnswers] = useState({});
     const [uploadedImages, setUploadedImages] = useState({});
     const [textAnswers, setTextAnswers] = useState({});
-    const [scores, setScores] = useState({}); // Scores for questions 36-45
+    const [scores, setScores] = useState({}); // Scores for questions 36-45 (read-only, for checked tests)
+    const [essayScores, setEssayScores] = useState({}); // Essay scores for questions 36-45 (editable)
     const [showCamera, setShowCamera] = useState(false);
     const [cameraStream, setCameraStream] = useState(null);
     const [capturedImage, setCapturedImage] = useState(null);
@@ -330,6 +331,22 @@ export const TestTakingPage = () => {
                                 console.log("Loaded text answers:", loadedTextAnswers);
                                 setTextAnswers(loadedTextAnswers);
                             }
+
+                            // Load essay scores if they exist
+                            if (results.questions_36_45.essay_scores) {
+                                const loadedEssayScores = {};
+                                Object.entries(results.questions_36_45.essay_scores).forEach(
+                                    ([qNum, score]) => {
+                                        if (score !== null && score !== undefined) {
+                                            loadedEssayScores[String(qNum)] = typeof score === "number" ? score : parseFloat(score) || 0;
+                                        }
+                                    },
+                                );
+                                if (Object.keys(loadedEssayScores).length > 0) {
+                                    console.log("Loaded essay scores:", loadedEssayScores);
+                                    setEssayScores(loadedEssayScores);
+                                }
+                            }
                         }
                     }
 
@@ -493,6 +510,66 @@ export const TestTakingPage = () => {
         }));
     };
 
+    // Essay balllarni saqlash (1-75 oralig'ida)
+    const handleEssayScoreChange = (questionNum, value) => {
+        if (isReadOnly) {
+            return; // Don't allow changes in read-only mode
+        }
+
+        if (!isTestActive) {
+            toast.warning(
+                isTestExpired
+                    ? "Test vaqti tugagan! Javob yuborib bo'lmaydi."
+                    : "Test hali boshlanmagan!",
+                {
+                    position: "top-center",
+                    autoClose: 5000,
+                    hideProgressBar: false,
+                    closeOnClick: false,
+                    pauseOnHover: true,
+                    draggable: true,
+                    progress: undefined,
+                    theme: "light",
+                    transition: Bounce,
+                    className: "toast-width my-2",
+                },
+            );
+            return;
+        }
+
+        // 1-75 oralig'ida tekshirish
+        const numValue = parseInt(value);
+        if (value === "" || value === null || value === undefined) {
+            setEssayScores((prev) => {
+                const newScores = { ...prev };
+                delete newScores[questionNum];
+                return newScores;
+            });
+            return;
+        }
+
+        if (isNaN(numValue) || numValue < 1 || numValue > 75) {
+            toast.error("Ball 1 dan 75 gacha bo'lishi kerak!", {
+                position: "top-center",
+                autoClose: 3000,
+                hideProgressBar: false,
+                closeOnClick: false,
+                pauseOnHover: true,
+                draggable: true,
+                progress: undefined,
+                theme: "light",
+                transition: Bounce,
+                className: "toast-width my-2",
+            });
+            return;
+        }
+
+        setEssayScores((prev) => ({
+            ...prev,
+            [questionNum]: numValue,
+        }));
+    };
+
     // Variantlar sonini aniqlash funksiyasi
     const getOptionsForQuestion = (questionNum) => {
         const num = Number(questionNum);
@@ -510,7 +587,8 @@ export const TestTakingPage = () => {
     const answeredCount =
         Object.keys(answers).length +
         Object.keys(uploadedImages).length +
-        Object.keys(textAnswers).length;
+        Object.keys(textAnswers).length +
+        Object.keys(essayScores).length;
 
     // Total questions - test turiga qarab
     const totalQuestions = isAtestatsiyaTest
@@ -558,7 +636,8 @@ export const TestTakingPage = () => {
         const totalAnswered =
             Object.keys(answers).length +
             Object.keys(uploadedImages).length +
-            Object.keys(textAnswers).length;
+            Object.keys(textAnswers).length +
+            Object.keys(essayScores).length;
 
         if (totalAnswered === 0) {
             toast.error("Hech qanday javob belgilanmagan!", {
@@ -627,16 +706,25 @@ export const TestTakingPage = () => {
                     questions_33_35[qid] = { correct_answer: answer };
             });
 
-            const questions36_45 =
-                details.questions_36_45?.mode === "image"
-                    ? {
-                        mode: "image",
-                        images: uploadedImages,
-                    }
-                    : {
-                        mode: "write",
-                        answers: textAnswers,
-                    };
+            // questions_36_45 uchun ma'lumotlarni tayyorlash
+            let questions36_45;
+            if (details.questions_36_45?.mode === "image") {
+                questions36_45 = {
+                    mode: "image",
+                    images: uploadedImages,
+                };
+            } else {
+                // Write mode uchun - textAnswers va essayScores ni birlashtirish
+                questions36_45 = {
+                    mode: "write",
+                    answers: textAnswers,
+                    essay_scores: Object.keys(essayScores).length > 0 ? essayScores : undefined,
+                };
+                // essay_scores bo'sh bo'lsa, uni o'chirish
+                if (!questions36_45.essay_scores) {
+                    delete questions36_45.essay_scores;
+                }
+            }
 
             submissionData = {
                 test_code: code,
@@ -758,7 +846,62 @@ export const TestTakingPage = () => {
             return (
                 <div className="space-y-4 mb-24">
                     {Object.entries(q36_45.questions).map(([qNum, qData]) => {
-                        const variantCount = qData.variant_count || 1;
+                        // is_essay ni tekshirish (boolean yoki string formatda)
+                        const isEssay = qData.is_essay === true || qData.is_essay === "true" || qData.is_essay === 1;
+                        const variantCount = qData.variant_count || 0;
+
+                        // Agar is_essay true bo'lsa, ball input ko'rsatish
+                        if (isEssay) {
+                            const currentScore = essayScores[qNum] !== undefined ? essayScores[qNum] : (isReadOnly && scores[qNum] !== undefined ? scores[qNum] : "");
+                            return (
+                                <div
+                                    key={qNum}
+                                    className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100"
+                                >
+                                    <div className="flex justify-between items-center mb-3">
+                                        <h3 className="font-semibold text-gray-800">
+                                            {qNum}-savol (Essey)
+                                        </h3>
+                                        {isReadOnly && scores[qNum] !== undefined && (
+                                            <span className="px-3 py-1 bg-green-100 text-green-700 rounded-lg text-sm font-medium">
+                                                Ball: {scores[qNum]}
+                                            </span>
+                                        )}
+                                    </div>
+                                    <div className="space-y-3">
+                                        <div>
+                                            <label className="block text-sm text-gray-700 mb-2">
+                                                Essey balli (1-75):
+                                            </label>
+                                            <input
+                                                type="number"
+                                                min="1"
+                                                max="75"
+                                                value={currentScore}
+                                                onChange={(e) =>
+                                                    handleEssayScoreChange(
+                                                        qNum,
+                                                        e.target.value,
+                                                    )
+                                                }
+                                                placeholder="1 dan 75 gacha ball kiriting..."
+                                                disabled={isReadOnly}
+                                                className="w-full p-3 border border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none disabled:bg-gray-100 disabled:cursor-not-allowed"
+                                            />
+                                            <p className="text-xs text-gray-500 mt-1">
+                                                Essey savoli uchun 1 dan 75 gacha ball kiriting
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            );
+                        }
+
+                        // Agar is_essay false yoki yo'q bo'lsa, odatiy variant input ko'rsatish
+                        if (variantCount === 0) {
+                            return null; // Variant count 0 bo'lsa, savol ko'rsatilmaydi
+                        }
+
                         return (
                             <div
                                 key={qNum}
