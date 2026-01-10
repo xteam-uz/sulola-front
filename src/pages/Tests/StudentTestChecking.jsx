@@ -960,7 +960,7 @@ export const StudentTestChecking = () => {
                                                                                             variantKey
                                                                                         );
                                                                                     }}
-                                                                                    className="w-5 h-5 text-green-600 border-gray-300 rounded focus:ring-green-500 focus:ring-2 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                                                                                    className="w-5 h-5 text-green-600 border-gray-300 rounded focus:ring-green-500 focus:ring-2 outline-none disabled:bg-gray-100 disabled:cursor-not-allowed"
                                                                                     disabled={isChecked || submitting || loadingScores}
                                                                                 />
                                                                                 <span className="text-sm font-medium text-green-600">
@@ -978,7 +978,7 @@ export const StudentTestChecking = () => {
                                                                                             variantKey
                                                                                         );
                                                                                     }}
-                                                                                    className="w-5 h-5 text-red-600 border-gray-300 rounded focus:ring-red-500 focus:ring-2 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                                                                                    className="w-5 h-5 text-red-600 border-gray-300 rounded focus:ring-red-500 focus:ring-2 outline-none disabled:bg-gray-100 disabled:cursor-not-allowed"
                                                                                     disabled={isChecked || submitting || loadingScores}
                                                                                 />
                                                                                 <span className="text-sm font-medium text-red-600">
@@ -1034,7 +1034,7 @@ export const StudentTestChecking = () => {
                                                                                 e.target.checked ? true : undefined
                                                                             );
                                                                         }}
-                                                                        className="w-5 h-5 text-green-600 border-gray-300 rounded focus:ring-green-500 focus:ring-2 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                                                                        className="w-5 h-5 text-green-600 border-gray-300 rounded focus:ring-green-500 focus:ring-2 outline-none disabled:bg-gray-100 disabled:cursor-not-allowed"
                                                                         disabled={isChecked || submitting || loadingScores}
                                                                     />
                                                                     <span className="text-sm font-medium text-green-600">
@@ -1053,7 +1053,7 @@ export const StudentTestChecking = () => {
                                                                                 e.target.checked ? false : undefined
                                                                             );
                                                                         }}
-                                                                        className="w-5 h-5 text-red-600 border-gray-300 rounded focus:ring-red-500 focus:ring-2 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                                                                        className="w-5 h-5 text-red-600 border-gray-300 rounded focus:ring-red-500 focus:ring-2 outline-none disabled:bg-gray-100 disabled:cursor-not-allowed"
                                                                         disabled={isChecked || submitting || loadingScores}
                                                                     />
                                                                     <span className="text-sm font-medium text-red-600">
